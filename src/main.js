@@ -1323,12 +1323,16 @@ class NeonHavocGame {
       }
     } else if (type.id === 'freeze') {
       this.player.chronoFreezeTimer = 5.0;
+      if (this.player2) this.player2.chronoFreezeTimer = 5.0;
     } else if (type.id === 'battery') {
       this.player.overdriveCharge = 100;
+      if (this.player2) this.player2.overdriveCharge = 100;
     } else if (type.id === 'shield') {
       this.player.invulnPowerupTimer = 6.0;
+      if (this.player2) this.player2.invulnPowerupTimer = 6.0;
     } else if (type.id === 'heal') {
       this.player.health = Math.min(this.player.maxHealth, this.player.health + this.player.maxHealth * 0.5);
+      if (this.player2) this.player2.health = Math.min(this.player2.maxHealth, this.player2.health + this.player2.maxHealth * 0.5);
     }
   }
 
@@ -1485,50 +1489,60 @@ class NeonHavocGame {
   }
 
   gameLoop(currentTime) {
-    const rawDt = (currentTime - this.lastTime) / 1000;
-    this.lastTime = currentTime;
+    try {
+      if (!currentTime || isNaN(currentTime)) {
+        currentTime = performance.now();
+      }
+      if (!this.lastTime || isNaN(this.lastTime)) {
+        this.lastTime = currentTime;
+      }
+      const rawDt = Math.max(0.001, Math.min(0.08, (currentTime - this.lastTime) / 1000));
+      this.lastTime = currentTime;
 
-    // 30X Dodge Matrix Bullet-Time Dilation
-    if (this.bulletTimeTimer > 0) {
-      this.bulletTimeTimer -= rawDt;
-      this.timeDilation = 0.35;
-      if (this.bulletTimeTimer <= 0) {
+      // 30X Dodge Matrix Bullet-Time Dilation
+      if (this.bulletTimeTimer > 0) {
+        this.bulletTimeTimer -= rawDt;
+        this.timeDilation = 0.35;
+        if (this.bulletTimeTimer <= 0) {
+          this.timeDilation = 1.0;
+        }
+      } else {
         this.timeDilation = 1.0;
       }
-    } else {
-      this.timeDilation = 1.0;
-    }
 
-    const dt = Math.min(0.08, rawDt * this.timeDilation);
+      const dt = Math.max(0.001, Math.min(0.064, rawDt * this.timeDilation));
 
-    // FPS Meter
-    this.frameCount++;
-    this.fpsTimer += dt;
-    if (this.fpsTimer >= 0.5) {
-      this.fps = Math.round(this.frameCount / this.fpsTimer);
-      this.frameCount = 0;
-      this.fpsTimer = 0;
-      if (this.dom.fpsCounter) {
-        this.dom.fpsCounter.textContent = `${this.fps} FPS`;
+      // FPS Meter
+      this.frameCount++;
+      this.fpsTimer += dt;
+      if (this.fpsTimer >= 0.5) {
+        this.fps = Math.round(this.frameCount / this.fpsTimer);
+        this.frameCount = 0;
+        this.fpsTimer = 0;
+        if (this.dom.fpsCounter) {
+          this.dom.fpsCounter.textContent = `${this.fps} FPS`;
+        }
       }
-    }
 
-    // Hit-stop crunch freeze handling
-    if (this.renderer.hitStopTimer > 0) {
-      this.renderer.hitStopTimer -= dt;
-      this.particlePool.update(dt);
-      this.renderer.updateCamera(dt, this.player ? this.player.x : 0, this.player ? this.player.y : 0, !!this.activeBoss, this.player ? this.player.isOverdrive : false);
+      // Hit-stop crunch freeze handling
+      if (this.renderer.hitStopTimer > 0) {
+        this.renderer.hitStopTimer = Math.max(0, this.renderer.hitStopTimer - dt);
+        this.particlePool.update(dt);
+        this.renderer.updateCamera(dt, this.player ? this.player.x : 0, this.player ? this.player.y : 0, !!this.activeBoss, this.player ? this.player.isOverdrive : false);
+        this.render();
+        return;
+      }
+
+      if (this.state === 'PLAYING') {
+        this.update(dt);
+      }
+
       this.render();
+    } catch (err) {
+      console.error('[GameLoop Exception caught and recovered]:', err);
+    } finally {
       requestAnimationFrame((t) => this.gameLoop(t));
-      return;
     }
-
-    if (this.state === 'PLAYING') {
-      this.update(dt);
-    }
-
-    this.render();
-    requestAnimationFrame((t) => this.gameLoop(t));
   }
 
   update(dt) {
@@ -1817,12 +1831,22 @@ class NeonHavocGame {
       else if (this.comboStreak >= 5) comboMult = 1.2;
 
       const xpGained = Math.round(crystal.value * comboMult);
-      const leveledUp = player.addXp(xpGained, soundEngine, this.floatingTexts);
-      if (this.player2) {
+      const primaryPlayer = (this.gameMode === 'ONLINE_CLIENT' && this.player2) ? this.player2 : player;
+      const leveledUp = primaryPlayer.addXp(xpGained, soundEngine, this.floatingTexts);
+      if (this.player2 && primaryPlayer !== this.player2) {
         this.player2.addXp(xpGained, soundEngine, this.floatingTexts);
       }
       if (leveledUp) {
-        this.triggerLevelUp();
+        if (this.gameMode === 'ONLINE_HOST' || this.gameMode === 'ONLINE_CLIENT') {
+          // In online co-op: auto-apply random upgrade so neither player's screen halts!
+          const choices = upgradeManager.generateChoices(primaryPlayer, 1);
+          if (choices.length > 0) {
+            upgradeManager.applyChoice(0, primaryPlayer);
+            this.floatingTexts.spawn(primaryPlayer.x, primaryPlayer.y - 45, `+${choices[0].title.toUpperCase()}!`, '#ffe600', '#00f0ff', true, 16);
+          }
+        } else {
+          this.triggerLevelUp();
+        }
       }
     });
 

@@ -122,6 +122,10 @@ export class Player {
   update(dt, input, soundEngine, particlePool, floatingTexts) {
     this.pulseAnim += dt * 6;
 
+    // Powerup Timers (always count down)
+    if (this.chronoFreezeTimer > 0) this.chronoFreezeTimer -= dt;
+    if (this.invulnPowerupTimer > 0) this.invulnPowerupTimer -= dt;
+
     // Downed Core Simulation
     if (this.isDowned) {
       this.vx *= 0.85;

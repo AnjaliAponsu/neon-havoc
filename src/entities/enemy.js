@@ -321,7 +321,9 @@ export class Enemy {
 
     if (this.bossPhase >= 2) {
       this.bossLaserAngle += dt * (this.bossPhase === 4 ? 1.4 : 0.9);
-      if (Math.random() < 0.28) {
+      this.bossLaserTimer = (this.bossLaserTimer || 0) + dt;
+      if (this.bossLaserTimer >= 0.12) {
+        this.bossLaserTimer = 0;
         bulletPool.spawn(
           this.x,
           this.y,
@@ -385,7 +387,9 @@ export class Enemy {
     this.singularityTimer += dt;
 
     // 1. Crucifix 4-Way Laser Beams
-    if (Math.random() < 0.35) {
+    this.crucifixTimer = (this.crucifixTimer || 0) + dt;
+    if (this.crucifixTimer >= 0.25) {
+      this.crucifixTimer = 0;
       for (let k = 0; k < 4; k++) {
         const beamA = this.bossLaserAngle + (k * Math.PI) / 2;
         bulletPool.spawn(
@@ -628,15 +632,14 @@ export class Enemy {
       // 3C. Comet Chaser with Streaming Flaming Magenta Wake (Matching Reference Image)
       const moveAngle = Math.atan2(this.vy || 0.01, this.vx || 0.01);
       const tailAngle = moveAngle + Math.PI;
-      const tailLen = this.radius * (2.4 + Math.sin(this.animTimer * 6) * 0.5);
+      const tailLen = Math.max(12, this.radius * (2.2 + Math.sin(this.animTimer * 5) * 0.4));
       const tailWidth = this.radius * 0.88;
 
       // Outer blazing flame plume trailing behind
-      const flameGrad = ctx.createRadialGradient(
-        this.x, this.y, this.radius * 0.2,
-        this.x + Math.cos(tailAngle) * tailLen, this.y + Math.sin(tailAngle) * tailLen, tailLen
-      );
-      flameGrad.addColorStop(0, '#ff0077');
+      const gradEndX = this.x + Math.cos(tailAngle) * tailLen;
+      const gradEndY = this.y + Math.sin(tailAngle) * tailLen;
+      const flameGrad = ctx.createLinearGradient(this.x, this.y, gradEndX, gradEndY);
+      flameGrad.addColorStop(0, '#ff00aa');
       flameGrad.addColorStop(0.35, '#ff2255');
       flameGrad.addColorStop(0.7, '#ff8800');
       flameGrad.addColorStop(1, 'rgba(255, 200, 0, 0)');
@@ -644,24 +647,23 @@ export class Enemy {
       ctx.fillStyle = flameGrad;
       ctx.beginPath();
       ctx.moveTo(this.x + Math.cos(moveAngle + Math.PI / 2) * tailWidth, this.y + Math.sin(moveAngle + Math.PI / 2) * tailWidth);
-      ctx.lineTo(this.x + Math.cos(tailAngle) * tailLen, this.y + Math.sin(tailAngle) * tailLen);
+      ctx.lineTo(gradEndX, gradEndY);
       ctx.lineTo(this.x + Math.cos(moveAngle - Math.PI / 2) * tailWidth, this.y + Math.sin(moveAngle - Math.PI / 2) * tailWidth);
       ctx.closePath();
       ctx.fill();
 
       // Inner hot-orange flame core stream
       const innerTailLen = tailLen * 0.65;
-      const innerFlameGrad = ctx.createLinearGradient(
-        this.x, this.y,
-        this.x + Math.cos(tailAngle) * innerTailLen, this.y + Math.sin(tailAngle) * innerTailLen
-      );
+      const inEndX = this.x + Math.cos(tailAngle) * innerTailLen;
+      const inEndY = this.y + Math.sin(tailAngle) * innerTailLen;
+      const innerFlameGrad = ctx.createLinearGradient(this.x, this.y, inEndX, inEndY);
       innerFlameGrad.addColorStop(0, '#ffe600');
       innerFlameGrad.addColorStop(0.5, '#ff6600');
       innerFlameGrad.addColorStop(1, 'rgba(255, 50, 0, 0)');
       ctx.fillStyle = innerFlameGrad;
       ctx.beginPath();
       ctx.moveTo(this.x + Math.cos(moveAngle + Math.PI / 2) * (tailWidth * 0.5), this.y + Math.sin(moveAngle + Math.PI / 2) * (tailWidth * 0.5));
-      ctx.lineTo(this.x + Math.cos(tailAngle) * innerTailLen, this.y + Math.sin(tailAngle) * innerTailLen);
+      ctx.lineTo(inEndX, inEndY);
       ctx.lineTo(this.x + Math.cos(moveAngle - Math.PI / 2) * (tailWidth * 0.5), this.y + Math.sin(moveAngle - Math.PI / 2) * (tailWidth * 0.5));
       ctx.closePath();
       ctx.fill();

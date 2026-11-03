@@ -68,26 +68,30 @@ class SpringGrid {
   }
 
   update(dt, camX, camY, camW, camH) {
-    // Only simulate nodes near the viewport for optimal 120 FPS performance
+    if (isNaN(camX) || isNaN(camY) || isNaN(camW) || isNaN(camH)) return;
     const pad = 120;
-    const minC = Math.max(0, Math.floor((camX - pad) / this.spacing));
-    const maxC = Math.min(this.cols - 1, Math.ceil((camX + camW + pad) / this.spacing));
-    const minR = Math.max(0, Math.floor((camY - pad) / this.spacing));
-    const maxR = Math.min(this.rows - 1, Math.ceil((camY + camH + pad) / this.spacing));
+    const minC = Math.max(0, Math.min(this.cols - 1, Math.floor((camX - pad) / this.spacing) || 0));
+    const maxC = Math.max(0, Math.min(this.cols - 1, Math.ceil((camX + camW + pad) / this.spacing) || 0));
+    const minR = Math.max(0, Math.min(this.rows - 1, Math.floor((camY - pad) / this.spacing) || 0));
+    const maxR = Math.max(0, Math.min(this.rows - 1, Math.ceil((camY + camH + pad) / this.spacing) || 0));
 
     for (let r = minR; r <= maxR; r++) {
+      if (!this.nodes[r]) continue;
       for (let c = minC; c <= maxC; c++) {
-        this.nodes[r][c].update(dt);
+        if (this.nodes[r][c]) {
+          this.nodes[r][c].update(dt);
+        }
       }
     }
   }
 
   draw(ctx, camX, camY, camW, camH, pulse = 0.05, accentColor = '#00f0ff') {
+    if (isNaN(camX) || isNaN(camY) || isNaN(camW) || isNaN(camH)) return;
     const pad = 80;
-    const minC = Math.max(0, Math.floor((camX - pad) / this.spacing));
-    const maxC = Math.min(this.cols - 1, Math.ceil((camX + camW + pad) / this.spacing));
-    const minR = Math.max(0, Math.floor((camY - pad) / this.spacing));
-    const maxR = Math.min(this.rows - 1, Math.ceil((camY + camH + pad) / this.spacing));
+    const minC = Math.max(0, Math.min(this.cols - 1, Math.floor((camX - pad) / this.spacing) || 0));
+    const maxC = Math.max(0, Math.min(this.cols - 1, Math.ceil((camX + camW + pad) / this.spacing) || 0));
+    const minR = Math.max(0, Math.min(this.rows - 1, Math.floor((camY - pad) / this.spacing) || 0));
+    const maxR = Math.max(0, Math.min(this.rows - 1, Math.ceil((camY + camH + pad) / this.spacing) || 0));
 
     ctx.save();
     ctx.strokeStyle = accentColor;
@@ -97,17 +101,23 @@ class SpringGrid {
 
     // Horizontal lines
     for (let r = minR; r <= maxR; r++) {
+      if (!this.nodes[r] || !this.nodes[r][minC]) continue;
       ctx.moveTo(this.nodes[r][minC].x, this.nodes[r][minC].y);
       for (let c = minC + 1; c <= maxC; c++) {
-        ctx.lineTo(this.nodes[r][c].x, this.nodes[r][c].y);
+        if (this.nodes[r][c]) {
+          ctx.lineTo(this.nodes[r][c].x, this.nodes[r][c].y);
+        }
       }
     }
 
     // Vertical lines
     for (let c = minC; c <= maxC; c++) {
+      if (!this.nodes[minR] || !this.nodes[minR][c]) continue;
       ctx.moveTo(this.nodes[minR][c].x, this.nodes[minR][c].y);
       for (let r = minR + 1; r <= maxR; r++) {
-        ctx.lineTo(this.nodes[r][c].x, this.nodes[r][c].y);
+        if (this.nodes[r] && this.nodes[r][c]) {
+          ctx.lineTo(this.nodes[r][c].x, this.nodes[r][c].y);
+        }
       }
     }
     ctx.stroke();
