@@ -1,6 +1,7 @@
 // NEON HAVOC — 30X Canvas Graphics Engine: Spring Grid, Camera Trauma, Dynamic Zoom & Holographic Radar
 
 import { COLORS, GAME_CONFIG } from './constants.js';
+import { glowCache } from './glowCache.js';
 
 class SpringNode {
   constructor(x, y) {
@@ -13,15 +14,16 @@ class SpringNode {
   }
 
   update(dt, damping = 0.92, stiffness = 120.0) {
+    const safeDt = Math.min(0.04, Math.max(0.001, dt));
     // Hooke's law towards anchor
     const fx = -stiffness * (this.x - this.x0);
     const fy = -stiffness * (this.y - this.y0);
 
-    this.vx = (this.vx + fx * dt) * damping;
-    this.vy = (this.vy + fy * dt) * damping;
+    this.vx = (this.vx + fx * safeDt) * damping;
+    this.vy = (this.vy + fy * safeDt) * damping;
 
-    this.x += this.vx * dt;
-    this.y += this.vy * dt;
+    this.x += this.vx * safeDt;
+    this.y += this.vy * safeDt;
   }
 }
 
@@ -127,9 +129,12 @@ class SpringGrid {
     ctx.fillStyle = accentColor;
     ctx.globalAlpha = Math.min(1, pulse * 2.5);
     for (let r = minR; r <= maxR; r += 2) {
+      if (!this.nodes[r]) continue;
       for (let c = minC; c <= maxC; c += 2) {
         const node = this.nodes[r][c];
-        ctx.fillRect(node.x - 1.5, node.y - 1.5, 3, 3);
+        if (node && isFinite(node.x) && isFinite(node.y)) {
+          ctx.fillRect(node.x - 1.5, node.y - 1.5, 3, 3);
+        }
       }
     }
 
@@ -370,26 +375,34 @@ export class Renderer {
     const halfViewH = (this.height / 2) / safeZoom;
 
     // 1. Volumetric Deep Indigo Center Illumination (Matching Reference Image)
-    const spaceGrad = ctx.createRadialGradient(
-      GAME_CONFIG.ARENA_WIDTH / 2, GAME_CONFIG.ARENA_HEIGHT / 2, 60,
-      GAME_CONFIG.ARENA_WIDTH / 2, GAME_CONFIG.ARENA_HEIGHT / 2, GAME_CONFIG.ARENA_WIDTH * 0.55
-    );
-    spaceGrad.addColorStop(0, 'rgba(18, 30, 85, 0.42)');
-    spaceGrad.addColorStop(0.5, 'rgba(10, 18, 52, 0.25)');
-    spaceGrad.addColorStop(1, 'rgba(4, 8, 20, 0)');
-    ctx.fillStyle = spaceGrad;
-    ctx.fillRect(0, 0, GAME_CONFIG.ARENA_WIDTH, GAME_CONFIG.ARENA_HEIGHT);
+    try {
+      const spaceGrad = ctx.createRadialGradient(
+        GAME_CONFIG.ARENA_WIDTH / 2, GAME_CONFIG.ARENA_HEIGHT / 2, 60,
+        GAME_CONFIG.ARENA_WIDTH / 2, GAME_CONFIG.ARENA_HEIGHT / 2, GAME_CONFIG.ARENA_WIDTH * 0.55
+      );
+      spaceGrad.addColorStop(0, 'rgba(18, 30, 85, 0.42)');
+      spaceGrad.addColorStop(0.5, 'rgba(10, 18, 52, 0.25)');
+      spaceGrad.addColorStop(1, 'rgba(4, 8, 20, 0)');
+      ctx.fillStyle = spaceGrad;
+      ctx.fillRect(0, 0, GAME_CONFIG.ARENA_WIDTH, GAME_CONFIG.ARENA_HEIGHT);
+    } catch (e) { /* gradient guard */ }
 
     // 2. Ambient Floating Hexagonal Debris (Matching Reference Background)
-    this._drawFloatingHexagons(ctx, halfViewW, halfViewH);
+    try {
+      this._drawFloatingHexagons(ctx, halfViewW, halfViewH);
+    } catch (e) { /* hex guard */ }
 
     // 3. Draw elastic grid & glowing arena borders
-    const pulseAlpha = 0.05 + Math.sin(this.gridPulse) * 0.025;
-    this.grid.draw(ctx, this.camera.x - halfViewW, this.camera.y - halfViewH, halfViewW * 2, halfViewH * 2, pulseAlpha, this.sectorAccent);
-    this._drawBorders(ctx);
+    try {
+      const pulseAlpha = 0.05 + Math.sin(this.gridPulse) * 0.025;
+      this.grid.draw(ctx, this.camera.x - halfViewW, this.camera.y - halfViewH, halfViewW * 2, halfViewH * 2, pulseAlpha, this.sectorAccent);
+      this._drawBorders(ctx);
+    } catch (e) { /* grid/border guard */ }
 
     // 4. Ambient Glowing Crystal Clusters (Corners Matching Reference Image)
-    this._drawCrystalClusters(ctx, halfViewW, halfViewH);
+    try {
+      this._drawCrystalClusters(ctx, halfViewW, halfViewH);
+    } catch (e) { /* crystal cluster guard */ }
   }
 
   _drawFloatingHexagons(ctx, halfViewW, halfViewH) {
@@ -400,40 +413,43 @@ export class Renderer {
     const maxY = this.camera.y + halfViewH + pad;
 
     ctx.save();
-    for (let i = 0; i < this.bgHexagons.length; i++) {
-      const hex = this.bgHexagons[i];
-      if (hex.x < minX || hex.x > maxX || hex.y < minY || hex.y > maxY) continue;
+    try {
+      for (let i = 0; i < this.bgHexagons.length; i++) {
+        const hex = this.bgHexagons[i];
+        if (hex.x < minX || hex.x > maxX || hex.y < minY || hex.y > maxY) continue;
 
-      const bob = Math.sin(this.gridPulse * hex.pulseSpeed + hex.offset) * 6;
-      ctx.save();
-      ctx.translate(hex.x, hex.y + bob);
-      ctx.rotate(hex.rotation);
+        const bob = Math.sin(this.gridPulse * hex.pulseSpeed + hex.offset) * 6;
+        ctx.save();
+        ctx.translate(hex.x, hex.y + bob);
+        ctx.rotate(hex.rotation);
 
-      // Dark translucent hexagon platform
-      ctx.fillStyle = 'rgba(12, 20, 42, 0.55)';
-      ctx.strokeStyle = 'rgba(0, 240, 255, 0.12)';
-      ctx.lineWidth = 1.2;
-      ctx.beginPath();
-      for (let s = 0; s < 6; s++) {
-        const a = (s * Math.PI) / 3;
-        const px = Math.cos(a) * hex.size;
-        const py = Math.sin(a) * hex.size * 0.85; // isometric tilt
-        if (s === 0) ctx.moveTo(px, py);
-        else ctx.lineTo(px, py);
+        // Dark translucent hexagon platform
+        ctx.fillStyle = 'rgba(12, 20, 42, 0.55)';
+        ctx.strokeStyle = 'rgba(0, 240, 255, 0.12)';
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        for (let s = 0; s < 6; s++) {
+          const a = (s * Math.PI) / 3;
+          const px = Math.cos(a) * hex.size;
+          const py = Math.sin(a) * hex.size * 0.85; // isometric tilt
+          if (s === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
+        }
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        // Subtle center notch
+        ctx.fillStyle = 'rgba(0, 240, 255, 0.2)';
+        ctx.beginPath();
+        ctx.arc(0, 0, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.restore();
       }
-      ctx.closePath();
-      ctx.fill();
-      ctx.stroke();
-
-      // Subtle center notch
-      ctx.fillStyle = 'rgba(0, 240, 255, 0.2)';
-      ctx.beginPath();
-      ctx.arc(0, 0, 2.5, 0, Math.PI * 2);
-      ctx.fill();
-
+    } finally {
       ctx.restore();
     }
-    ctx.restore();
   }
 
   _drawCrystalClusters(ctx, halfViewW, halfViewH) {
@@ -444,69 +460,72 @@ export class Renderer {
     const maxY = this.camera.y + halfViewH + pad;
 
     ctx.save();
-    for (let f = 0; f < this.crystalFormations.length; f++) {
-      const form = this.crystalFormations[f];
-      if (form.x < minX || form.x > maxX || form.y < minY || form.y > maxY) continue;
+    try {
+      for (let f = 0; f < this.crystalFormations.length; f++) {
+        const form = this.crystalFormations[f];
+        if (form.x < minX || form.x > maxX || form.y < minY || form.y > maxY) continue;
 
-      const cColor = form.color;
-      const scale = form.scale;
+        const cColor = form.color;
+        const scale = form.scale;
 
-      // Glow behind crystal cluster
-      glowCache.drawGlow(ctx, form.x, form.y, 45 * scale, cColor, 0.6);
+        // Glow behind crystal cluster
+        glowCache.drawGlow(ctx, form.x, form.y, 45 * scale, cColor, 0.6);
 
-      // Draw cluster of sharp faceted crystal stalagmites
-      const shards = [
-        { dx: 0, dy: 0, w: 14, h: 48, tilt: -0.08 },
-        { dx: -14, dy: 10, w: 10, h: 36, tilt: -0.22 },
-        { dx: 13, dy: 8, w: 11, h: 40, tilt: 0.18 },
-        { dx: -24, dy: 22, w: 8, h: 25, tilt: -0.38 },
-        { dx: 22, dy: 20, w: 8, h: 28, tilt: 0.35 },
-      ];
+        // Draw cluster of sharp faceted crystal stalagmites
+        const shards = [
+          { dx: 0, dy: 0, w: 14, h: 48, tilt: -0.08 },
+          { dx: -14, dy: 10, w: 10, h: 36, tilt: -0.22 },
+          { dx: 13, dy: 8, w: 11, h: 40, tilt: 0.18 },
+          { dx: -24, dy: 22, w: 8, h: 25, tilt: -0.38 },
+          { dx: 22, dy: 20, w: 8, h: 28, tilt: 0.35 },
+        ];
 
-      for (let s = 0; s < shards.length; s++) {
-        const sh = shards[s];
-        const sx = form.x + sh.dx * scale;
-        const sy = form.y + sh.dy * scale;
-        const sw = sh.w * scale;
-        const shh = sh.h * scale;
+        for (let s = 0; s < shards.length; s++) {
+          const sh = shards[s];
+          const sx = form.x + sh.dx * scale;
+          const sy = form.y + sh.dy * scale;
+          const sw = sh.w * scale;
+          const shh = sh.h * scale;
 
-        ctx.save();
-        ctx.translate(sx, sy);
-        ctx.rotate(sh.tilt);
+          ctx.save();
+          ctx.translate(sx, sy);
+          ctx.rotate(sh.tilt);
 
-        // Left facet
-        ctx.fillStyle = cColor;
-        ctx.globalAlpha = 0.85;
-        ctx.beginPath();
-        ctx.moveTo(0, -shh);
-        ctx.lineTo(-sw / 2, 0);
-        ctx.lineTo(0, 8);
-        ctx.closePath();
-        ctx.fill();
+          // Left facet
+          ctx.fillStyle = cColor;
+          ctx.globalAlpha = 0.85;
+          ctx.beginPath();
+          ctx.moveTo(0, -shh);
+          ctx.lineTo(-sw / 2, 0);
+          ctx.lineTo(0, 8);
+          ctx.closePath();
+          ctx.fill();
 
-        // Right facet (darker shade)
-        ctx.fillStyle = '#ffffff';
-        ctx.globalAlpha = 0.55;
-        ctx.beginPath();
-        ctx.moveTo(0, -shh);
-        ctx.lineTo(sw / 2, 0);
-        ctx.lineTo(0, 8);
-        ctx.closePath();
-        ctx.fill();
+          // Right facet (darker shade)
+          ctx.fillStyle = '#ffffff';
+          ctx.globalAlpha = 0.55;
+          ctx.beginPath();
+          ctx.moveTo(0, -shh);
+          ctx.lineTo(sw / 2, 0);
+          ctx.lineTo(0, 8);
+          ctx.closePath();
+          ctx.fill();
 
-        // Crystal facet ridge
-        ctx.strokeStyle = '#ffffff';
-        ctx.globalAlpha = 0.7;
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(0, -shh);
-        ctx.lineTo(0, 8);
-        ctx.stroke();
+          // Crystal facet ridge
+          ctx.strokeStyle = '#ffffff';
+          ctx.globalAlpha = 0.7;
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(0, -shh);
+          ctx.lineTo(0, 8);
+          ctx.stroke();
 
-        ctx.restore();
+          ctx.restore();
+        }
       }
+    } finally {
+      ctx.restore();
     }
-    ctx.restore();
   }
 
   endFrame(player = null) {
