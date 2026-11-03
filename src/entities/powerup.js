@@ -58,6 +58,12 @@ export class Powerup {
     const dy = s * 0.5;   // sin(30 deg)
     const h = s * 1.1;
 
+    // Ground Drop-Shadow (Soft floating shadow)
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.38)';
+    ctx.beginPath();
+    ctx.ellipse(0, dy * 2 + 12 - bob * 0.8, dx * 0.95, dy * 0.7, 0, 0, Math.PI * 2);
+    ctx.fill();
+
     // Face 1: Top Diamond Face
     ctx.beginPath();
     ctx.moveTo(0, -h);
@@ -65,10 +71,21 @@ export class Powerup {
     ctx.lineTo(0, -h + dy * 2);
     ctx.lineTo(-dx, -h + dy);
     ctx.closePath();
-    ctx.fillStyle = 'rgba(18, 30, 54, 0.9)';
+    ctx.fillStyle = 'rgba(18, 32, 58, 0.92)';
     ctx.fill();
     ctx.strokeStyle = this.type.color;
     ctx.lineWidth = 1.8;
+    ctx.stroke();
+
+    // Top Face Inner Accent Border
+    ctx.beginPath();
+    ctx.moveTo(0, -h + 3);
+    ctx.lineTo(dx - 4, -h + dy + 1);
+    ctx.lineTo(0, -h + dy * 2 - 3);
+    ctx.lineTo(-dx + 4, -h + dy + 1);
+    ctx.closePath();
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+    ctx.lineWidth = 1;
     ctx.stroke();
 
     // Face 2: Left Side Face
@@ -78,7 +95,7 @@ export class Powerup {
     ctx.lineTo(0, dy * 2);
     ctx.lineTo(-dx, dy);
     ctx.closePath();
-    ctx.fillStyle = 'rgba(10, 18, 36, 0.92)';
+    ctx.fillStyle = 'rgba(10, 18, 36, 0.94)';
     ctx.fill();
     ctx.strokeStyle = this.type.color;
     ctx.lineWidth = 1.8;
@@ -91,7 +108,7 @@ export class Powerup {
     ctx.lineTo(dx, dy);
     ctx.lineTo(0, dy * 2);
     ctx.closePath();
-    ctx.fillStyle = 'rgba(14, 24, 46, 0.95)';
+    ctx.fillStyle = 'rgba(14, 24, 48, 0.96)';
     ctx.fill();
     ctx.strokeStyle = this.type.color;
     ctx.lineWidth = 1.8;
@@ -103,20 +120,25 @@ export class Powerup {
     ctx.lineWidth = 2.5;
 
     if (this.type.id === 'heal' || this.type.id === 'heart' || this.type.icon === '❤️' || this.type.icon === '➕') {
-      // Glowing '+' Cross Emblem (Health Crate)
+      // Glowing '+' Cross Emblem (Health Crate - Matching Reference Image)
       const cx = 0;
       const cy = -h * 0.2;
-      const cw = 4;
-      const cl = 11;
+      const cw = 4.5;
+      const cl = 12;
       ctx.fillStyle = '#00f0ff';
       ctx.fillRect(cx - cw / 2, cy - cl / 2, cw, cl);
       ctx.fillRect(cx - cl / 2, cy - cw / 2, cl, cw);
+
+      // White inner core
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(cx - cw / 4, cy - cl / 4, cw / 2, cl / 2);
+      ctx.fillRect(cx - cl / 4, cy - cw / 4, cl / 2, cw / 2);
     } else if (this.type.id === 'boost' || this.type.id === 'overdrive' || this.type.id === 'multishot') {
-      // Glowing '⏫' Double Chevrons (Buff Crate)
+      // Glowing '⏫' Double Chevrons (Buff Crate - Matching Reference Image)
       const cx = 0;
       const cy = -h * 0.2;
       ctx.strokeStyle = '#ffe600';
-      ctx.lineWidth = 2.5;
+      ctx.lineWidth = 2.6;
       ctx.beginPath();
       // Lower chevron
       ctx.moveTo(-6, cy + 3);

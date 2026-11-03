@@ -266,51 +266,52 @@
     .wave-cyber-bezel {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      background: rgba(6, 10, 26, 0.88);
-      border: 1.5px solid rgba(0, 240, 255, 0.5);
+      gap: 10px;
+      background: linear-gradient(180deg, rgba(14, 22, 48, 0.95) 0%, rgba(6, 10, 28, 0.92) 100%);
+      border: 1.5px solid rgba(0, 240, 255, 0.6);
       border-top: none;
-      border-radius: 0 0 14px 14px;
-      padding: 5px 18px 6px 18px;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5), inset 0 0 8px rgba(0, 240, 255, 0.15);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
+      clip-path: polygon(0 0, 100% 0, 88% 100%, 12% 100%);
+      padding: 6px 28px 7px 28px;
+      box-shadow: 0 4px 20px rgba(0, 240, 255, 0.25), inset 0 0 10px rgba(0, 240, 255, 0.15);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
     }
 
     .bezel-wing {
       font-family: var(--font-display);
-      font-size: 13px;
+      font-size: 14px;
       font-weight: 900;
       color: #d000ff;
-      letter-spacing: 1.5px;
-      text-shadow: 0 0 10px #d000ff;
+      letter-spacing: 2px;
+      text-shadow: 0 0 12px #d000ff, 0 0 4px #ffffff;
     }
 
     .wave-text {
       font-family: var(--font-display);
-      font-size: 16px;
+      font-size: 17px;
       font-weight: 800;
       letter-spacing: 2.5px;
       color: #ffffff;
-      text-shadow: 0 0 12px rgba(255, 255, 255, 0.6);
+      text-shadow: 0 0 12px rgba(255, 255, 255, 0.7), 0 0 20px rgba(0, 240, 255, 0.5);
     }
 
     .timer-pill {
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      background: rgba(4, 10, 24, 0.9);
+      background: rgba(4, 10, 26, 0.92);
       border: 1.5px solid #00f0ff;
-      border-radius: 16px;
-      padding: 3px 14px;
-      box-shadow: 0 0 14px rgba(0, 240, 255, 0.4), inset 0 0 6px rgba(0, 240, 255, 0.2);
+      border-radius: 18px;
+      padding: 3px 16px;
+      box-shadow: 0 0 16px rgba(0, 240, 255, 0.4), inset 0 0 6px rgba(0, 240, 255, 0.2);
       backdrop-filter: blur(8px);
       -webkit-backdrop-filter: blur(8px);
     }
 
     .timer-icon {
-      font-size: 12px;
+      font-size: 13px;
       color: #00f0ff;
+      filter: drop-shadow(0 0 4px #00f0ff);
     }
 
     .timer-display {
@@ -418,7 +419,7 @@
       bottom: 0;
       left: 0;
       width: 100%;
-      height: 48px;
+      height: 52px;
       pointer-events: none;
       z-index: 8;
       display: flex;
@@ -428,8 +429,15 @@
 
     #bottomCyberFrame svg {
       width: 100%;
-      height: 48px;
-      filter: drop-shadow(0 0 8px rgba(0, 240, 255, 0.4));
+      height: 52px;
+    }
+
+    .cyber-bracket.magenta {
+      filter: drop-shadow(0 0 8px #ff00aa) drop-shadow(0 0 16px rgba(255, 0, 170, 0.5));
+    }
+
+    .cyber-bracket.cyan {
+      filter: drop-shadow(0 0 8px #00f0ff) drop-shadow(0 0 16px rgba(0, 240, 255, 0.5));
     }
 
     /* ---- BOTTOM ABILITY BAR (4 SLOTS MATCHING STORYBOARD) ---- */
@@ -1781,10 +1789,10 @@
 
   <!-- Bottom Cyber-Frame Decorative Bezel (Matching Reference) -->
   <div id="bottomCyberFrame" style="display: none;">
-    <svg viewBox="0 0 1200 48" preserveAspectRatio="none">
-      <path d="M 0,32 L 120,32 L 150,14 L 280,14 L 305,32 L 380,32" stroke="#ff00aa" stroke-width="2.2" fill="none" />
-      <path d="M 388,32 L 414,42 L 786,42 L 812,32" stroke="#00f0ff" stroke-width="2.2" fill="none" />
-      <path d="M 820,32 L 895,32 L 920,14 L 1050,14 L 1080,32 L 1200,32" stroke="#ff00aa" stroke-width="2.2" fill="none" />
+    <svg viewBox="0 0 1200 52" preserveAspectRatio="none">
+      <path class="cyber-bracket magenta" d="M 0,38 L 130,38 L 160,18 L 310,18 L 335,38 L 415,38" stroke="#ff00aa" stroke-width="2.6" fill="none" />
+      <path class="cyber-bracket cyan" d="M 425,38 L 452,48 L 748,48 L 775,38" stroke="#00f0ff" stroke-width="2.6" fill="none" />
+      <path class="cyber-bracket magenta" d="M 785,38 L 865,38 L 890,18 L 1040,18 L 1070,38 L 1200,38" stroke="#ff00aa" stroke-width="2.6" fill="none" />
     </svg>
   </div>
 

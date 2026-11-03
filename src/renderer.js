@@ -160,6 +160,33 @@ export class Renderer {
     this.sectorAccent = '#00f0ff';
     this.recoilKick = 0;
 
+    // Ambient Floating Hexagonal Debris (Matching Reference Image Background)
+    this.bgHexagons = [];
+    const hexCount = 28;
+    for (let i = 0; i < hexCount; i++) {
+      this.bgHexagons.push({
+        x: Math.random() * GAME_CONFIG.ARENA_WIDTH,
+        y: Math.random() * GAME_CONFIG.ARENA_HEIGHT,
+        size: 26 + Math.random() * 24,
+        rotation: (Math.random() - 0.5) * 0.6,
+        pulseSpeed: 0.4 + Math.random() * 0.6,
+        offset: Math.random() * Math.PI * 2,
+      });
+    }
+
+    // Ambient Glowing Crystal Formations (Corners & Borders Matching Reference Image)
+    this.crystalFormations = [
+      // Bottom-Right Cyan Crystal Cluster (As in reference screenshot)
+      { x: GAME_CONFIG.ARENA_WIDTH - 140, y: GAME_CONFIG.ARENA_HEIGHT - 120, color: '#00f0ff', count: 6, scale: 1.2 },
+      { x: GAME_CONFIG.ARENA_WIDTH - 240, y: GAME_CONFIG.ARENA_HEIGHT - 70, color: '#00f0ff', count: 4, scale: 0.9 },
+      // Bottom-Left Purple/Magenta Crystal Cluster (As in reference screenshot)
+      { x: 120, y: GAME_CONFIG.ARENA_HEIGHT - 130, color: '#d000ff', count: 5, scale: 1.1 },
+      { x: 220, y: GAME_CONFIG.ARENA_HEIGHT - 80, color: '#ff00aa', count: 4, scale: 0.85 },
+      // Top-Left & Top-Right Ambient Crystals
+      { x: 140, y: 130, color: '#9933ff', count: 4, scale: 0.8 },
+      { x: GAME_CONFIG.ARENA_WIDTH - 150, y: 140, color: '#00f0ff', count: 5, scale: 0.9 },
+    ];
+
     this.resize();
     window.addEventListener('resize', () => this.resize());
     window.addEventListener('fullscreenchange', () => this.resize());
@@ -299,10 +326,144 @@ export class Renderer {
     const halfViewW = (this.width / 2) / this.camera.zoom;
     const halfViewH = (this.height / 2) / this.camera.zoom;
 
-    // Draw elastic grid & glowing arena borders
+    // 1. Volumetric Deep Indigo Center Illumination (Matching Reference Image)
+    const spaceGrad = ctx.createRadialGradient(
+      GAME_CONFIG.ARENA_WIDTH / 2, GAME_CONFIG.ARENA_HEIGHT / 2, 60,
+      GAME_CONFIG.ARENA_WIDTH / 2, GAME_CONFIG.ARENA_HEIGHT / 2, GAME_CONFIG.ARENA_WIDTH * 0.55
+    );
+    spaceGrad.addColorStop(0, 'rgba(18, 30, 85, 0.42)');
+    spaceGrad.addColorStop(0.5, 'rgba(10, 18, 52, 0.25)');
+    spaceGrad.addColorStop(1, 'rgba(4, 8, 20, 0)');
+    ctx.fillStyle = spaceGrad;
+    ctx.fillRect(0, 0, GAME_CONFIG.ARENA_WIDTH, GAME_CONFIG.ARENA_HEIGHT);
+
+    // 2. Ambient Floating Hexagonal Debris (Matching Reference Background)
+    this._drawFloatingHexagons(ctx, halfViewW, halfViewH);
+
+    // 3. Draw elastic grid & glowing arena borders
     const pulseAlpha = 0.05 + Math.sin(this.gridPulse) * 0.025;
     this.grid.draw(ctx, this.camera.x - halfViewW, this.camera.y - halfViewH, halfViewW * 2, halfViewH * 2, pulseAlpha, this.sectorAccent);
     this._drawBorders(ctx);
+
+    // 4. Ambient Glowing Crystal Clusters (Corners Matching Reference Image)
+    this._drawCrystalClusters(ctx, halfViewW, halfViewH);
+  }
+
+  _drawFloatingHexagons(ctx, halfViewW, halfViewH) {
+    const pad = 120;
+    const minX = this.camera.x - halfViewW - pad;
+    const maxX = this.camera.x + halfViewW + pad;
+    const minY = this.camera.y - halfViewH - pad;
+    const maxY = this.camera.y + halfViewH + pad;
+
+    ctx.save();
+    for (let i = 0; i < this.bgHexagons.length; i++) {
+      const hex = this.bgHexagons[i];
+      if (hex.x < minX || hex.x > maxX || hex.y < minY || hex.y > maxY) continue;
+
+      const bob = Math.sin(this.gridPulse * hex.pulseSpeed + hex.offset) * 6;
+      ctx.save();
+      ctx.translate(hex.x, hex.y + bob);
+      ctx.rotate(hex.rotation);
+
+      // Dark translucent hexagon platform
+      ctx.fillStyle = 'rgba(12, 20, 42, 0.55)';
+      ctx.strokeStyle = 'rgba(0, 240, 255, 0.12)';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      for (let s = 0; s < 6; s++) {
+        const a = (s * Math.PI) / 3;
+        const px = Math.cos(a) * hex.size;
+        const py = Math.sin(a) * hex.size * 0.85; // isometric tilt
+        if (s === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      }
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // Subtle center notch
+      ctx.fillStyle = 'rgba(0, 240, 255, 0.2)';
+      ctx.beginPath();
+      ctx.arc(0, 0, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.restore();
+    }
+    ctx.restore();
+  }
+
+  _drawCrystalClusters(ctx, halfViewW, halfViewH) {
+    const pad = 160;
+    const minX = this.camera.x - halfViewW - pad;
+    const maxX = this.camera.x + halfViewW + pad;
+    const minY = this.camera.y - halfViewH - pad;
+    const maxY = this.camera.y + halfViewH + pad;
+
+    ctx.save();
+    for (let f = 0; f < this.crystalFormations.length; f++) {
+      const form = this.crystalFormations[f];
+      if (form.x < minX || form.x > maxX || form.y < minY || form.y > maxY) continue;
+
+      const cColor = form.color;
+      const scale = form.scale;
+
+      // Glow behind crystal cluster
+      glowCache.drawGlow(ctx, form.x, form.y, 45 * scale, cColor, 0.6);
+
+      // Draw cluster of sharp faceted crystal stalagmites
+      const shards = [
+        { dx: 0, dy: 0, w: 14, h: 48, tilt: -0.08 },
+        { dx: -14, dy: 10, w: 10, h: 36, tilt: -0.22 },
+        { dx: 13, dy: 8, w: 11, h: 40, tilt: 0.18 },
+        { dx: -24, dy: 22, w: 8, h: 25, tilt: -0.38 },
+        { dx: 22, dy: 20, w: 8, h: 28, tilt: 0.35 },
+      ];
+
+      for (let s = 0; s < shards.length; s++) {
+        const sh = shards[s];
+        const sx = form.x + sh.dx * scale;
+        const sy = form.y + sh.dy * scale;
+        const sw = sh.w * scale;
+        const shh = sh.h * scale;
+
+        ctx.save();
+        ctx.translate(sx, sy);
+        ctx.rotate(sh.tilt);
+
+        // Left facet
+        ctx.fillStyle = cColor;
+        ctx.globalAlpha = 0.85;
+        ctx.beginPath();
+        ctx.moveTo(0, -shh);
+        ctx.lineTo(-sw / 2, 0);
+        ctx.lineTo(0, 8);
+        ctx.closePath();
+        ctx.fill();
+
+        // Right facet (darker shade)
+        ctx.fillStyle = '#ffffff';
+        ctx.globalAlpha = 0.55;
+        ctx.beginPath();
+        ctx.moveTo(0, -shh);
+        ctx.lineTo(sw / 2, 0);
+        ctx.lineTo(0, 8);
+        ctx.closePath();
+        ctx.fill();
+
+        // Crystal facet ridge
+        ctx.strokeStyle = '#ffffff';
+        ctx.globalAlpha = 0.7;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(0, -shh);
+        ctx.lineTo(0, 8);
+        ctx.stroke();
+
+        ctx.restore();
+      }
+    }
+    ctx.restore();
   }
 
   endFrame(player = null) {

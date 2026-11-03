@@ -627,7 +627,7 @@ export class Enemy {
       const tailLen = this.radius * (2.4 + Math.sin(this.animTimer * 6) * 0.5);
       const tailWidth = this.radius * 0.88;
 
-      // Fiery blazing flame plume trailing behind
+      // Outer blazing flame plume trailing behind
       const flameGrad = ctx.createRadialGradient(
         this.x, this.y, this.radius * 0.2,
         this.x + Math.cos(tailAngle) * tailLen, this.y + Math.sin(tailAngle) * tailLen, tailLen
@@ -645,10 +645,33 @@ export class Enemy {
       ctx.closePath();
       ctx.fill();
 
-      // Spherical magenta body
+      // Inner hot-orange flame core stream
+      const innerTailLen = tailLen * 0.65;
+      const innerFlameGrad = ctx.createLinearGradient(
+        this.x, this.y,
+        this.x + Math.cos(tailAngle) * innerTailLen, this.y + Math.sin(tailAngle) * innerTailLen
+      );
+      innerFlameGrad.addColorStop(0, '#ffe600');
+      innerFlameGrad.addColorStop(0.5, '#ff6600');
+      innerFlameGrad.addColorStop(1, 'rgba(255, 50, 0, 0)');
+      ctx.fillStyle = innerFlameGrad;
+      ctx.beginPath();
+      ctx.moveTo(this.x + Math.cos(moveAngle + Math.PI / 2) * (tailWidth * 0.5), this.y + Math.sin(moveAngle + Math.PI / 2) * (tailWidth * 0.5));
+      ctx.lineTo(this.x + Math.cos(tailAngle) * innerTailLen, this.y + Math.sin(tailAngle) * innerTailLen);
+      ctx.lineTo(this.x + Math.cos(moveAngle - Math.PI / 2) * (tailWidth * 0.5), this.y + Math.sin(moveAngle - Math.PI / 2) * (tailWidth * 0.5));
+      ctx.closePath();
+      ctx.fill();
+
+      // Spherical glossy magenta body
       ctx.fillStyle = this.flashTimer > 0 ? '#ffffff' : '#ff0066';
       ctx.beginPath();
       ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Dark shadow crescent for spherical depth
+      ctx.fillStyle = 'rgba(40, 6, 28, 0.45)';
+      ctx.beginPath();
+      ctx.arc(this.x + Math.cos(tailAngle) * 3, this.y + Math.sin(tailAngle) * 3, this.radius * 0.85, 0, Math.PI * 2);
       ctx.fill();
 
       // Demonic angled glowing slit eyes facing direction of movement
@@ -656,20 +679,20 @@ export class Enemy {
       ctx.translate(this.x, this.y);
       ctx.rotate(moveAngle);
 
-      ctx.fillStyle = '#ffffff';
       // Left eye (\)
+      ctx.fillStyle = '#ffffff';
       ctx.beginPath();
-      ctx.moveTo(this.radius * 0.45, -this.radius * 0.35);
-      ctx.lineTo(this.radius * 0.05, -this.radius * 0.55);
-      ctx.lineTo(this.radius * 0.12, -this.radius * 0.18);
+      ctx.moveTo(this.radius * 0.48, -this.radius * 0.35);
+      ctx.lineTo(this.radius * 0.04, -this.radius * 0.58);
+      ctx.lineTo(this.radius * 0.12, -this.radius * 0.15);
       ctx.closePath();
       ctx.fill();
 
       // Right eye (/)
       ctx.beginPath();
-      ctx.moveTo(this.radius * 0.45, this.radius * 0.35);
-      ctx.lineTo(this.radius * 0.05, this.radius * 0.55);
-      ctx.lineTo(this.radius * 0.12, this.radius * 0.18);
+      ctx.moveTo(this.radius * 0.48, this.radius * 0.35);
+      ctx.lineTo(this.radius * 0.04, this.radius * 0.58);
+      ctx.lineTo(this.radius * 0.12, this.radius * 0.15);
       ctx.closePath();
       ctx.fill();
 

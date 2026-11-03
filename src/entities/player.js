@@ -431,28 +431,50 @@ export class Player {
 
     // 1.5 Ground Holographic Tactical Radar Circles (Matching Reference Image)
     const accentCol = this.id === 2 ? '#ff00aa' : '#00f0ff';
+    const isPlayer2 = this.id === 2;
 
-    // Outer subtle tactical range circle
-    ctx.strokeStyle = this.id === 2 ? 'rgba(255, 0, 170, 0.14)' : 'rgba(0, 240, 255, 0.16)';
+    // Outer subtle tactical range circle & crosshairs
+    const reticleR = 135;
+    ctx.strokeStyle = isPlayer2 ? 'rgba(255, 0, 170, 0.14)' : 'rgba(0, 240, 255, 0.16)';
     ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.arc(this.x, this.y, 108, 0, Math.PI * 2);
+    ctx.arc(this.x, this.y, reticleR, 0, Math.PI * 2);
+    // Subtle crosshair lines
+    ctx.moveTo(this.x - reticleR - 8, this.y);
+    ctx.lineTo(this.x + reticleR + 8, this.y);
+    ctx.moveTo(this.x, this.y - reticleR - 8);
+    ctx.lineTo(this.x, this.y + reticleR + 8);
     ctx.stroke();
 
-    // Inner orbiting tactical brackets
-    const bracketR = 30;
-    const bAngle = this.pulseAnim * 0.35;
-    ctx.strokeStyle = this.id === 2 ? 'rgba(255, 0, 170, 0.55)' : 'rgba(0, 240, 255, 0.6)';
-    ctx.lineWidth = 2.2;
+    // Inner orbiting tactical brackets (Matching Reference Aim Reticle)
+    const bracketR = 36;
+    const bAngle = this.aimAngle || (this.pulseAnim * 0.35);
+    ctx.strokeStyle = isPlayer2 ? 'rgba(255, 0, 170, 0.75)' : 'rgba(0, 240, 255, 0.8)';
+    ctx.lineWidth = 2.8;
 
-    // Left Bracket Arc
+    // Bracket Arc 1 (Perpendicular to aim heading)
     ctx.beginPath();
-    ctx.arc(this.x, this.y, bracketR, bAngle + Math.PI * 0.72, bAngle + Math.PI * 1.28);
+    ctx.arc(this.x, this.y, bracketR, bAngle + Math.PI * 0.65, bAngle + Math.PI * 1.35);
     ctx.stroke();
 
-    // Right Bracket Arc
+    // Bracket Arc 2
     ctx.beginPath();
-    ctx.arc(this.x, this.y, bracketR, bAngle - Math.PI * 0.28, bAngle + Math.PI * 0.28);
+    ctx.arc(this.x, this.y, bracketR, bAngle - Math.PI * 0.35, bAngle + Math.PI * 0.35);
+    ctx.stroke();
+
+    // Micro corner ticks on brackets
+    ctx.lineWidth = 1.5;
+    const tickLen = 6;
+    const angles = [bAngle + Math.PI * 0.65, bAngle + Math.PI * 1.35, bAngle - Math.PI * 0.35, bAngle + Math.PI * 0.35];
+    ctx.beginPath();
+    for (const a of angles) {
+      const tx1 = this.x + Math.cos(a) * (bracketR - 3);
+      const ty1 = this.y + Math.sin(a) * (bracketR - 3);
+      const tx2 = this.x + Math.cos(a) * (bracketR + tickLen);
+      const ty2 = this.y + Math.sin(a) * (bracketR + tickLen);
+      ctx.moveTo(tx1, ty1);
+      ctx.lineTo(tx2, ty2);
+    }
     ctx.stroke();
 
     // 2. Overdrive Solar Corona & Flare Discharges
