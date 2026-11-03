@@ -698,6 +698,38 @@ class NeonHavocGame {
     document.getElementById('btnLoreClose').onclick = () => this._hideOverlay(this.dom.loreModal);
     document.getElementById('btnSettingsClose').onclick = () => this._hideOverlay(this.dom.settingsModal);
 
+    // Lore Modal Category Tabs
+    const loreTabs = document.querySelectorAll('#loreTabs .guide-tab-btn');
+    loreTabs.forEach(btn => {
+      btn.onclick = () => {
+        loreTabs.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const targetId = btn.getAttribute('data-target');
+        const cards = document.querySelectorAll('#loreContentContainer .guide-section-card');
+        if (targetId === 'loreSecAll') {
+          cards.forEach(c => c.style.display = 'block');
+        } else {
+          cards.forEach(c => {
+            c.style.display = (c.id === targetId) ? 'block' : 'none';
+          });
+        }
+      };
+    });
+
+    // Synergy Modal (Arsenal Archive & Power Guide) Category Tabs
+    const synTabs = document.querySelectorAll('#synTabs .guide-tab-btn');
+    synTabs.forEach(btn => {
+      btn.onclick = () => {
+        synTabs.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const targetId = btn.getAttribute('data-target');
+        const sections = document.querySelectorAll('#synergyModal .syn-tab-content');
+        sections.forEach(sec => {
+          sec.style.display = (sec.id === targetId) ? 'block' : 'none';
+        });
+      };
+    });
+
     // Settings listeners
     this.dom.volMaster.oninput = () => this._updateAudioVolumes();
     this.dom.volSfx.oninput = () => this._updateAudioVolumes();
@@ -1318,21 +1350,47 @@ class NeonHavocGame {
     const container = this.dom.upgradeCards;
     container.innerHTML = '';
 
+    const categoryLabels = {
+      weapon: 'WEAPON',
+      player: 'MOBILITY',
+      survival: 'DEFENSE',
+      ability: 'ABILITY',
+      evolution: 'SUPER WEAPON',
+    };
+
     choices.forEach((upg, idx) => {
       const card = document.createElement('div');
       card.className = `upgrade-card ${upg.rarity}`;
       const imgPath = upg.image || './assets/powers/power_pulse_blaster.svg';
+      const catLabel = categoryLabels[upg.category] || (upg.category || 'AUGMENT').toUpperCase();
+
       card.innerHTML = `
-        <div style="font-family: var(--font-display); font-size: 11px; color: var(--neon-cyan); margin-bottom: 6px; letter-spacing: 1.5px; font-weight: 800;">PRESS [${idx + 1}]</div>
+        <div class="upgrade-card-header">
+          <span class="upgrade-category-tag">${catLabel}</span>
+          <span class="upgrade-hotkey-badge">KEY [${idx + 1}]</span>
+        </div>
+
+        <div class="upgrade-identity">
+          <span class="upgrade-icon">${upg.icon}</span>
+          <div class="upgrade-name-wrap">
+            <div class="upgrade-title" title="${upg.title}">${upg.title}</div>
+            <span class="upgrade-rarity rarity-${upg.rarity}">${upg.rarity.toUpperCase()}</span>
+          </div>
+        </div>
+
         <div class="upgrade-card-preview">
-          <img src="${imgPath}" alt="${upg.title}" loading="lazy" />
+          <div class="preview-hud-tag">TACTICAL PREVIEW</div>
+          <img src="${imgPath}" alt="${upg.title}" />
         </div>
-        <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 6px; margin-bottom: 6px;">
-          <span class="upgrade-icon" style="margin-bottom: 0; font-size: 22px;">${upg.icon}</span>
-          <span class="upgrade-title" style="margin-bottom: 0;">${upg.title}</span>
+
+        <div class="upgrade-desc-box">
+          <div class="upgrade-desc-text">${upg.desc}</div>
         </div>
-        <div class="upgrade-rarity rarity-${upg.rarity}">${upg.rarity}</div>
-        <div class="upgrade-desc">${upg.desc}</div>
+
+        <div class="upgrade-select-btn">
+          <span>EQUIP AUGMENTATION</span>
+          <kbd>[${idx + 1}]</kbd>
+        </div>
       `;
 
       card.onclick = () => this._chooseCard(idx);
