@@ -10,8 +10,8 @@ export class Player {
     this.active = true;
     this.x = startX;
     this.y = startY;
-    this.radius = 16;
-    this.collisionRadius = 14;
+    this.radius = 13;
+    this.collisionRadius = 11;
     this.coreColor = id === 2 ? (COLORS.PLAYER2_CORE || '#ffffff') : COLORS.PLAYER_CORE;
     this.glowColor = id === 2 ? (COLORS.PLAYER2_GLOW || '#ff00aa') : COLORS.PLAYER_GLOW;
     this.trailColor = id === 2 ? (COLORS.PLAYER2_TRAIL || 'rgba(255, 0, 170, 0.4)') : COLORS.PLAYER_TRAIL;
@@ -502,14 +502,11 @@ export class Player {
     }
 
     // 4. Player Core Sphere (Clean, Radiant Energy Orb — Unobstructed by UI overlays)
-    const currentRadius = this.isOverdrive ? this.radius * 1.5 : this.radius;
-    const pulse = 1 + Math.sin(this.pulseAnim) * 0.08;
+    const currentRadius = this.isOverdrive ? this.radius * 1.4 : this.radius;
+    const pulse = 1 + Math.sin(this.pulseAnim) * 0.06;
     const auraColor = this.isOverdrive ? (this.overdriveColor || COLORS.PLAYER_OVERDRIVE) : this.glowColor;
 
-    // Fast Glow Cache Aura
-    glowCache.drawGlow(ctx, this.x, this.y, currentRadius * 2.2, auraColor, 0.85);
-
-    // Player body
+    // Player body (Clean, crisp neon orb without the bloated outer glow layer)
     ctx.fillStyle = auraColor;
     ctx.beginPath();
     ctx.arc(this.x, this.y, currentRadius * pulse, 0, Math.PI * 2);
@@ -518,7 +515,7 @@ export class Player {
     // White-hot core
     ctx.fillStyle = this.coreColor || '#ffffff';
     ctx.beginPath();
-    ctx.arc(this.x, this.y, currentRadius * 0.5, 0, Math.PI * 2);
+    ctx.arc(this.x, this.y, currentRadius * 0.48, 0, Math.PI * 2);
     ctx.fill();
 
     // Invulnerability / Shield Shimmer (During I-Frames)
@@ -559,7 +556,7 @@ export class Player {
   _drawDownedCore(ctx) {
     ctx.save();
     const pulse = 0.8 + Math.sin(this.pulseAnim * 3) * 0.2;
-    const coreR = 20;
+    const coreR = 15;
 
     // Warning distress radius beacon
     ctx.strokeStyle = 'rgba(255, 0, 85, 0.45)';
