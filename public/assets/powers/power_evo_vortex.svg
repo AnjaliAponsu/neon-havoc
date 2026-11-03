@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180" width="320" height="180">
+  <defs>
+    <radialGradient id="cardBgGrad" cx="50%" cy="50%" r="70%">
+      <stop offset="0%" stop-color="#0e172e" />
+      <stop offset="70%" stop-color="#080c18" />
+      <stop offset="100%" stop-color="#04060c" />
+    </radialGradient>
+    <pattern id="arenaGrid" width="24" height="24" patternUnits="userSpaceOnUse">
+      <path d="M 24 0 L 0 0 0 24" fill="none" stroke="rgba(0, 240, 255, 0.08)" stroke-width="1"/>
+    </pattern>
+    <filter id="glowCyan" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="3.5" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+    <filter id="glowPink" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="3.5" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+    <filter id="glowGold" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="3.5" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+    
+  </defs>
+  <rect width="320" height="180" fill="url(#cardBgGrad)" rx="10" />
+  <rect width="320" height="180" fill="url(#arenaGrid)" rx="10" />
+  <!-- Border Vignette -->
+  <rect width="320" height="180" fill="none" stroke="rgba(0, 240, 255, 0.25)" stroke-width="1.5" rx="10" />
+  
+    <!-- Crown -->
+    <g transform="translate(45, 30)">
+      <polygon points="0,14 6,0 12,8 18,0 24,14" fill="#ff0055" filter="url(#glowPink)"/>
+    </g>
+    <!-- Central Black Hole Singularity -->
+    <g transform="translate(175, 100)">
+      <!-- Spiral Accretion Disk Rays -->
+      <circle cx="0" cy="0" r="65" fill="none" stroke="rgba(255, 0, 85, 0.3)" stroke-width="1.5" stroke-dasharray="8 6"/>
+      <circle cx="0" cy="0" r="48" fill="none" stroke="#ff0055" stroke-width="2.5" stroke-dasharray="12 4" filter="url(#glowPink)"/>
+      <circle cx="0" cy="0" r="30" fill="#150010" stroke="#ff00aa" stroke-width="3" filter="url(#glowPink)"/>
+      <circle cx="0" cy="0" r="16" fill="#000000" stroke="#ffffff" stroke-width="1.5"/>
+      <!-- 4 Relativistic Fast Orbiting Orbs -->
+      <circle cx="-42" cy="-25" r="8" fill="#ff0055" filter="url(#glowPink)"/>
+      <circle cx="25" cy="-42" r="8" fill="#ff0055" filter="url(#glowPink)"/>
+      <circle cx="42" cy="25" r="8" fill="#ff0055" filter="url(#glowPink)"/>
+      <circle cx="-25" cy="42" r="8" fill="#ff0055" filter="url(#glowPink)"/>
+    </g>
+    <!-- Player at Left -->
+    <circle cx="55" cy="100" r="14" fill="#00f0ff" filter="url(#glowCyan)"/>
+    <circle cx="55" cy="100" r="7" fill="#ffffff"/>
+    <!-- Inward Suction Spiral Path of Enemies -->
+    <circle cx="270" cy="50" r="10" fill="#ff0055" opacity="0.6"/>
+    <path d="M 265 55 Q 240 70 215 85" fill="none" stroke="#ff0055" stroke-width="2" stroke-dasharray="4 2"/>
+    <circle cx="280" cy="140" r="10" fill="#ff0055" opacity="0.6"/>
+    <path d="M 275 135 Q 240 125 210 115" fill="none" stroke="#ff0055" stroke-width="2" stroke-dasharray="4 2"/>
+    <!-- Text Badge -->
+    <rect x="155" y="20" width="150" height="26" rx="6" fill="rgba(255, 0, 85, 0.2)" stroke="#ff0055" stroke-width="1.5"/>
+    <text x="230" y="38" font-family="monospace" font-size="11" fill="#ff0055" font-weight="bold" text-anchor="middle">🌀👑 EVENT HORIZON</text>
+  
+</svg>

@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180" width="320" height="180">
+  <defs>
+    <radialGradient id="cardBgGrad" cx="50%" cy="50%" r="70%">
+      <stop offset="0%" stop-color="#0e172e" />
+      <stop offset="70%" stop-color="#080c18" />
+      <stop offset="100%" stop-color="#04060c" />
+    </radialGradient>
+    <pattern id="arenaGrid" width="24" height="24" patternUnits="userSpaceOnUse">
+      <path d="M 24 0 L 0 0 0 24" fill="none" stroke="rgba(0, 240, 255, 0.08)" stroke-width="1"/>
+    </pattern>
+    <filter id="glowCyan" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="3.5" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+    <filter id="glowPink" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="3.5" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+    <filter id="glowGold" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="3.5" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+    
+  </defs>
+  <rect width="320" height="180" fill="url(#cardBgGrad)" rx="10" />
+  <rect width="320" height="180" fill="url(#arenaGrid)" rx="10" />
+  <!-- Border Vignette -->
+  <rect width="320" height="180" fill="none" stroke="rgba(0, 240, 255, 0.25)" stroke-width="1.5" rx="10" />
+  
+    <!-- Crown -->
+    <g transform="translate(45, 30)">
+      <polygon points="0,14 6,0 12,8 18,0 24,14" fill="#00f0ff" filter="url(#glowCyan)"/>
+    </g>
+    <!-- Player Core -->
+    <circle cx="65" cy="95" r="16" fill="#00f0ff" filter="url(#glowCyan)"/>
+    <circle cx="65" cy="95" r="8" fill="#ffffff"/>
+    <!-- Web Mesh Nodes &amp; Interconnecting Lightning -->
+    <g stroke="#00f0ff" stroke-width="2.5" filter="url(#glowCyan)">
+      <line x1="65" y1="95" x2="130" y2="55"/>
+      <line x1="65" y1="95" x2="135" y2="135"/>
+      <line x1="130" y1="55" x2="210" y2="45"/>
+      <line x1="130" y1="55" x2="180" y2="95"/>
+      <line x1="135" y1="135" x2="180" y2="95"/>
+      <line x1="135" y1="135" x2="215" y2="145"/>
+      <line x1="210" y1="45" x2="270" y2="75"/>
+      <line x1="180" y1="95" x2="270" y2="75"/>
+      <line x1="180" y1="95" x2="270" y2="125"/>
+      <line x1="215" y1="145" x2="270" y2="125"/>
+    </g>
+    <!-- Trapped Electrocuted Nodes -->
+    <circle cx="130" cy="55" r="10" fill="#ff0055"/>
+    <circle cx="135" cy="135" r="10" fill="#ff0055"/>
+    <circle cx="180" cy="95" r="12" fill="#ffe600"/>
+    <circle cx="210" cy="45" r="9" fill="#ff0055"/>
+    <circle cx="215" cy="145" r="9" fill="#ff0055"/>
+    <circle cx="270" cy="75" r="10" fill="#ff0055"/>
+    <circle cx="270" cy="125" r="10" fill="#ff0055"/>
+    <!-- Text Badge -->
+    <rect x="155" y="20" width="150" height="26" rx="6" fill="rgba(0, 240, 255, 0.2)" stroke="#00f0ff" stroke-width="1.5"/>
+    <text x="230" y="38" font-family="monospace" font-size="11" fill="#00f0ff" font-weight="bold" text-anchor="middle">🕸️👑 TEMPEST WEB</text>
+  
+</svg>

@@ -1,0 +1,110 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 220" width="560" height="220">
+  <defs>
+    <radialGradient id="cardBgGrad" cx="50%" cy="50%" r="70%">
+      <stop offset="0%" stop-color="#0e172e" />
+      <stop offset="70%" stop-color="#080c18" />
+      <stop offset="100%" stop-color="#04060c" />
+    </radialGradient>
+    <pattern id="arenaGrid" width="24" height="24" patternUnits="userSpaceOnUse">
+      <path d="M 24 0 L 0 0 0 24" fill="none" stroke="rgba(0, 240, 255, 0.08)" stroke-width="1"/>
+    </pattern>
+    <filter id="glowCyan" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="3.5" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+    <filter id="glowPink" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="3.5" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+    <filter id="glowGold" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="3.5" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+    
+  </defs>
+  <rect width="560" height="220" fill="url(#cardBgGrad)" rx="10" />
+  <rect width="560" height="220" fill="url(#arenaGrid)" rx="10" />
+  <!-- Border Vignette -->
+  <rect width="560" height="220" fill="none" stroke="rgba(0, 240, 255, 0.25)" stroke-width="1.5" rx="10" />
+  
+    <text x="280" y="32" font-family="monospace" font-size="14" fill="#ff0055" font-weight="bold" text-anchor="middle">HOSTILE VOID ENTITY THREAT REGISTER</text>
+    <!-- 7 Enemy Archetypes Distributed -->
+    <!-- 1. Chaser (Red) -->
+    <g transform="translate(60, 75)">
+      <circle cx="0" cy="0" r="16" fill="#ff2255" filter="url(#glowPink)"/>
+      <circle cx="0" cy="0" r="8" fill="#550015"/>
+      <path d="M -5 -2 L -2 2 M 5 -2 L 2 2" stroke="#ffffff" stroke-width="2"/>
+      <text x="0" y="32" font-family="monospace" font-size="10" fill="#ff2255" font-weight="bold" text-anchor="middle">CHASER</text>
+      <text x="0" y="44" font-family="sans-serif" font-size="9" fill="rgba(255,255,255,0.6)" text-anchor="middle">Swarms in packs</text>
+    </g>
+
+    <!-- 2. Speeder (Yellow) -->
+    <g transform="translate(135, 75)">
+      <circle cx="0" cy="0" r="13" fill="#ffe600" filter="url(#glowGold)"/>
+      <circle cx="0" cy="0" r="6" fill="#ffffff"/>
+      <line x1="-18" y1="0" x2="-28" y2="0" stroke="#ffe600" stroke-width="2"/>
+      <text x="0" y="32" font-family="monospace" font-size="10" fill="#ffe600" font-weight="bold" text-anchor="middle">SPEEDER</text>
+      <text x="0" y="44" font-family="sans-serif" font-size="9" fill="rgba(255,255,255,0.6)" text-anchor="middle">High-speed bursts</text>
+    </g>
+
+    <!-- 3. Tank (Purple) -->
+    <g transform="translate(215, 75)">
+      <polygon points="0,-22 18,-10 18,10 0,22 -18,10 -18,-10" fill="#aa00ff" filter="url(#glowPink)"/>
+      <circle cx="0" cy="0" r="9" fill="#2d0045" stroke="#ffffff" stroke-width="1.5"/>
+      <text x="0" y="32" font-family="monospace" font-size="10" fill="#da70d6" font-weight="bold" text-anchor="middle">TANK</text>
+      <text x="0" y="44" font-family="sans-serif" font-size="9" fill="rgba(255,255,255,0.6)" text-anchor="middle">Armored behemoth</text>
+    </g>
+
+    <!-- 4. Splitter (Green) -->
+    <g transform="translate(295, 75)">
+      <circle cx="0" cy="0" r="16" fill="#00ff66" filter="url(#glowCyan)"/>
+      <circle cx="-5" cy="-3" r="4" fill="#004d1f"/>
+      <circle cx="5" cy="-3" r="4" fill="#004d1f"/>
+      <circle cx="0" cy="6" r="4" fill="#004d1f"/>
+      <text x="0" y="32" font-family="monospace" font-size="10" fill="#00ff66" font-weight="bold" text-anchor="middle">SPLITTER</text>
+      <text x="0" y="44" font-family="sans-serif" font-size="9" fill="rgba(255,255,255,0.6)" text-anchor="middle">Divides on death</text>
+    </g>
+
+    <!-- 5. Sniper (Blue) -->
+    <g transform="translate(375, 75)">
+      <polygon points="0,-16 16,0 0,16 -16,0" fill="#00aaff" filter="url(#glowCyan)"/>
+      <circle cx="0" cy="0" r="5" fill="#ffffff"/>
+      <line x1="0" y1="16" x2="0" y2="35" stroke="#00aaff" stroke-width="1.5" stroke-dasharray="3 2"/>
+      <text x="0" y="44" font-family="monospace" font-size="10" fill="#00aaff" font-weight="bold" text-anchor="middle">SNIPER</text>
+      <text x="0" y="56" font-family="sans-serif" font-size="9" fill="rgba(255,255,255,0.6)" text-anchor="middle">Telegraph laser line</text>
+    </g>
+
+    <!-- 6. Exploder (Orange) -->
+    <g transform="translate(450, 75)">
+      <circle cx="0" cy="0" r="15" fill="#ff6600" filter="url(#glowGold)"/>
+      <polygon points="0,-20 5,-14 -5,-14" fill="#ffe600"/>
+      <circle cx="0" cy="0" r="6" fill="#ffe600"/>
+      <text x="0" y="32" font-family="monospace" font-size="10" fill="#ff6600" font-weight="bold" text-anchor="middle">EXPLODER</text>
+      <text x="0" y="44" font-family="sans-serif" font-size="9" fill="rgba(255,255,255,0.6)" text-anchor="middle">Flashes &amp; detonate</text>
+    </g>
+
+    <!-- 7. Void Titan (Boss) -->
+    <g transform="translate(520, 75)">
+      <circle cx="0" cy="0" r="22" fill="#ff0044" filter="url(#glowPink)"/>
+      <circle cx="0" cy="0" r="12" fill="#38000f"/>
+      <circle cx="0" cy="0" r="6" fill="#ffe600"/>
+      <text x="0" y="32" font-family="monospace" font-size="10" fill="#ff0044" font-weight="bold" text-anchor="middle">VOID TITAN</text>
+      <text x="0" y="44" font-family="sans-serif" font-size="9" fill="rgba(255,255,255,0.6)" text-anchor="middle">Sector 01 Boss</text>
+    </g>
+
+    <!-- Bottom Advisory -->
+    <rect x="50" y="150" width="460" height="32" rx="6" fill="rgba(255, 0, 85, 0.12)" stroke="rgba(255, 0, 85, 0.4)" stroke-width="1"/>
+    <text x="280" y="170" font-family="monospace" font-size="11" fill="#ffffff" text-anchor="middle">
+      ⚠️ Prioritize Snipers &amp; Exploders first • Keep moving to avoid Chaser swarms
+    </text>
+  
+</svg>

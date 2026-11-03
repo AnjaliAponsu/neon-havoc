@@ -43,6 +43,7 @@ class NeonHavocGame {
     this.enemies = [];
     this.activeBoss = null;
     this.waveManager = null;
+    this.upgradeManager = upgradeManager;
     this.rerollsRemaining = 1;
 
     // Performance & FPS Tracking
@@ -1320,10 +1321,16 @@ class NeonHavocGame {
     choices.forEach((upg, idx) => {
       const card = document.createElement('div');
       card.className = `upgrade-card ${upg.rarity}`;
+      const imgPath = upg.image || './assets/powers/power_pulse_blaster.svg';
       card.innerHTML = `
         <div style="font-family: var(--font-display); font-size: 11px; color: var(--neon-cyan); margin-bottom: 6px; letter-spacing: 1.5px; font-weight: 800;">PRESS [${idx + 1}]</div>
-        <div class="upgrade-icon">${upg.icon}</div>
-        <div class="upgrade-title">${upg.title}</div>
+        <div class="upgrade-card-preview">
+          <img src="${imgPath}" alt="${upg.title}" loading="lazy" />
+        </div>
+        <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 6px; margin-bottom: 6px;">
+          <span class="upgrade-icon" style="margin-bottom: 0; font-size: 22px;">${upg.icon}</span>
+          <span class="upgrade-title" style="margin-bottom: 0;">${upg.title}</span>
+        </div>
         <div class="upgrade-rarity rarity-${upg.rarity}">${upg.rarity}</div>
         <div class="upgrade-desc">${upg.desc}</div>
       `;

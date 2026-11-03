@@ -275,6 +275,7 @@ export const WEAPONS = {
     projectiles: 1,
     spread: 0.05,
     color: COLORS.BULLET_PLAYER,
+    image: './assets/powers/power_pulse_blaster.svg',
   },
   SHOTGUN: {
     id: 'shotgun',
@@ -288,6 +289,7 @@ export const WEAPONS = {
     projectiles: 5,
     spread: 0.48,
     color: COLORS.BULLET_SHOTGUN,
+    image: './assets/powers/power_unlock_shotgun.svg',
   },
   LIGHTNING: {
     id: 'lightning',
@@ -300,6 +302,7 @@ export const WEAPONS = {
     chains: 3,
     chainRadius: 200,
     color: COLORS.BULLET_LIGHTNING,
+    image: './assets/powers/power_unlock_lightning.svg',
   },
   ORBITAL: {
     id: 'orbital',
@@ -310,6 +313,7 @@ export const WEAPONS = {
     radius: 90,
     rotationSpeed: 3.4,
     color: '#00ffea',
+    image: './assets/powers/power_unlock_orbital.svg',
   },
   BEAM: {
     id: 'beam',
@@ -320,6 +324,7 @@ export const WEAPONS = {
     range: 920,
     width: 6,
     color: '#ff00ff',
+    image: './assets/powers/power_unlock_beam.svg',
   },
 
   // ---- WEAPON EVOLUTIONS (SUPER WEAPONS) ----
@@ -334,6 +339,7 @@ export const WEAPONS = {
     pierce: 5,
     color: '#ffffff',
     isEvolution: true,
+    image: './assets/powers/power_evo_railgun.svg',
   },
   EVO_SUPERNOVA: {
     id: 'evo_supernova',
@@ -348,6 +354,7 @@ export const WEAPONS = {
     spread: 0.65,
     color: '#ffea00',
     isEvolution: true,
+    image: './assets/powers/power_evo_supernova.svg',
   },
   EVO_STORM_WEB: {
     id: 'evo_storm_web',
@@ -359,6 +366,7 @@ export const WEAPONS = {
     chainRadius: 260,
     color: '#00f0ff',
     isEvolution: true,
+    image: './assets/powers/power_evo_storm_web.svg',
   },
   EVO_EVENT_HORIZON: {
     id: 'evo_event_horizon',
@@ -369,6 +377,7 @@ export const WEAPONS = {
     rotationSpeed: 5.5,
     color: '#ff0055',
     isEvolution: true,
+    image: './assets/powers/power_evo_vortex.svg',
   },
 };
 
@@ -381,6 +390,7 @@ export const UPGRADES_POOL = [
     icon: '⚡',
     category: 'weapon',
     rarity: 'common',
+    image: './assets/powers/power_fire_rate.svg',
     apply: (p) => { p.stats.fireRateMult *= 1.25; },
   },
   {
@@ -390,6 +400,7 @@ export const UPGRADES_POOL = [
     icon: '💥',
     category: 'weapon',
     rarity: 'common',
+    image: './assets/powers/power_damage.svg',
     apply: (p) => { p.stats.damageMult *= 1.20; },
   },
   {
@@ -399,6 +410,7 @@ export const UPGRADES_POOL = [
     icon: '🚀',
     category: 'player',
     rarity: 'common',
+    image: './assets/powers/power_speed.svg',
     apply: (p) => { p.stats.moveSpeedMult *= 1.18; },
   },
   {
@@ -408,6 +420,7 @@ export const UPGRADES_POOL = [
     icon: '🧲',
     category: 'player',
     rarity: 'common',
+    image: './assets/powers/power_magnet.svg',
     apply: (p) => { p.stats.magnetRadius *= 1.5; },
   },
   {
@@ -417,6 +430,7 @@ export const UPGRADES_POOL = [
     icon: '❤️',
     category: 'survival',
     rarity: 'common',
+    image: './assets/powers/power_max_hp.svg',
     apply: (p) => {
       p.maxHealth += 35;
       p.health = Math.min(p.maxHealth, p.health + 60);
@@ -431,6 +445,7 @@ export const UPGRADES_POOL = [
     icon: '✨',
     category: 'weapon',
     rarity: 'rare',
+    image: './assets/powers/power_multishot.svg',
     apply: (p) => { p.stats.extraProjectiles += 1; },
   },
   {
@@ -440,6 +455,7 @@ export const UPGRADES_POOL = [
     icon: '🎯',
     category: 'weapon',
     rarity: 'rare',
+    image: './assets/powers/power_pierce.svg',
     apply: (p) => { p.stats.extraPierce += 1; },
   },
   {
@@ -449,6 +465,7 @@ export const UPGRADES_POOL = [
     icon: '⏩',
     category: 'ability',
     rarity: 'rare',
+    image: './assets/powers/power_dash_cd.svg',
     apply: (p) => {
       p.stats.dashCdMult *= 0.75;
       p.maxDashCharges += 1;
@@ -462,6 +479,7 @@ export const UPGRADES_POOL = [
     icon: '🌟',
     category: 'weapon',
     rarity: 'rare',
+    image: './assets/powers/power_crit.svg',
     apply: (p) => { p.stats.critChance += 0.15; },
   },
   {
@@ -471,6 +489,7 @@ export const UPGRADES_POOL = [
     icon: '🛡️',
     category: 'survival',
     rarity: 'rare',
+    image: './assets/powers/power_shield_regen.svg',
     apply: (p) => {
       p.maxShield += 45;
       p.shield = p.maxShield;
@@ -484,6 +503,7 @@ export const UPGRADES_POOL = [
     icon: '🌊',
     category: 'ability',
     rarity: 'rare',
+    image: './assets/powers/power_shockwave_aoe.svg',
     apply: (p) => {
       p.stats.shockwaveRadiusMult *= 1.45;
       p.stats.shockwaveDamageMult *= 1.6;
@@ -498,6 +518,7 @@ export const UPGRADES_POOL = [
     icon: '🔥',
     category: 'weapon',
     rarity: 'epic',
+    image: './assets/powers/power_unlock_shotgun.svg',
     condition: (p) => !p.weapons.shotgun,
     apply: (p) => { p.weapons.shotgun = true; },
   },
@@ -508,6 +529,7 @@ export const UPGRADES_POOL = [
     icon: '⚡',
     category: 'weapon',
     rarity: 'epic',
+    image: './assets/powers/power_unlock_lightning.svg',
     condition: (p) => !p.weapons.lightning,
     apply: (p) => { p.weapons.lightning = true; },
   },
@@ -518,6 +540,7 @@ export const UPGRADES_POOL = [
     icon: '🪐',
     category: 'weapon',
     rarity: 'epic',
+    image: './assets/powers/power_unlock_orbital.svg',
     condition: (p) => !p.weapons.orbital,
     apply: (p) => { p.weapons.orbital = true; p.orbitalDrones += 2; },
   },
@@ -528,6 +551,7 @@ export const UPGRADES_POOL = [
     icon: '🔦',
     category: 'weapon',
     rarity: 'epic',
+    image: './assets/powers/power_unlock_beam.svg',
     condition: (p) => !p.weapons.beam,
     apply: (p) => { p.weapons.beam = true; },
   },
@@ -538,6 +562,7 @@ export const UPGRADES_POOL = [
     icon: '☄️',
     category: 'ability',
     rarity: 'epic',
+    image: './assets/powers/power_overdrive_ext.svg',
     apply: (p) => {
       p.stats.overdriveDuration += 3.5;
       p.stats.overdriveChargeRate *= 1.4;
@@ -552,6 +577,7 @@ export const UPGRADES_POOL = [
     icon: '⚡👑',
     category: 'evolution',
     rarity: 'legendary',
+    image: './assets/powers/power_evo_railgun.svg',
     condition: (p) => p.weapons.pistol && !p.weapons.evoRailgun && p.stats.damageMult >= 1.2,
     apply: (p) => { p.weapons.evoRailgun = true; },
   },
@@ -562,6 +588,7 @@ export const UPGRADES_POOL = [
     icon: '💥👑',
     category: 'evolution',
     rarity: 'legendary',
+    image: './assets/powers/power_evo_supernova.svg',
     condition: (p) => p.weapons.shotgun && !p.weapons.evoSupernova && p.stats.extraProjectiles >= 1,
     apply: (p) => { p.weapons.evoSupernova = true; },
   },
@@ -572,6 +599,7 @@ export const UPGRADES_POOL = [
     icon: '🕸️👑',
     category: 'evolution',
     rarity: 'legendary',
+    image: './assets/powers/power_evo_storm_web.svg',
     condition: (p) => p.weapons.lightning && !p.weapons.evoStormWeb && p.stats.fireRateMult >= 1.25,
     apply: (p) => { p.weapons.evoStormWeb = true; },
   },
@@ -582,6 +610,7 @@ export const UPGRADES_POOL = [
     icon: '🌀👑',
     category: 'evolution',
     rarity: 'legendary',
+    image: './assets/powers/power_evo_vortex.svg',
     condition: (p) => p.weapons.orbital && !p.weapons.evoVortex && p.hasShieldUpgrade,
     apply: (p) => { p.weapons.evoVortex = true; p.orbitalDrones = 4; },
   },

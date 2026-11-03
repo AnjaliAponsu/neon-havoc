@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180" width="320" height="180">
+  <defs>
+    <radialGradient id="cardBgGrad" cx="50%" cy="50%" r="70%">
+      <stop offset="0%" stop-color="#0e172e" />
+      <stop offset="70%" stop-color="#080c18" />
+      <stop offset="100%" stop-color="#04060c" />
+    </radialGradient>
+    <pattern id="arenaGrid" width="24" height="24" patternUnits="userSpaceOnUse">
+      <path d="M 24 0 L 0 0 0 24" fill="none" stroke="rgba(0, 240, 255, 0.08)" stroke-width="1"/>
+    </pattern>
+    <filter id="glowCyan" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="3.5" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+    <filter id="glowPink" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="3.5" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+    <filter id="glowGold" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="3.5" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+    
+  </defs>
+  <rect width="320" height="180" fill="url(#cardBgGrad)" rx="10" />
+  <rect width="320" height="180" fill="url(#arenaGrid)" rx="10" />
+  <!-- Border Vignette -->
+  <rect width="320" height="180" fill="none" stroke="rgba(0, 240, 255, 0.25)" stroke-width="1.5" rx="10" />
+  
+    <!-- Orbital Path Ring -->
+    <ellipse cx="160" cy="95" rx="75" ry="50" fill="none" stroke="rgba(0, 255, 234, 0.4)" stroke-width="2" stroke-dasharray="6 4"/>
+    <!-- Central Player -->
+    <circle cx="160" cy="95" r="16" fill="#00f0ff" filter="url(#glowCyan)"/>
+    <circle cx="160" cy="95" r="8" fill="#ffffff"/>
+    <!-- Orbiting Drone 1 (Top Right) -->
+    <circle cx="215" cy="62" r="10" fill="#00ffea" filter="url(#glowCyan)"/>
+    <circle cx="215" cy="62" r="5" fill="#ffffff"/>
+    <path d="M 205 56 Q 225 50 230 68" fill="none" stroke="#00ffea" stroke-width="2"/>
+    <!-- Orbiting Drone 2 (Bottom Left) -->
+    <circle cx="105" cy="128" r="10" fill="#00ffea" filter="url(#glowCyan)"/>
+    <circle cx="105" cy="128" r="5" fill="#ffffff"/>
+    <path d="M 115 134 Q 95 140 90 122" fill="none" stroke="#00ffea" stroke-width="2"/>
+    <!-- Sliced Enemy Dot -->
+    <circle cx="240" cy="60" r="12" fill="#ff0055" opacity="0.6"/>
+    <line x1="228" y1="50" x2="252" y2="70" stroke="#ffe600" stroke-width="2"/>
+    <!-- Text Badge -->
+    <rect x="175" y="20" width="130" height="26" rx="6" fill="rgba(0, 255, 234, 0.2)" stroke="#00ffea" stroke-width="1"/>
+    <text x="240" y="38" font-family="monospace" font-size="12" fill="#00ffea" font-weight="bold" text-anchor="middle">2 SHIELD ORBS</text>
+  
+</svg>
