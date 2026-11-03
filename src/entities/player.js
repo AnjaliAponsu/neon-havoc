@@ -9,7 +9,7 @@ export class Player {
     this.name = id === 2 ? 'Nova-02' : 'Spark-01';
     this.x = startX;
     this.y = startY;
-    this.radius = 11;
+    this.radius = 18;
     this.coreColor = id === 2 ? (COLORS.PLAYER2_CORE || '#ffffff') : COLORS.PLAYER_CORE;
     this.glowColor = id === 2 ? (COLORS.PLAYER2_GLOW || '#ff00aa') : COLORS.PLAYER_GLOW;
     this.trailColor = id === 2 ? (COLORS.PLAYER2_TRAIL || 'rgba(255, 0, 170, 0.4)') : COLORS.PLAYER_TRAIL;
@@ -487,25 +487,51 @@ export class Player {
       ctx.fill();
     }
 
-    // 4. Player Core Sphere
-    const currentRadius = this.isOverdrive ? this.radius * 1.5 : this.radius;
+    // 4. Player Core Sphere (Bold, High-Visibility Cyber Orb Matching Reference Image)
+    const currentRadius = this.isOverdrive ? this.radius * 1.35 : this.radius;
     const pulse = 1 + Math.sin(this.pulseAnim) * 0.08;
-
-    // Fast Glow Cache Aura
     const auraColor = this.isOverdrive ? (this.overdriveColor || COLORS.PLAYER_OVERDRIVE) : this.glowColor;
-    glowCache.drawGlow(ctx, this.x, this.y, currentRadius * 1.8, auraColor, 0.85);
 
-    // Player body
+    // A. Multi-layer Radiant Bloom Halo
+    glowCache.drawGlow(ctx, this.x, this.y, currentRadius * 3.0, auraColor, 0.95);
+    glowCache.drawGlow(ctx, this.x, this.y, currentRadius * 1.6, '#ffffff', 0.55);
+
+    // B. Concentric Outer Energy Field Ring
+    ctx.strokeStyle = auraColor;
+    ctx.lineWidth = 1.8;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, currentRadius * 1.55, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // C. Outer Glowing Body Sphere
     ctx.fillStyle = auraColor;
     ctx.beginPath();
     ctx.arc(this.x, this.y, currentRadius * pulse, 0, Math.PI * 2);
     ctx.fill();
 
-    // White hot core
+    // D. White-Hot High-Contrast Nucleus
     ctx.fillStyle = this.coreColor || '#ffffff';
     ctx.beginPath();
-    ctx.arc(this.x, this.y, currentRadius * 0.5, 0, Math.PI * 2);
+    ctx.arc(this.x, this.y, currentRadius * 0.52, 0, Math.PI * 2);
     ctx.fill();
+
+    // E. Aim Heading Thruster / Directional Indicator
+    const aim = this.aimAngle || 0;
+    const noseDist = currentRadius * 1.35;
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(this.x + Math.cos(aim) * noseDist, this.y + Math.sin(aim) * noseDist, 3.2, 0, Math.PI * 2);
+    ctx.fill();
+
+    // F. Callsign Tag in Co-Op / Multiplayer
+    const isPlayer2 = this.id === 2;
+    const tagText = isPlayer2 ? 'P2: NOVA-02' : 'P1: SPARK-01';
+    const tagCol = isPlayer2 ? '#ff00aa' : '#00f0ff';
+    ctx.font = 'bold 11px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = tagCol;
+    ctx.fillText(tagText, this.x, this.y - currentRadius - 16);
 
     // 5. Orbital Drones
     if (this.weapons.orbital && this.orbitalDrones > 0) {

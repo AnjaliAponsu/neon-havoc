@@ -493,7 +493,14 @@ class NeonHavocGame {
     };
 
     multiplayerManager.onPeerStateCb = (payload) => {
-      if (this.gameMode === 'ONLINE_HOST' && payload.p2 && this.player2) {
+      if (this.gameMode === 'ONLINE_HOST' && payload.p2) {
+        if (!this.player2) {
+          const metaMods = this._calculateMetaModifiers();
+          this.player2 = new Player(payload.p2.x || (this.player ? this.player.x + 60 : 1660), payload.p2.y || (this.player ? this.player.y : 1200), metaMods, 2);
+          this.player2.isRemote = true;
+          this.players = [this.player, this.player2];
+          this.isCoop = true;
+        }
         this.player2.targetNetX = payload.p2.x;
         this.player2.targetNetY = payload.p2.y;
         this.player2.targetNetVx = payload.p2.vx || 0;
@@ -503,7 +510,14 @@ class NeonHavocGame {
         if (payload.p2.hp !== undefined) this.player2.health = payload.p2.hp;
         if (payload.p2.isDashing && !this.player2.isDashing) this.player2.dash(soundEngine, this.particlePool);
         if (payload.p2.isOverdrive && !this.player2.isOverdrive) this.player2.activateOverdrive(soundEngine, this.particlePool);
-      } else if (this.gameMode === 'ONLINE_CLIENT' && payload.p1 && this.player) {
+      } else if (this.gameMode === 'ONLINE_CLIENT' && payload.p1) {
+        if (!this.player) {
+          const metaMods = this._calculateMetaModifiers();
+          this.player = new Player(payload.p1.x || (this.player2 ? this.player2.x - 60 : 1540), payload.p1.y || (this.player2 ? this.player2.y : 1200), metaMods, 1);
+          this.player.isRemote = true;
+          this.players = [this.player, this.player2];
+          this.isCoop = true;
+        }
         this.player.targetNetX = payload.p1.x;
         this.player.targetNetY = payload.p1.y;
         this.player.targetNetVx = payload.p1.vx || 0;
