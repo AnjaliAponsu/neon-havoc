@@ -94,111 +94,239 @@
       transition: width 0.15s ease-out;
     }
 
-    /* ---- IN-GAME HUD ---- */
+    /* ---- IN-GAME HUD (MATCHING REFERENCE BATTLEGROUND UI) ---- */
     #inGameHud {
       position: absolute;
-      top: 14px;
+      top: 0;
       left: 0;
       width: 100%;
-      padding: 12px 24px;
+      padding: max(10px, env(safe-area-inset-top, 10px)) 24px 0 24px;
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
       pointer-events: none;
-      z-index: 10;
+      z-index: 20;
     }
 
+    /* ---- TOP-LEFT: STATUS CAPSULE PANEL ---- */
     .hud-left {
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 4px;
+      pointer-events: auto;
     }
 
-    .hp-container {
+    .hud-status-panel {
       display: flex;
       align-items: center;
       gap: 12px;
-      background: rgba(8, 12, 24, 0.75);
-      padding: 8px 16px;
-      border-radius: 8px;
-      border: 1px solid var(--panel-border);
-      backdrop-filter: blur(8px);
+      background: rgba(6, 12, 28, 0.82);
+      border: 1.5px solid rgba(0, 240, 255, 0.45);
+      border-radius: 28px;
+      padding: 6px 14px 6px 8px;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), inset 0 0 12px rgba(0, 240, 255, 0.12);
+      transition: border-color 0.2s, box-shadow 0.2s;
     }
 
-    .hearts {
+    .hud-status-panel.p2-panel {
+      border-color: rgba(255, 0, 170, 0.45);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), inset 0 0 12px rgba(255, 0, 170, 0.12);
+    }
+
+    /* Player Avatar Orb */
+    .hud-player-orb {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 40% 40%, rgba(0, 240, 255, 0.25), rgba(4, 10, 24, 0.95));
+      border: 2px solid #00f0ff;
       display: flex;
-      gap: 4px;
-      font-size: 20px;
-      color: var(--neon-red);
-      text-shadow: 0 0 10px var(--neon-red);
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 14px rgba(0, 240, 255, 0.5), inset 0 0 8px rgba(0, 240, 255, 0.4);
+      flex-shrink: 0;
+      position: relative;
     }
 
-    .hp-bars {
+    .hud-player-orb.p2-orb {
+      background: radial-gradient(circle at 40% 40%, rgba(255, 0, 170, 0.25), rgba(24, 4, 18, 0.95));
+      border-color: #ff00aa;
+      box-shadow: 0 0 14px rgba(255, 0, 170, 0.5), inset 0 0 8px rgba(255, 0, 170, 0.4);
+    }
+
+    .hud-player-orb .orb-core {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #00f0ff;
+      box-shadow: 0 0 12px #00f0ff, 0 0 4px #ffffff;
+    }
+
+    .hud-player-orb.p2-orb .orb-core {
+      background: #ff00aa;
+      box-shadow: 0 0 12px #ff00aa, 0 0 4px #ffffff;
+    }
+
+    .hud-bars-col {
       display: flex;
       flex-direction: column;
-      gap: 4px;
-      width: 140px;
+      gap: 5px;
+    }
+
+    .hud-bar-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .hud-bar-icon {
+      font-size: 13px;
+      line-height: 1;
     }
 
     .bar-bg {
       height: 8px;
+      width: 120px;
       background: rgba(255, 255, 255, 0.1);
       border-radius: 4px;
       overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.08);
     }
 
     #hpFill {
       height: 100%;
       width: 100%;
-      background: var(--neon-red);
-      box-shadow: 0 0 8px var(--neon-red);
-      transition: width 0.1s ease;
+      background: linear-gradient(90deg, #ff0055, #ff3377);
+      box-shadow: 0 0 10px rgba(255, 0, 85, 0.7);
+      transition: width 0.12s ease;
     }
 
     #shieldFill {
       height: 100%;
       width: 0%;
-      background: var(--neon-cyan);
-      box-shadow: 0 0 8px var(--neon-cyan);
-      transition: width 0.1s ease;
+      background: linear-gradient(90deg, #00f0ff, #00b0ff);
+      box-shadow: 0 0 10px rgba(0, 240, 255, 0.7);
+      transition: width 0.12s ease;
+    }
+
+    .hud-num-text {
+      font-family: var(--font-body);
+      font-size: 12px;
+      font-weight: 700;
+      color: #ffffff;
+      white-space: nowrap;
+      min-width: 75px;
+      text-shadow: 0 0 6px rgba(0, 240, 255, 0.4);
     }
 
     .level-badge {
       font-family: var(--font-display);
-      font-size: 13px;
+      font-size: 11px;
       font-weight: 800;
-      color: var(--neon-yellow);
-      text-shadow: 0 0 8px var(--neon-yellow);
+      color: #ffe600;
+      background: rgba(255, 230, 0, 0.12);
+      border: 1px solid #ffe600;
+      border-radius: 10px;
+      padding: 1px 8px;
+      text-shadow: 0 0 8px rgba(255, 230, 0, 0.5);
+      white-space: nowrap;
+      box-shadow: 0 0 8px rgba(255, 230, 0, 0.2);
     }
 
+    .level-badge.p2-badge {
+      color: #ff00aa;
+      border-color: #ff00aa;
+      background: rgba(255, 0, 170, 0.15);
+      text-shadow: 0 0 8px rgba(255, 0, 170, 0.6);
+      box-shadow: 0 0 8px rgba(255, 0, 170, 0.2);
+    }
+
+    .hud-fps-text {
+      font-family: var(--font-display);
+      font-size: 11px;
+      font-weight: 700;
+      color: #00f0ff;
+      letter-spacing: 1px;
+      padding-left: 8px;
+      margin-top: 2px;
+      text-shadow: 0 0 8px rgba(0, 240, 255, 0.5);
+    }
+
+    /* ---- TOP-CENTER: CYBER-BEZEL & FLOATING PILL TIMER ---- */
     .hud-center {
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 6px;
+      position: relative;
     }
 
-    .wave-badge {
+    .wave-cyber-bezel {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(6, 10, 26, 0.88);
+      border: 1.5px solid rgba(0, 240, 255, 0.5);
+      border-top: none;
+      border-radius: 0 0 14px 14px;
+      padding: 5px 18px 6px 18px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5), inset 0 0 8px rgba(0, 240, 255, 0.15);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    .bezel-wing {
       font-family: var(--font-display);
-      font-size: 18px;
-      letter-spacing: 2px;
+      font-size: 13px;
+      font-weight: 900;
+      color: #d000ff;
+      letter-spacing: 1.5px;
+      text-shadow: 0 0 10px #d000ff;
+    }
+
+    .wave-text {
+      font-family: var(--font-display);
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: 2.5px;
       color: #ffffff;
-      text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+      text-shadow: 0 0 12px rgba(255, 255, 255, 0.6);
+    }
+
+    .timer-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(4, 10, 24, 0.9);
+      border: 1.5px solid #00f0ff;
+      border-radius: 16px;
+      padding: 3px 14px;
+      box-shadow: 0 0 14px rgba(0, 240, 255, 0.4), inset 0 0 6px rgba(0, 240, 255, 0.2);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+
+    .timer-icon {
+      font-size: 12px;
+      color: #00f0ff;
     }
 
     .timer-display {
       font-family: var(--font-display);
-      font-size: 24px;
+      font-size: 14px;
       font-weight: 800;
-      color: var(--neon-cyan);
-      text-shadow: 0 0 12px var(--neon-cyan);
+      letter-spacing: 1.5px;
+      color: #00f0ff;
+      text-shadow: 0 0 10px #00f0ff;
     }
 
     /* Boss HUD Bar */
     #bossHudBar {
       display: none;
       width: 320px;
-      background: rgba(20, 0, 10, 0.85);
+      background: rgba(20, 0, 10, 0.88);
       border: 1px solid var(--neon-red);
       border-radius: 6px;
       padding: 6px 12px;
@@ -206,6 +334,7 @@
       align-items: center;
       gap: 4px;
       box-shadow: 0 0 16px rgba(255, 0, 80, 0.4);
+      margin-top: 4px;
     }
 
     .boss-name {
@@ -232,10 +361,11 @@
       transition: width 0.1s ease;
     }
 
+    /* ---- TOP-RIGHT: SHARDS & BUTTON CONTROLS ---- */
     .hud-right {
       display: flex;
       align-items: center;
-      gap: 14px;
+      gap: 12px;
       pointer-events: auto;
     }
 
@@ -243,56 +373,82 @@
       display: flex;
       align-items: center;
       gap: 8px;
-      background: rgba(8, 12, 24, 0.75);
-      border: 1px solid rgba(255, 230, 0, 0.4);
-      padding: 6px 14px;
+      background: rgba(8, 14, 28, 0.82);
+      border: 1.5px solid rgba(255, 230, 0, 0.5);
+      padding: 5px 14px;
       border-radius: 20px;
       font-family: var(--font-display);
-      font-size: 16px;
-      color: var(--neon-yellow);
-      text-shadow: 0 0 8px var(--neon-yellow);
+      font-size: 15px;
+      font-weight: 800;
+      color: #ffe600;
+      text-shadow: 0 0 8px #ffe600;
+      box-shadow: 0 0 14px rgba(255, 230, 0, 0.25);
       backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
     }
 
     .hud-btn {
-      background: rgba(8, 12, 24, 0.75);
-      border: 1px solid var(--panel-border);
+      background: rgba(8, 14, 28, 0.82);
+      border: 1.5px solid rgba(0, 240, 255, 0.45);
       color: #ffffff;
-      width: 40px;
-      height: 40px;
+      width: 38px;
+      height: 38px;
       border-radius: 50%;
       display: flex;
       justify-content: center;
       align-items: center;
       cursor: pointer;
-      font-size: 18px;
-      transition: all 0.2s ease;
+      font-size: 17px;
+      transition: all 0.2s cubic-bezier(0.2, 0.8, 0.4, 1);
       backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4), inset 0 0 6px rgba(0, 240, 255, 0.15);
     }
 
     .hud-btn:hover {
-      border-color: var(--neon-cyan);
-      box-shadow: 0 0 14px var(--neon-cyan);
-      transform: scale(1.05);
+      border-color: #00f0ff;
+      background: rgba(0, 240, 255, 0.2);
+      box-shadow: 0 0 16px rgba(0, 240, 255, 0.6);
+      transform: scale(1.08);
     }
 
-    /* ---- BOTTOM ABILITY BAR (Styled like prompt storyboard!) ---- */
+    /* ---- BOTTOM CYBER-FRAME DECORATIVE BEZEL (MATCHING REFERENCE) ---- */
+    #bottomCyberFrame {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 48px;
+      pointer-events: none;
+      z-index: 8;
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+    }
+
+    #bottomCyberFrame svg {
+      width: 100%;
+      height: 48px;
+      filter: drop-shadow(0 0 8px rgba(0, 240, 255, 0.4));
+    }
+
+    /* ---- BOTTOM ABILITY BAR (4 SLOTS MATCHING STORYBOARD) ---- */
     #abilityTray {
       position: absolute;
-      bottom: 24px;
+      bottom: max(16px, env(safe-area-inset-bottom, 16px));
       left: 50%;
       transform: translateX(-50%);
       display: flex;
-      gap: 16px;
-      z-index: 10;
+      gap: 14px;
+      z-index: 15;
       pointer-events: none;
     }
 
     .ability-slot {
-      width: 72px;
-      height: 72px;
-      background: rgba(8, 14, 28, 0.85);
-      border: 2px solid rgba(0, 240, 255, 0.4);
+      width: 70px;
+      height: 70px;
+      background: rgba(6, 12, 28, 0.86);
+      border: 2px solid rgba(0, 240, 255, 0.55);
       border-radius: 12px;
       display: flex;
       flex-direction: column;
@@ -300,53 +456,79 @@
       justify-content: center;
       position: relative;
       overflow: hidden;
-      backdrop-filter: blur(8px);
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
-      transition: all 0.2s ease;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.6), inset 0 0 10px rgba(0, 240, 255, 0.12);
+      transition: all 0.2s cubic-bezier(0.2, 0.8, 0.4, 1);
       pointer-events: auto;
       cursor: pointer;
     }
 
+    .ability-slot:hover {
+      transform: translateY(-3px) scale(1.04);
+      border-color: #00f0ff;
+      box-shadow: 0 0 20px rgba(0, 240, 255, 0.5);
+    }
+
     .ability-slot.ready {
-      border-color: var(--neon-cyan);
+      border-color: #00f0ff;
       box-shadow: 0 0 16px rgba(0, 240, 255, 0.45);
     }
 
     .ability-slot.overdrive-slot {
-      border-color: rgba(255, 0, 119, 0.4);
+      border-color: rgba(255, 0, 119, 0.6);
+      box-shadow: 0 0 16px rgba(255, 0, 119, 0.35);
     }
 
     .ability-slot.overdrive-slot.ready {
       border-color: var(--neon-pink);
-      box-shadow: 0 0 24px rgba(255, 0, 119, 0.8);
+      box-shadow: 0 0 26px rgba(255, 0, 119, 0.85);
       animation: pulseOverdrive 1.2s infinite alternate;
     }
 
-    @keyframes pulseOverdrive {
-      from { transform: scale(1); box-shadow: 0 0 16px var(--neon-pink); }
-      to { transform: scale(1.06); box-shadow: 0 0 28px var(--neon-pink); }
-    }
-
-    @keyframes pulseAlert {
-      from { transform: translateX(-50%) scale(0.96); opacity: 0.85; }
-      to { transform: translateX(-50%) scale(1.04); opacity: 1.0; }
-    }
-
-    @keyframes pulseText {
-      0%, 100% { opacity: 0.6; }
-      50% { opacity: 1.0; }
-    }
-
     .ability-icon {
-      font-size: 26px;
+      font-size: 24px;
       margin-bottom: 2px;
+      filter: drop-shadow(0 0 6px rgba(0, 240, 255, 0.5));
     }
 
     .ability-key {
       font-family: var(--font-display);
-      font-size: 11px;
-      font-weight: 700;
-      color: rgba(255, 255, 255, 0.7);
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      color: rgba(255, 255, 255, 0.85);
+      text-shadow: 0 0 6px rgba(255, 255, 255, 0.4);
+    }
+
+    .ability-subtext {
+      font-family: var(--font-display);
+      font-size: 10px;
+      font-weight: 800;
+      color: #ff0077;
+      text-shadow: 0 0 8px #ff0077;
+    }
+
+    /* Dash charge pips */
+    .dash-pips {
+      display: flex;
+      gap: 3px;
+      margin-top: 3px;
+    }
+
+    .dash-pips .pip {
+      width: 7px;
+      height: 4px;
+      border-radius: 1px;
+      background: rgba(0, 240, 255, 0.2);
+      border: 1px solid rgba(0, 240, 255, 0.3);
+      transition: background 0.15s, box-shadow 0.15s;
+    }
+
+    .dash-pips .pip.on {
+      background: #00f0ff;
+      box-shadow: 0 0 6px #00f0ff;
+      border-color: #ffffff;
     }
 
     .cooldown-overlay {
@@ -355,9 +537,153 @@
       left: 0;
       width: 100%;
       height: 0%;
-      background: rgba(0, 0, 0, 0.75);
+      background: rgba(2, 4, 12, 0.78);
       pointer-events: none;
       transition: height 0.08s linear;
+    }
+
+    /* ---- VIRTUAL JOYSTICK (BOTTOM-LEFT MATCHING REFERENCE) ---- */
+    #virtualJoystickContainer {
+      position: absolute;
+      bottom: max(20px, env(safe-area-inset-bottom, 20px));
+      left: max(20px, env(safe-area-inset-left, 20px));
+      width: 116px;
+      height: 116px;
+      z-index: 15;
+      pointer-events: none;
+      touch-action: none;
+      user-select: none;
+      display: block;
+    }
+
+    #virtualJoystickBase {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background: radial-gradient(circle at 50% 50%, rgba(12, 22, 48, 0.75) 0%, rgba(4, 8, 20, 0.92) 100%);
+      border: 2px solid rgba(0, 240, 255, 0.55);
+      box-shadow: 0 0 20px rgba(0, 240, 255, 0.25), inset 0 0 16px rgba(0, 0, 0, 0.8);
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .joy-arrow {
+      position: absolute;
+      font-size: 11px;
+      color: rgba(0, 240, 255, 0.7);
+      text-shadow: 0 0 6px rgba(0, 240, 255, 0.6);
+      pointer-events: none;
+      line-height: 1;
+    }
+    .joy-arrow.top { top: 8px; left: 50%; transform: translateX(-50%); }
+    .joy-arrow.bottom { bottom: 8px; left: 50%; transform: translateX(-50%); }
+    .joy-arrow.left { left: 8px; top: 50%; transform: translateY(-50%); }
+    .joy-arrow.right { right: 8px; top: 50%; transform: translateY(-50%); }
+
+    #virtualJoystickThumb {
+      position: absolute;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #ffffff 10%, #00f0ff 65%, #0077aa 100%);
+      border: 2px solid #ffffff;
+      box-shadow: 0 0 18px #00f0ff, inset 0 0 8px rgba(0, 0, 0, 0.4);
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      transition: transform 0.04s ease-out;
+    }
+
+    /* ---- MOBILE RESPONSIVENESS (PHONES, TABLETS & NOTCHES) ---- */
+    @media (max-width: 768px) {
+      #inGameHud {
+        padding: max(6px, env(safe-area-inset-top, 6px)) 12px 0 12px;
+      }
+      .hud-status-panel {
+        padding: 4px 10px 4px 6px;
+        gap: 8px;
+        border-radius: 20px;
+      }
+      .hud-player-orb {
+        width: 34px;
+        height: 34px;
+      }
+      .hud-player-orb .orb-core {
+        width: 14px;
+        height: 14px;
+      }
+      .bar-bg {
+        width: 85px;
+        height: 7px;
+      }
+      .hud-num-text {
+        font-size: 10px;
+        min-width: 60px;
+      }
+      .level-badge {
+        font-size: 9px;
+        padding: 0 6px;
+      }
+      .wave-text {
+        font-size: 13px;
+        letter-spacing: 1.5px;
+      }
+      .timer-display {
+        font-size: 12px;
+      }
+      .shards-pill {
+        font-size: 13px;
+        padding: 4px 10px;
+      }
+      .hud-btn {
+        width: 32px;
+        height: 32px;
+        font-size: 14px;
+      }
+      #abilityTray {
+        gap: 8px;
+        bottom: max(10px, env(safe-area-inset-bottom, 10px));
+      }
+      .ability-slot {
+        width: 56px;
+        height: 56px;
+        border-radius: 10px;
+      }
+      .ability-icon {
+        font-size: 19px;
+      }
+      .ability-key {
+        font-size: 9px;
+      }
+      #virtualJoystickContainer {
+        width: 96px;
+        height: 96px;
+        bottom: max(14px, env(safe-area-inset-bottom, 14px));
+        left: max(14px, env(safe-area-inset-left, 14px));
+      }
+      #virtualJoystickThumb {
+        width: 36px;
+        height: 36px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .bar-bg {
+        width: 65px;
+      }
+      .ability-slot {
+        width: 50px;
+        height: 50px;
+      }
+      .ability-icon {
+        font-size: 17px;
+      }
+      .ability-key {
+        font-size: 8px;
+      }
     }
 
     /* ---- SCREENS & MODALS OVERLAYS ---- */
@@ -1369,40 +1695,63 @@
     <div id="xpBarFill"></div>
   </div>
 
-  <!-- In-Game HUD -->
+  <!-- In-Game HUD (Matching Battleground Reference UI) -->
   <div id="inGameHud" style="display: none;">
-    <!-- Left: Health, Shield, Level -->
+    <!-- Left: Health, Shield, Level, FPS -->
     <div class="hud-left">
-      <div class="hp-container">
-        <div class="hearts">❤️</div>
-        <div class="hp-bars">
-          <div class="bar-bg"><div id="hpFill"></div></div>
-          <div class="bar-bg"><div id="shieldFill"></div></div>
+      <div class="hud-status-panel">
+        <div class="hud-player-orb">
+          <div class="orb-core"></div>
         </div>
-        <span id="hpText" style="font-size: 12px; font-weight: 700; color: #ffffff; min-width: 45px;">100 HP</span>
-        <div class="level-badge" id="hudLevelBadge">P1: SPARK</div>
+        <div class="hud-bars-col">
+          <div class="hud-bar-row">
+            <span class="hud-bar-icon">❤️</span>
+            <div class="bar-bg"><div id="hpFill"></div></div>
+            <span id="hpText" class="hud-num-text">115 / 115 HP</span>
+          </div>
+          <div class="hud-bar-row">
+            <span class="hud-bar-icon">⚡</span>
+            <div class="bar-bg"><div id="shieldFill"></div></div>
+            <div class="level-badge" id="hudLevelBadge">LVL 1</div>
+          </div>
+        </div>
       </div>
-      <div style="font-family: var(--font-display); font-size: 11px; color: rgba(0, 240, 255, 0.75); letter-spacing: 1px; padding-left: 6px;" id="fpsCounter">60 FPS</div>
+      <div class="hud-fps-text" id="fpsCounter">144 FPS</div>
     </div>
 
     <!-- Player 2 (Nova-02) HUD - Shown in Co-op -->
-    <div class="hud-left" id="p2HudContainer" style="display: none; border-left: 2px solid #ff00aa; padding-left: 10px; margin-left: 6px;">
-      <div class="hp-container">
-        <div class="hearts" style="filter: hue-rotate(280deg);">💜</div>
-        <div class="hp-bars">
-          <div class="bar-bg"><div id="p2HpFill" style="background: linear-gradient(90deg, #ff00aa, #ff66cc); width: 100%; height: 100%;"></div></div>
-          <div class="bar-bg"><div id="p2ShieldFill" style="background: linear-gradient(90deg, #aa00ff, #ff00aa); width: 0%; height: 100%;"></div></div>
+    <div class="hud-left" id="p2HudContainer" style="display: none;">
+      <div class="hud-status-panel p2-panel">
+        <div class="hud-player-orb p2-orb">
+          <div class="orb-core"></div>
         </div>
-        <span id="p2HpText" style="font-size: 12px; font-weight: 700; color: #ff00aa; min-width: 45px;">100 HP</span>
-        <div class="level-badge" id="p2HudLevelBadge" style="background: rgba(255, 0, 170, 0.2); border-color: #ff00aa; color: #ff00aa;">P2: NOVA</div>
+        <div class="hud-bars-col">
+          <div class="hud-bar-row">
+            <span class="hud-bar-icon">💜</span>
+            <div class="bar-bg"><div id="p2HpFill"></div></div>
+            <span id="p2HpText" class="hud-num-text">100 HP</span>
+          </div>
+          <div class="hud-bar-row">
+            <span class="hud-bar-icon">⚡</span>
+            <div class="bar-bg"><div id="p2ShieldFill"></div></div>
+            <div class="level-badge p2-badge" id="p2HudLevelBadge">P2: NOVA</div>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- Center: Wave & Survival Timer & Boss Health -->
+    <!-- Center: Winged Cyber-Bezel Wave & Pill Timer -->
     <div class="hud-center">
-      <div class="wave-badge" id="hudWaveBadge">WAVE 1 / 20</div>
-      <div class="timer-display" id="hudTimer">00:00</div>
-      <div id="hudPowerupBadge" style="display: none; font-family: var(--font-display); font-size: 13px; font-weight: 800; color: #ffe600; text-shadow: 0 0 10px #ffe600; background: rgba(10, 16, 35, 0.85); border: 1px solid #ffe600; padding: 4px 12px; border-radius: 12px;"></div>
+      <div class="wave-cyber-bezel">
+        <span class="bezel-wing left">///</span>
+        <span class="wave-text" id="hudWaveBadge">WAVE 1 / 20</span>
+        <span class="bezel-wing right">\\\</span>
+      </div>
+      <div class="timer-pill">
+        <span class="timer-icon">⏱</span>
+        <span class="timer-display" id="hudTimer">00:03</span>
+      </div>
+      <div id="hudPowerupBadge" style="display: none; font-family: var(--font-display); font-size: 12px; font-weight: 800; color: #ffe600; text-shadow: 0 0 10px #ffe600; background: rgba(10, 16, 35, 0.9); border: 1px solid #ffe600; padding: 4px 12px; border-radius: 12px; margin-top: 4px;"></div>
 
       <div id="bossHudBar">
         <div class="boss-name" id="hudBossName">⚠️ THE VOID TITAN ⚠️</div>
@@ -1430,23 +1779,38 @@
     ⚡ TEAMMATE DOWN! STAND NEAR CORE TO REVIVE! ⚡
   </div>
 
-  <!-- Bottom Ability Slots Tray -->
+  <!-- Bottom Cyber-Frame Decorative Bezel (Matching Reference) -->
+  <div id="bottomCyberFrame" style="display: none;">
+    <svg viewBox="0 0 1200 48" preserveAspectRatio="none">
+      <path d="M 0,32 L 120,32 L 150,14 L 280,14 L 305,32 L 380,32" stroke="#ff00aa" stroke-width="2.2" fill="none" />
+      <path d="M 388,32 L 414,42 L 786,42 L 812,32" stroke="#00f0ff" stroke-width="2.2" fill="none" />
+      <path d="M 820,32 L 895,32 L 920,14 L 1050,14 L 1080,32 L 1200,32" stroke="#ff00aa" stroke-width="2.2" fill="none" />
+    </svg>
+  </div>
+
+  <!-- Bottom Ability Slots Tray (Matching Storyboard 4 Cards) -->
   <div id="abilityTray" style="display: none;">
-    <!-- Q: Lightning Dash -->
+    <!-- Q: Lightning Dash with 4 Pips -->
     <div class="ability-slot ready" id="slotDash">
       <div class="ability-icon">⏩</div>
       <div class="ability-key">[Q] DASH</div>
+      <div class="dash-pips" id="hudDashPips">
+        <span class="pip on"></span>
+        <span class="pip on"></span>
+        <span class="pip on"></span>
+        <span class="pip on"></span>
+      </div>
       <div class="cooldown-overlay" id="cdDash"></div>
     </div>
 
-    <!-- E: Orbital Shield -->
+    <!-- E: Regis / Shield -->
     <div class="ability-slot ready" id="slotShield">
       <div class="ability-icon">🛡️</div>
-      <div class="ability-key">[E] AEGIS</div>
+      <div class="ability-key">[E] REGIS</div>
       <div class="cooldown-overlay" id="cdShield"></div>
     </div>
 
-    <!-- R: Shockwave -->
+    <!-- R: Wave -->
     <div class="ability-slot ready" id="slotWave">
       <div class="ability-icon">🌊</div>
       <div class="ability-key">[R] WAVE</div>
@@ -1456,12 +1820,24 @@
     <!-- Space: Overdrive -->
     <div class="ability-slot overdrive-slot" id="slotOverdrive">
       <div class="ability-icon">☄️</div>
-      <div class="ability-key">[SPACE] OD</div>
+      <div class="ability-key">[SPACE]</div>
+      <div class="ability-subtext" id="odPercent">0%</div>
       <div class="cooldown-overlay" id="cdOverdrive" style="height: 100%;"></div>
     </div>
   </div>
 
-  <!-- Touch Overlay -->
+  <!-- Bottom-Left Virtual Joystick (Matching Reference Image) -->
+  <div id="virtualJoystickContainer" style="display: none;">
+    <div id="virtualJoystickBase">
+      <span class="joy-arrow top">▲</span>
+      <span class="joy-arrow right">▶</span>
+      <span class="joy-arrow bottom">▼</span>
+      <span class="joy-arrow left">◀</span>
+      <div id="virtualJoystickThumb"></div>
+    </div>
+  </div>
+
+  <!-- Legacy Touch Overlay -->
   <div id="touchOverlay">
     <div class="touch-stick-base" id="touchMoveBase" style="display: none;"></div>
     <div class="touch-stick-thumb" id="touchMoveThumb" style="display: none;"></div>

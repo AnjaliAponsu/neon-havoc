@@ -79,28 +79,48 @@ export class Crystal {
   draw(ctx) {
     if (!this.active) return;
 
-    const pulse = 1 + Math.sin(this.pulseTimer) * 0.16;
+    const pulse = 1 + Math.sin(this.pulseTimer) * 0.12;
     const r = this.radius * pulse;
 
-    // Fast glow via cached sprite
-    glowCache.drawGlow(ctx, this.x, this.y, r * 1.5, this.color, 0.6);
+    // Fast glow via cached sprite (warm golden aura)
+    glowCache.drawGlow(ctx, this.x, this.y, r * 1.6, '#ffe600', 0.65);
 
     ctx.save();
-    ctx.fillStyle = this.color;
 
-    // Diamond gem shape
+    // 1. Faceted Golden Diamond Geometry (Matching Reference Image)
+    // Left highlight facet
+    ctx.fillStyle = '#fff176';
     ctx.beginPath();
-    ctx.moveTo(this.x, this.y - r * 1.3);
-    ctx.lineTo(this.x + r, this.y);
-    ctx.lineTo(this.x, this.y + r * 1.3);
+    ctx.moveTo(this.x, this.y - r * 1.35);
     ctx.lineTo(this.x - r, this.y);
+    ctx.lineTo(this.x, this.y + r * 1.35);
     ctx.closePath();
     ctx.fill();
 
-    // Bright inner core
+    // Right shaded facet
+    ctx.fillStyle = '#ffaa00';
+    ctx.beginPath();
+    ctx.moveTo(this.x, this.y - r * 1.35);
+    ctx.lineTo(this.x + r, this.y);
+    ctx.lineTo(this.x, this.y + r * 1.35);
+    ctx.closePath();
+    ctx.fill();
+
+    // Sharp diamond facet border
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(this.x, this.y - r * 1.35);
+    ctx.lineTo(this.x + r, this.y);
+    ctx.lineTo(this.x, this.y + r * 1.35);
+    ctx.lineTo(this.x - r, this.y);
+    ctx.closePath();
+    ctx.stroke();
+
+    // Gleaming center spark
     ctx.fillStyle = '#ffffff';
     ctx.beginPath();
-    ctx.arc(this.x, this.y, r * 0.35, 0, Math.PI * 2);
+    ctx.arc(this.x - r * 0.15, this.y - r * 0.25, r * 0.28, 0, Math.PI * 2);
     ctx.fill();
 
     ctx.restore();

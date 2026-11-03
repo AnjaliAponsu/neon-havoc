@@ -571,12 +571,116 @@ export class Enemy {
       ctx.beginPath();
       ctx.arc(this.x, this.y, r * 0.3, 0, Math.PI * 2);
       ctx.fill();
-    } else {
+    } else if (this.type === 'tank' || this.type === 'exploder' || this.behavior === 'heavy_crush') {
+      // 3B. Spiky Fiery Mine / Tank (Matching Reference Image)
+      const spikes = 10;
+      const rot = this.animTimer * 0.4;
+      const innerR = this.radius * 0.82;
+      const outerR = this.radius * (1.38 + Math.sin(this.animTimer * 3.5) * 0.08);
+
+      // Radiating fiery orange/yellow spikes
+      ctx.beginPath();
+      for (let i = 0; i < spikes; i++) {
+        const a = (i * Math.PI * 2) / spikes + rot;
+        const aMid = a + Math.PI / spikes;
+        const sx = this.x + Math.cos(a) * outerR;
+        const sy = this.y + Math.sin(a) * outerR;
+        const mx = this.x + Math.cos(aMid) * innerR;
+        const my = this.y + Math.sin(aMid) * innerR;
+        if (i === 0) ctx.moveTo(sx, sy);
+        else ctx.lineTo(sx, sy);
+        ctx.lineTo(mx, my);
+      }
+      ctx.closePath();
+      ctx.fillStyle = '#ff5500';
+      ctx.fill();
+      ctx.strokeStyle = '#ffe600';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      // Dark charcoal core body
+      ctx.fillStyle = '#1c152c';
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, innerR, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Glowing evil orange/yellow eyes
+      ctx.fillStyle = '#ffe600';
+      const eyeOffset = this.radius * 0.32;
+      ctx.beginPath();
+      ctx.moveTo(this.x - eyeOffset - 3, this.y - 3);
+      ctx.lineTo(this.x - 2, this.y);
+      ctx.lineTo(this.x - eyeOffset - 1, this.y + 2);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.moveTo(this.x + eyeOffset + 3, this.y - 3);
+      ctx.lineTo(this.x + 2, this.y);
+      ctx.lineTo(this.x + eyeOffset + 1, this.y + 2);
+      ctx.closePath();
+      ctx.fill();
+    } else if (this.type === 'chaser' || this.type === 'speeder' || this.behavior === 'rush' || this.behavior === 'fast_dash') {
+      // 3C. Comet Chaser with Streaming Flaming Magenta Wake (Matching Reference Image)
+      const moveAngle = Math.atan2(this.vy || 0.01, this.vx || 0.01);
+      const tailAngle = moveAngle + Math.PI;
+      const tailLen = this.radius * (2.4 + Math.sin(this.animTimer * 6) * 0.5);
+      const tailWidth = this.radius * 0.88;
+
+      // Fiery blazing flame plume trailing behind
+      const flameGrad = ctx.createRadialGradient(
+        this.x, this.y, this.radius * 0.2,
+        this.x + Math.cos(tailAngle) * tailLen, this.y + Math.sin(tailAngle) * tailLen, tailLen
+      );
+      flameGrad.addColorStop(0, '#ff0077');
+      flameGrad.addColorStop(0.35, '#ff2255');
+      flameGrad.addColorStop(0.7, '#ff8800');
+      flameGrad.addColorStop(1, 'rgba(255, 200, 0, 0)');
+
+      ctx.fillStyle = flameGrad;
+      ctx.beginPath();
+      ctx.moveTo(this.x + Math.cos(moveAngle + Math.PI / 2) * tailWidth, this.y + Math.sin(moveAngle + Math.PI / 2) * tailWidth);
+      ctx.lineTo(this.x + Math.cos(tailAngle) * tailLen, this.y + Math.sin(tailAngle) * tailLen);
+      ctx.lineTo(this.x + Math.cos(moveAngle - Math.PI / 2) * tailWidth, this.y + Math.sin(moveAngle - Math.PI / 2) * tailWidth);
+      ctx.closePath();
+      ctx.fill();
+
+      // Spherical magenta body
+      ctx.fillStyle = this.flashTimer > 0 ? '#ffffff' : '#ff0066';
       ctx.beginPath();
       ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
       ctx.fill();
 
-      // Angry dot eyes
+      // Demonic angled glowing slit eyes facing direction of movement
+      ctx.save();
+      ctx.translate(this.x, this.y);
+      ctx.rotate(moveAngle);
+
+      ctx.fillStyle = '#ffffff';
+      // Left eye (\)
+      ctx.beginPath();
+      ctx.moveTo(this.radius * 0.45, -this.radius * 0.35);
+      ctx.lineTo(this.radius * 0.05, -this.radius * 0.55);
+      ctx.lineTo(this.radius * 0.12, -this.radius * 0.18);
+      ctx.closePath();
+      ctx.fill();
+
+      // Right eye (/)
+      ctx.beginPath();
+      ctx.moveTo(this.radius * 0.45, this.radius * 0.35);
+      ctx.lineTo(this.radius * 0.05, this.radius * 0.55);
+      ctx.lineTo(this.radius * 0.12, this.radius * 0.18);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.restore();
+    } else {
+      // 3D. Purple Energy Orbs & Standard Entities
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Glowing core
       ctx.fillStyle = '#ffffff';
       const eyeOffset = this.radius * 0.35;
       const eyeSize = Math.max(1.5, this.radius * 0.18);

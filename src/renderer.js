@@ -426,9 +426,11 @@ export class Renderer {
     if (!player) return;
 
     const ctx = this.ctx;
-    const radarSize = 130;
-    const radarX = this.width - radarSize - 24;
-    const radarY = 68;
+    // Responsive sizing for mobile vs desktop
+    const isMobile = this.width < 768;
+    const radarSize = isMobile ? 96 : 124;
+    const radarX = this.width - radarSize - (isMobile ? 14 : 24);
+    const radarY = isMobile ? 54 : 64;
     const radius = radarSize / 2;
     const cx = radarX + radius;
     const cy = radarY + radius;
@@ -437,23 +439,33 @@ export class Renderer {
     ctx.save();
 
     // Radar backdrop
-    ctx.fillStyle = 'rgba(6, 12, 28, 0.85)';
-    ctx.strokeStyle = 'rgba(0, 240, 255, 0.4)';
+    ctx.fillStyle = 'rgba(6, 12, 28, 0.88)';
+    ctx.strokeStyle = 'rgba(0, 240, 255, 0.45)';
     ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.arc(cx, cy, radius, 0, Math.PI * 2);
     ctx.fill();
     ctx.stroke();
 
-    // Range rings
-    ctx.strokeStyle = 'rgba(0, 240, 255, 0.15)';
+    // Tactical Crosshairs (Matching Reference Image)
+    ctx.strokeStyle = 'rgba(0, 240, 255, 0.16)';
+    ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.arc(cx, cy, radius * 0.5, 0, Math.PI * 2);
-    ctx.arc(cx, cy, radius * 0.75, 0, Math.PI * 2);
+    ctx.moveTo(cx - radius + 4, cy);
+    ctx.lineTo(cx + radius - 4, cy);
+    ctx.moveTo(cx, cy - radius + 4);
+    ctx.lineTo(cx, cy + radius - 4);
+    ctx.stroke();
+
+    // Concentric Range rings
+    ctx.strokeStyle = 'rgba(0, 240, 255, 0.18)';
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius * 0.35, 0, Math.PI * 2);
+    ctx.arc(cx, cy, radius * 0.7, 0, Math.PI * 2);
     ctx.stroke();
 
     // Rotating radar sweep line
-    ctx.strokeStyle = 'rgba(0, 240, 255, 0.4)';
+    ctx.strokeStyle = 'rgba(0, 240, 255, 0.35)';
     ctx.beginPath();
     ctx.moveTo(cx, cy);
     ctx.lineTo(cx + Math.cos(this.radarSweep) * radius, cy + Math.sin(this.radarSweep) * radius);
@@ -480,7 +492,7 @@ export class Renderer {
       }
     }
 
-    // 2. Draw Enemies
+    // 2. Draw Enemies (Red hostile blips matching Reference Image)
     for (let i = 0; i < enemies.length; i++) {
       const e = enemies[i];
       if (!e.active || e.isDead) continue;
@@ -491,9 +503,9 @@ export class Renderer {
       if (dist < radarRange) {
         const rx = cx + (dx / radarRange) * radius;
         const ry = cy + (dy / radarRange) * radius;
-        ctx.fillStyle = e.isBoss ? '#ff0055' : e.color;
+        ctx.fillStyle = e.isBoss ? '#ff0055' : '#ff2255';
         ctx.beginPath();
-        ctx.arc(rx, ry, e.isBoss ? 4.5 : 2, 0, Math.PI * 2);
+        ctx.arc(rx, ry, e.isBoss ? 4.5 : 2.2, 0, Math.PI * 2);
         ctx.fill();
       }
     }
@@ -520,7 +532,7 @@ export class Renderer {
     // 3. Draw Player in Center
     ctx.fillStyle = player.playerIndex === 2 ? '#ff00aa' : '#00ffff';
     ctx.beginPath();
-    ctx.arc(cx, cy, 3.5, 0, Math.PI * 2);
+    ctx.arc(cx, cy, 3.8, 0, Math.PI * 2);
     ctx.fill();
 
     // Aim Heading Pointer

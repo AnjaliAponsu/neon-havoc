@@ -385,6 +385,11 @@ export class WeaponSystem {
           enemy.takeDamage(bullet.damage, soundEngine, particlePool, floatingTexts, bullet.isCrit);
           enemy.applyKnockback(Math.atan2(bullet.vy, bullet.vx), 20);
 
+          // Fiery Starburst Explosive Impact Effect (Matching Reference Image)
+          if (particlePool) {
+            particlePool.spawnStarburst(bullet.x, bullet.y, bullet.isCrit ? '#ffe600' : '#ff9900', bullet.isCrit ? 22 : 14);
+          }
+
           // 30X Directional impact sparks
           const hitAngle = Math.atan2(bullet.vy, bullet.vx) + Math.PI;
           particlePool.spawnDirectionalSparks(bullet.x, bullet.y, hitAngle, 0.9, 340, bullet.color, 4);

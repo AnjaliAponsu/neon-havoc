@@ -42,30 +42,98 @@ export class Powerup {
 
   draw(ctx) {
     if (!this.active) return;
-    const pulse = 1 + Math.sin(this.animTimer) * 0.15;
-    const r = this.radius * pulse;
+    const pulse = 1 + Math.sin(this.animTimer) * 0.08;
+    const bob = Math.sin(this.animTimer * 1.5) * 4;
+    const s = (this.radius || 16) * pulse;
+    const px = this.x;
+    const py = this.y + bob;
 
     ctx.save();
-    glowCache.drawGlow(ctx, this.x, this.y, r * 1.6, this.type.color, 0.85);
+    glowCache.drawGlow(ctx, px, py, s * 1.8, this.type.color, 0.8);
 
-    // Glowing outer ring
-    ctx.strokeStyle = this.type.color;
-    ctx.lineWidth = 2.5;
+    ctx.translate(px, py);
+
+    // 3D Isometric Cube Dimensions
+    const dx = s * 0.866; // cos(30 deg)
+    const dy = s * 0.5;   // sin(30 deg)
+    const h = s * 1.1;
+
+    // Face 1: Top Diamond Face
     ctx.beginPath();
-    ctx.arc(this.x, this.y, r, 0, Math.PI * 2);
+    ctx.moveTo(0, -h);
+    ctx.lineTo(dx, -h + dy);
+    ctx.lineTo(0, -h + dy * 2);
+    ctx.lineTo(-dx, -h + dy);
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(18, 30, 54, 0.9)';
+    ctx.fill();
+    ctx.strokeStyle = this.type.color;
+    ctx.lineWidth = 1.8;
     ctx.stroke();
 
-    // Semi-transparent backdrop
-    ctx.fillStyle = 'rgba(10, 15, 30, 0.85)';
+    // Face 2: Left Side Face
     ctx.beginPath();
-    ctx.arc(this.x, this.y, r - 2, 0, Math.PI * 2);
+    ctx.moveTo(-dx, -h + dy);
+    ctx.lineTo(0, -h + dy * 2);
+    ctx.lineTo(0, dy * 2);
+    ctx.lineTo(-dx, dy);
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(10, 18, 36, 0.92)';
     ctx.fill();
+    ctx.strokeStyle = this.type.color;
+    ctx.lineWidth = 1.8;
+    ctx.stroke();
 
-    // Emoji icon in center
-    ctx.font = '16px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(this.type.icon, this.x, this.y + 1);
+    // Face 3: Right Side Face
+    ctx.beginPath();
+    ctx.moveTo(0, -h + dy * 2);
+    ctx.lineTo(dx, -h + dy);
+    ctx.lineTo(dx, dy);
+    ctx.lineTo(0, dy * 2);
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(14, 24, 46, 0.95)';
+    ctx.fill();
+    ctx.strokeStyle = this.type.color;
+    ctx.lineWidth = 1.8;
+    ctx.stroke();
+
+    // Inner glowing symbol on front face
+    ctx.fillStyle = '#ffffff';
+    ctx.strokeStyle = this.type.color;
+    ctx.lineWidth = 2.5;
+
+    if (this.type.id === 'heal' || this.type.id === 'heart' || this.type.icon === '❤️' || this.type.icon === '➕') {
+      // Glowing '+' Cross Emblem (Health Crate)
+      const cx = 0;
+      const cy = -h * 0.2;
+      const cw = 4;
+      const cl = 11;
+      ctx.fillStyle = '#00f0ff';
+      ctx.fillRect(cx - cw / 2, cy - cl / 2, cw, cl);
+      ctx.fillRect(cx - cl / 2, cy - cw / 2, cl, cw);
+    } else if (this.type.id === 'boost' || this.type.id === 'overdrive' || this.type.id === 'multishot') {
+      // Glowing '⏫' Double Chevrons (Buff Crate)
+      const cx = 0;
+      const cy = -h * 0.2;
+      ctx.strokeStyle = '#ffe600';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      // Lower chevron
+      ctx.moveTo(-6, cy + 3);
+      ctx.lineTo(0, cy - 3);
+      ctx.lineTo(6, cy + 3);
+      // Upper chevron
+      ctx.moveTo(-6, cy - 4);
+      ctx.lineTo(0, cy - 10);
+      ctx.lineTo(6, cy - 4);
+      ctx.stroke();
+    } else {
+      // Centered Icon / Emoji
+      ctx.font = 'bold 14px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(this.type.icon || '⚡', 0, -h * 0.2);
+    }
 
     ctx.restore();
   }

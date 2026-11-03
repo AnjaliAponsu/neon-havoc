@@ -429,6 +429,32 @@ export class Player {
 
     ctx.globalAlpha = 1.0;
 
+    // 1.5 Ground Holographic Tactical Radar Circles (Matching Reference Image)
+    const accentCol = this.id === 2 ? '#ff00aa' : '#00f0ff';
+
+    // Outer subtle tactical range circle
+    ctx.strokeStyle = this.id === 2 ? 'rgba(255, 0, 170, 0.14)' : 'rgba(0, 240, 255, 0.16)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, 108, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Inner orbiting tactical brackets
+    const bracketR = 30;
+    const bAngle = this.pulseAnim * 0.35;
+    ctx.strokeStyle = this.id === 2 ? 'rgba(255, 0, 170, 0.55)' : 'rgba(0, 240, 255, 0.6)';
+    ctx.lineWidth = 2.2;
+
+    // Left Bracket Arc
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, bracketR, bAngle + Math.PI * 0.72, bAngle + Math.PI * 1.28);
+    ctx.stroke();
+
+    // Right Bracket Arc
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, bracketR, bAngle - Math.PI * 0.28, bAngle + Math.PI * 0.28);
+    ctx.stroke();
+
     // 2. Overdrive Solar Corona & Flare Discharges
     if (this.isOverdrive) {
       const odColor = this.overdriveColor || COLORS.PLAYER_OVERDRIVE;

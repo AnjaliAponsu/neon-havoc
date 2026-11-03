@@ -79,22 +79,57 @@ export class Bullet {
     ctx.save();
     ctx.fillStyle = this.color;
 
-    if (this.type === 'sniper' || this.type === 'laser') {
-      const angle = Math.atan2(this.vy, this.vx);
-      ctx.translate(this.x, this.y);
-      ctx.rotate(angle);
+    const angle = Math.atan2(this.vy, this.vx);
+    ctx.translate(this.x, this.y);
+    ctx.rotate(angle);
+
+    if (this.isEnemy) {
+      // Enemy projectile: Pulsing spherical energy orb
       ctx.beginPath();
-      ctx.roundRect(-this.radius * 2.5, -this.radius, this.radius * 5, this.radius * 2, this.radius);
-      ctx.fill();
-    } else {
-      ctx.beginPath();
-      ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+      ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
       ctx.fill();
 
-      // Bright white core
+      // Corrupted center
       ctx.fillStyle = '#ffffff';
       ctx.beginPath();
-      ctx.arc(this.x, this.y, this.radius * 0.45, 0, Math.PI * 2);
+      ctx.arc(0, 0, this.radius * 0.45, 0, Math.PI * 2);
+      ctx.fill();
+    } else {
+      // Player projectile: Streamlined Glowing Plasma Dart (Matching Reference Image)
+      const dartLen = this.radius * 2.8;
+      const dartW = this.radius * 1.1;
+
+      // Soft glow tail plume
+      const tailGrad = ctx.createLinearGradient(-dartLen * 1.4, 0, dartLen * 0.5, 0);
+      tailGrad.addColorStop(0, 'rgba(0, 240, 255, 0)');
+      tailGrad.addColorStop(1, this.color);
+      ctx.fillStyle = tailGrad;
+      ctx.beginPath();
+      ctx.moveTo(dartLen * 0.6, 0);
+      ctx.lineTo(-dartLen * 1.4, -dartW * 0.45);
+      ctx.lineTo(-dartLen * 1.4, dartW * 0.45);
+      ctx.closePath();
+      ctx.fill();
+
+      // Dart aerodynamic body
+      ctx.fillStyle = this.color;
+      ctx.beginPath();
+      ctx.moveTo(dartLen, 0);
+      ctx.lineTo(-dartLen * 0.3, -dartW);
+      ctx.lineTo(-dartLen * 0.8, -dartW * 0.4);
+      ctx.lineTo(-dartLen * 0.8, dartW * 0.4);
+      ctx.lineTo(-dartLen * 0.3, dartW);
+      ctx.closePath();
+      ctx.fill();
+
+      // Brilliant white-hot core & tip
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.moveTo(dartLen, 0);
+      ctx.lineTo(0, -dartW * 0.45);
+      ctx.lineTo(-dartLen * 0.4, 0);
+      ctx.lineTo(0, dartW * 0.45);
+      ctx.closePath();
       ctx.fill();
     }
 

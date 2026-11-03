@@ -180,6 +180,14 @@ class NeonHavocGame {
       lblShield: document.querySelector('#slotShield .ability-key'),
       lblWave: document.querySelector('#slotWave .ability-key'),
       lblOverdrive: document.querySelector('#slotOverdrive .ability-key'),
+      hudDashPips: document.getElementById('hudDashPips'),
+      odPercent: document.getElementById('odPercent'),
+
+      // Cyber Bezel & Virtual Joystick
+      bottomCyberFrame: document.getElementById('bottomCyberFrame'),
+      virtualJoystickContainer: document.getElementById('virtualJoystickContainer'),
+      virtualJoystickThumb: document.getElementById('virtualJoystickThumb'),
+      virtualJoystickBase: document.getElementById('virtualJoystickBase'),
 
       // Touch Joysticks
       touchOverlay: document.getElementById('touchOverlay'),
@@ -1138,6 +1146,8 @@ class NeonHavocGame {
     this.dom.mainMenu.style.display = 'none';
     this.dom.inGameHud.style.display = 'flex';
     this.dom.abilityTray.style.display = 'flex';
+    if (this.dom.bottomCyberFrame) this.dom.bottomCyberFrame.style.display = 'flex';
+    if (this.dom.virtualJoystickContainer) this.dom.virtualJoystickContainer.style.display = 'block';
     if (this.dom.bossHudBar) this.dom.bossHudBar.style.display = 'none';
     if (this.dom.hudDownedAlert) this.dom.hudDownedAlert.style.display = 'none';
 
@@ -1240,6 +1250,8 @@ class NeonHavocGame {
     this.dom.mainMenu.style.display = 'flex';
     this.dom.inGameHud.style.display = 'none';
     this.dom.abilityTray.style.display = 'none';
+    if (this.dom.bottomCyberFrame) this.dom.bottomCyberFrame.style.display = 'none';
+    if (this.dom.virtualJoystickContainer) this.dom.virtualJoystickContainer.style.display = 'none';
     this.dom.bossHudBar.style.display = 'none';
     soundEngine.stopMusic();
     this.pendingMode = 'SOLO';
@@ -1992,20 +2004,27 @@ class NeonHavocGame {
       }
     }
 
-    // Ability Slot Cooldowns & Dynamic Number Labels
+    // Ability Slot Cooldowns & Dynamic Number Labels (Matching Reference Image)
     const dashCooldown = p.dashCooldown * p.stats.dashCdMult;
     const dashCdPct = p.dashCharges >= p.maxDashCharges ? 0 : 100 - (p.dashChargeRechargeTimer / dashCooldown) * 100;
     this.dom.cdDash.style.height = `${dashCdPct}%`;
     this.dom.slotDash.classList.toggle('ready', p.dashCharges > 0);
     if (this.dom.lblDash) {
-      this.dom.lblDash.textContent = p.dashCharges > 0 ? `[Q] DASH (${p.dashCharges})` : `[Q] ${(dashCooldown - p.dashChargeRechargeTimer).toFixed(1)}s`;
+      this.dom.lblDash.textContent = '[Q] DASH';
+    }
+    // Update Dash Charge Pips (4 Pips)
+    if (this.dom.hudDashPips) {
+      const pips = this.dom.hudDashPips.children;
+      for (let i = 0; i < pips.length; i++) {
+        pips[i].classList.toggle('on', i < p.dashCharges);
+      }
     }
 
     const shieldCdPct = p.shieldCdTimer > 0 ? (p.shieldCdTimer / p.shieldCooldown) * 100 : 0;
     this.dom.cdShield.style.height = `${shieldCdPct}%`;
     this.dom.slotShield.classList.toggle('ready', p.shieldCdTimer <= 0);
     if (this.dom.lblShield) {
-      this.dom.lblShield.textContent = p.shieldCdTimer > 0 ? `[E] ${p.shieldCdTimer.toFixed(1)}s` : '[E] AEGIS';
+      this.dom.lblShield.textContent = p.shieldCdTimer > 0 ? `[E] ${p.shieldCdTimer.toFixed(1)}s` : '[E] REGIS';
     }
 
     const waveCdPct = p.shockwaveCdTimer > 0 ? (p.shockwaveCdTimer / p.shockwaveCooldown) * 100 : 0;
@@ -2019,7 +2038,42 @@ class NeonHavocGame {
     this.dom.cdOverdrive.style.height = `${100 - odFillPct}%`;
     this.dom.slotOverdrive.classList.toggle('ready', p.overdriveCharge >= 100 || p.isOverdrive);
     if (this.dom.lblOverdrive) {
-      this.dom.lblOverdrive.textContent = p.isOverdrive ? 'ACTIVE!' : `[SPACE] ${Math.floor(p.overdriveCharge)}%`;
+      this.dom.lblOverdrive.textContent = '[SPACE]';
+    }
+    if (this.dom.odPercent) {
+      this.dom.odPercent.textContent = p.isOverdrive ? 'ACTIVE!' : `${Math.floor(p.overdriveCharge)}%`;
+    }
+
+    // Virtual Joystick Dial (Tactile Mobile & Desktop Feedback)
+    if (this.dom.virtualJoystickContainer) {
+      if (this.input.touchEnabled || window.innerWidth <= 768) {
+        this.dom.virtualJoystickContainer.style.display = 'block';
+      }
+
+      if (this.input.touchMoveActive) {
+        const tdx = this.input.touchMoveCurrent.x - this.input.touchMoveOrigin.x;
+        const tdy = this.input.touchMoveCurrent.y - this.input.touchMoveOrigin.y;
+        const dist = Math.hypot(tdx, tdy);
+        const maxR = 34;
+        const normDist = Math.min(dist, maxR);
+        const angle = Math.atan2(tdy, tdx);
+        const jx = Math.cos(angle) * normDist;
+        const jy = Math.sin(angle) * normDist;
+        if (this.dom.virtualJoystickThumb) {
+          this.dom.virtualJoystickThumb.style.transform = `translate(calc(-50% + ${jx.toFixed(1)}px), calc(-50% + ${jy.toFixed(1)}px))`;
+        }
+      } else if (Math.hypot(this.input.moveX, this.input.moveY) > 0.05) {
+        // Keyboard tactile deflection
+        const jx = this.input.moveX * 24;
+        const jy = this.input.moveY * 24;
+        if (this.dom.virtualJoystickThumb) {
+          this.dom.virtualJoystickThumb.style.transform = `translate(calc(-50% + ${jx.toFixed(1)}px), calc(-50% + ${jy.toFixed(1)}px))`;
+        }
+      } else {
+        if (this.dom.virtualJoystickThumb) {
+          this.dom.virtualJoystickThumb.style.transform = 'translate(-50%, -50%)';
+        }
+      }
     }
 
     // Touch Virtual Joysticks

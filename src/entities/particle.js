@@ -12,7 +12,9 @@ export class Particle {
     this.life = 1;
     this.maxLife = 1;
     this.drag = 0.96;
-    this.type = 'spark'; // 'spark', 'ring', 'line_spark', 'smoke_puff'
+    this.type = 'spark'; // 'spark', 'ring', 'line_spark', 'smoke_puff', 'starburst'
+    this.rotation = 0;
+    this.rotSpeed = 0;
   }
 
   reset(x, y, vx, vy, size, color, maxLife, drag = 0.96, type = 'spark') {
@@ -27,6 +29,8 @@ export class Particle {
     this.maxLife = maxLife;
     this.drag = drag;
     this.type = type;
+    this.rotation = Math.random() * Math.PI;
+    this.rotSpeed = (Math.random() - 0.5) * 8;
   }
 
   update(dt) {
@@ -41,6 +45,7 @@ export class Particle {
     this.y += this.vy * dt;
     this.vx *= this.drag;
     this.vy *= this.drag;
+    this.rotation += this.rotSpeed * dt;
 
     if (this.type === 'ring') {
       this.size += 240 * dt;
@@ -48,6 +53,8 @@ export class Particle {
       this.size += 22 * dt;
       this.vx *= 0.92;
       this.vy *= 0.92;
+    } else if (this.type === 'starburst') {
+      this.size += 40 * dt;
     }
   }
 
@@ -75,6 +82,34 @@ export class Particle {
       ctx.fillStyle = this.color;
       ctx.beginPath();
       ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (this.type === 'starburst') {
+      // 8-Pointed Explosive Hit Starburst (Matching reference image impact flash)
+      ctx.translate(this.x, this.y);
+      ctx.rotate(this.rotation);
+
+      const rOuter = this.size * 1.6;
+      const rInner = this.size * 0.45;
+      const points = 8;
+
+      // Radiant outer burst
+      ctx.fillStyle = this.color || '#ffcc00';
+      ctx.beginPath();
+      for (let i = 0; i < points * 2; i++) {
+        const r = i % 2 === 0 ? rOuter : rInner;
+        const angle = (i * Math.PI) / points;
+        const px = Math.cos(angle) * r;
+        const py = Math.sin(angle) * r;
+        if (i === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      }
+      ctx.closePath();
+      ctx.fill();
+
+      // Bright white-hot center core
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(0, 0, rInner * 0.75, 0, Math.PI * 2);
       ctx.fill();
     } else {
       ctx.fillStyle = this.color;
@@ -138,6 +173,13 @@ export class ParticlePool {
 
   spawnShockwave(x, y, color = '#00ffff', maxRadius = 160) {
     this.spawn(x, y, 0, 0, 10, color, 0.35, 1, 'ring');
+  }
+
+  spawnStarburst(x, y, color = '#ffcc00', size = 16) {
+    // Explosive impact starburst + spark ejection
+    this.spawn(x, y, 0, 0, size, color, 0.16, 0.85, 'starburst');
+    this.spawn(x, y, 0, 0, size * 0.7, '#ff3300', 0.22, 0.85, 'starburst');
+    this.spawnDirectionalSparks(x, y, Math.random() * Math.PI * 2, Math.PI * 2, 280, '#ffe600', 4);
   }
 
   update(dt) {
