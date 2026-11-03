@@ -1,8 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-touch-fullscreen" content="yes">
@@ -11,7 +13,9 @@
   <title>NEON HAVOC — 2D Bullet-Hell Survival</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Rajdhani:wght@500;600;700&display=swap"
+    rel="stylesheet">
   <style>
     :root {
       --neon-cyan: #00f0ff;
@@ -35,7 +39,8 @@
       -webkit-tap-highlight-color: transparent;
     }
 
-    body, html {
+    body,
+    html {
       width: 100%;
       height: 100%;
       height: 100dvh;
@@ -48,7 +53,8 @@
     }
 
     /* iOS / iPhone Standalone Fullscreen Mode */
-    html.ios-fullscreen-mode, body.ios-fullscreen-mode {
+    html.ios-fullscreen-mode,
+    body.ios-fullscreen-mode {
       position: fixed !important;
       top: 0 !important;
       left: 0 !important;
@@ -585,10 +591,30 @@
       pointer-events: none;
       line-height: 1;
     }
-    .joy-arrow.top { top: 8px; left: 50%; transform: translateX(-50%); }
-    .joy-arrow.bottom { bottom: 8px; left: 50%; transform: translateX(-50%); }
-    .joy-arrow.left { left: 8px; top: 50%; transform: translateY(-50%); }
-    .joy-arrow.right { right: 8px; top: 50%; transform: translateY(-50%); }
+
+    .joy-arrow.top {
+      top: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .joy-arrow.bottom {
+      bottom: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .joy-arrow.left {
+      left: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+
+    .joy-arrow.right {
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
 
     #virtualJoystickThumb {
       position: absolute;
@@ -610,68 +636,84 @@
       #inGameHud {
         padding: max(6px, env(safe-area-inset-top, 6px)) 12px 0 12px;
       }
+
       .hud-status-panel {
         padding: 4px 10px 4px 6px;
         gap: 8px;
         border-radius: 20px;
       }
+
       .hud-player-orb {
         width: 34px;
         height: 34px;
       }
+
       .hud-player-orb .orb-core {
         width: 14px;
         height: 14px;
       }
+
       .bar-bg {
         width: 85px;
         height: 7px;
       }
+
       .hud-num-text {
         font-size: 10px;
         min-width: 60px;
       }
+
       .level-badge {
         font-size: 9px;
         padding: 0 6px;
       }
+
       .wave-text {
         font-size: 13px;
         letter-spacing: 1.5px;
       }
+
       .timer-display {
         font-size: 12px;
       }
+
       .shards-pill {
         font-size: 13px;
         padding: 4px 10px;
       }
+
       .hud-btn {
         width: 32px;
         height: 32px;
         font-size: 14px;
       }
+
       #abilityTray {
         gap: 8px;
         bottom: max(10px, env(safe-area-inset-bottom, 10px));
       }
+
       .ability-slot {
         width: 56px;
         height: 56px;
         border-radius: 10px;
       }
+
       .ability-icon {
         font-size: 19px;
       }
+
       .ability-key {
         font-size: 9px;
       }
+
       #virtualJoystickContainer {
         width: 96px;
         height: 96px;
         bottom: max(14px, env(safe-area-inset-bottom, 14px));
         left: max(14px, env(safe-area-inset-left, 14px));
       }
+
       #virtualJoystickThumb {
         width: 36px;
         height: 36px;
@@ -682,13 +724,16 @@
       .bar-bg {
         width: 65px;
       }
+
       .ability-slot {
         width: 50px;
         height: 50px;
       }
+
       .ability-icon {
         font-size: 17px;
       }
+
       .ability-key {
         font-size: 8px;
       }
@@ -742,7 +787,7 @@
       width: 100%;
       height: 100%;
       background: radial-gradient(circle at 50% 50%, rgba(3, 7, 20, 0.15) 0%, rgba(2, 4, 14, 0.55) 100%),
-                  url('./assets/menu-bg.jpg?v=2') center center / cover no-repeat;
+        url('./assets/menu-bg.jpg?v=2') center center / cover no-repeat;
       z-index: 50;
       overflow: hidden;
       box-shadow: inset 0 0 100px rgba(0, 0, 0, 0.85);
@@ -1125,11 +1170,14 @@
     }
 
     @keyframes pulseGlow {
-      0%, 100% {
+
+      0%,
+      100% {
         opacity: 1;
         transform: scale(1);
         box-shadow: 0 0 12px #ff00aa;
       }
+
       50% {
         opacity: 0.5;
         transform: scale(0.85);
@@ -1195,73 +1243,91 @@
         padding: 0 16px;
         top: 14px;
       }
+
       .cyber-corner-tl {
         width: 44px;
         height: 28px;
       }
+
       .quick-icon-btn {
         width: 38px;
         height: 38px;
       }
+
       .menu-center-card {
         width: min(360px, 94vw);
         padding: 14px 14px;
         gap: 8px;
       }
+
       .menu-title {
         font-size: 38px;
         letter-spacing: 4px;
       }
+
       .sub-text {
         font-size: 10px;
         letter-spacing: 2px;
       }
+
       .menu-footer-bar {
         padding: 0 16px;
         bottom: 12px;
       }
+
       .menu-protocol-pill {
         font-size: 9px;
         padding: 4px 10px;
         letter-spacing: 1px;
       }
+
       .modal-box {
         width: 95vw !important;
         max-width: 95vw !important;
         padding: 16px !important;
       }
+
       .online-cards-grid {
         grid-template-columns: 1fr !important;
       }
+
       #abilityTray {
         bottom: 12px !important;
         gap: 8px !important;
       }
+
       .ability-slot {
         width: 54px !important;
         height: 54px !important;
       }
+
       .ability-icon {
         font-size: 20px !important;
       }
+
       .ability-key {
         font-size: 8px !important;
       }
+
       #inGameHud {
         padding: 8px 12px;
       }
+
       .hud-left {
         gap: 4px;
       }
+
       .bar-container {
         width: 140px !important;
         height: 12px !important;
       }
+
       .upgrade-cards-container {
         flex-direction: column !important;
         align-items: center !important;
         gap: 12px !important;
       }
+
       .upgrade-card {
         width: 100% !important;
         max-width: 320px !important;
@@ -1282,11 +1348,13 @@
         overflow-y: auto;
         padding: 16px 0 50px 0;
       }
+
       .menu-content-wrap {
         transform: scale(0.74);
         transform-origin: top center;
         margin-top: 40px;
       }
+
       #abilityTray {
         bottom: 6px !important;
       }
@@ -1401,6 +1469,7 @@
     .upgrade-card.rare {
       border-color: var(--neon-purple);
     }
+
     .upgrade-card.rare:hover {
       box-shadow: 0 0 24px var(--neon-purple);
     }
@@ -1408,6 +1477,7 @@
     .upgrade-card.epic {
       border-color: var(--neon-yellow);
     }
+
     .upgrade-card.epic:hover {
       box-shadow: 0 0 24px var(--neon-yellow);
     }
@@ -1435,15 +1505,32 @@
       font-weight: 700;
     }
 
-    .rarity-common { background: rgba(0, 240, 255, 0.2); color: var(--neon-cyan); }
-    .rarity-rare { background: rgba(153, 51, 255, 0.25); color: var(--neon-purple); }
-    .rarity-epic { background: rgba(255, 230, 0, 0.25); color: var(--neon-yellow); }
-    .rarity-legendary { background: rgba(255, 0, 119, 0.3); color: #ff0077; font-weight: 900; }
+    .rarity-common {
+      background: rgba(0, 240, 255, 0.2);
+      color: var(--neon-cyan);
+    }
+
+    .rarity-rare {
+      background: rgba(153, 51, 255, 0.25);
+      color: var(--neon-purple);
+    }
+
+    .rarity-epic {
+      background: rgba(255, 230, 0, 0.25);
+      color: var(--neon-yellow);
+    }
+
+    .rarity-legendary {
+      background: rgba(255, 0, 119, 0.3);
+      color: #ff0077;
+      font-weight: 900;
+    }
 
     .upgrade-card.legendary {
       border-color: #ff0077;
       background: radial-gradient(circle at center, rgba(38, 12, 34, 0.95), rgba(14, 20, 38, 0.98));
     }
+
     .upgrade-card.legendary:hover {
       box-shadow: 0 0 32px #ff0077;
     }
@@ -1583,9 +1670,20 @@
       font-weight: 700;
     }
 
-    .diff-normal { background: rgba(0, 240, 255, 0.2); color: var(--neon-cyan); }
-    .diff-hard { background: rgba(255, 0, 119, 0.2); color: var(--neon-pink); }
-    .diff-insane { background: rgba(255, 230, 0, 0.2); color: var(--neon-yellow); }
+    .diff-normal {
+      background: rgba(0, 240, 255, 0.2);
+      color: var(--neon-cyan);
+    }
+
+    .diff-hard {
+      background: rgba(255, 0, 119, 0.2);
+      color: var(--neon-pink);
+    }
+
+    .diff-insane {
+      background: rgba(255, 230, 0, 0.2);
+      color: var(--neon-yellow);
+    }
 
     /* ---- SETTINGS & LORE MODALS ---- */
     .settings-row {
@@ -1681,19 +1779,24 @@
     ::-webkit-scrollbar {
       width: 6px;
     }
+
     ::-webkit-scrollbar-track {
       background: rgba(0, 0, 0, 0.3);
     }
+
     ::-webkit-scrollbar-thumb {
       background: var(--neon-cyan);
       border-radius: 3px;
     }
   </style>
 </head>
+
 <body>
 
   <!-- Global High-Visibility HUD Notification Toast -->
-  <div id="globalToast" style="display: none; position: fixed; top: 28px; left: 50%; transform: translateX(-50%); z-index: 9999; padding: 10px 24px; border-radius: 30px; font-family: var(--font-display); font-size: 13px; font-weight: 800; letter-spacing: 1px; box-shadow: 0 0 25px rgba(0,0,0,0.85); transition: opacity 0.3s ease, transform 0.3s ease; pointer-events: none; text-align: center;"></div>
+  <div id="globalToast"
+    style="display: none; position: fixed; top: 28px; left: 50%; transform: translateX(-50%); z-index: 9999; padding: 10px 24px; border-radius: 30px; font-family: var(--font-display); font-size: 13px; font-weight: 800; letter-spacing: 1px; box-shadow: 0 0 25px rgba(0,0,0,0.85); transition: opacity 0.3s ease, transform 0.3s ease; pointer-events: none; text-align: center;">
+  </div>
 
   <!-- Game Canvas -->
   <canvas id="gameCanvas"></canvas>
@@ -1714,12 +1817,16 @@
         <div class="hud-bars-col">
           <div class="hud-bar-row">
             <span class="hud-bar-icon">❤️</span>
-            <div class="bar-bg"><div id="hpFill"></div></div>
+            <div class="bar-bg">
+              <div id="hpFill"></div>
+            </div>
             <span id="hpText" class="hud-num-text">115 / 115 HP</span>
           </div>
           <div class="hud-bar-row">
             <span class="hud-bar-icon">⚡</span>
-            <div class="bar-bg"><div id="shieldFill"></div></div>
+            <div class="bar-bg">
+              <div id="shieldFill"></div>
+            </div>
             <div class="level-badge" id="hudLevelBadge">LVL 1</div>
           </div>
         </div>
@@ -1738,20 +1845,25 @@
         <span class="timer-icon">⏱</span>
         <span class="timer-display" id="hudTimer">00:03</span>
       </div>
-      <div id="hudPowerupBadge" style="display: none; font-family: var(--font-display); font-size: 12px; font-weight: 800; color: #ffe600; text-shadow: 0 0 10px #ffe600; background: rgba(10, 16, 35, 0.9); border: 1px solid #ffe600; padding: 4px 12px; border-radius: 12px; margin-top: 4px;"></div>
+      <div id="hudComboBadge"
+        style="display: none; align-items: center; gap: 6px; background: rgba(255, 0, 119, 0.25); border: 1px solid var(--neon-pink); padding: 3px 14px; border-radius: 16px; font-family: var(--font-display); font-size: 12px; font-weight: 800; color: #ff00aa; text-shadow: 0 0 10px #ff00aa; box-shadow: 0 0 14px rgba(255, 0, 119, 0.35); transition: transform 0.1s ease; margin-top: 2px;">
+        <span>🔥</span>
+        <span id="hudComboText">10 COMBO (1.2x)</span>
+      </div>
+      <div id="hudPowerupBadge"
+        style="display: none; font-family: var(--font-display); font-size: 12px; font-weight: 800; color: #ffe600; text-shadow: 0 0 10px #ffe600; background: rgba(10, 16, 35, 0.9); border: 1px solid #ffe600; padding: 4px 12px; border-radius: 12px; margin-top: 4px;">
+      </div>
 
       <div id="bossHudBar">
         <div class="boss-name" id="hudBossName">⚠️ THE VOID TITAN ⚠️</div>
-        <div class="boss-hp-bg"><div id="bossHpFill"></div></div>
+        <div class="boss-hp-bg">
+          <div id="bossHpFill"></div>
+        </div>
       </div>
     </div>
 
     <!-- Right: Spectrum Shards, Fullscreen & Pause -->
     <div class="hud-right">
-      <div id="hudComboBadge" style="display: none; align-items: center; gap: 6px; background: rgba(255, 0, 119, 0.25); border: 1px solid var(--neon-pink); padding: 5px 12px; border-radius: 20px; font-family: var(--font-display); font-size: 13px; font-weight: 800; color: #ff00aa; text-shadow: 0 0 10px #ff00aa; box-shadow: 0 0 14px rgba(255, 0, 119, 0.35); transition: transform 0.1s ease;">
-        <span>🔥</span>
-        <span id="hudComboText">10 COMBO (1.2x)</span>
-      </div>
       <div class="shards-pill">
         <span>💎</span>
         <span id="hudShards">0</span>
@@ -1762,16 +1874,20 @@
   </div>
 
   <!-- Downed Teammate Co-Op Alert Banner -->
-  <div id="hudDownedAlert" style="display: none; position: absolute; top: 75px; left: 50%; transform: translateX(-50%); z-index: 20; background: rgba(255, 0, 68, 0.9); border: 1px solid #ffffff; border-radius: 20px; padding: 6px 20px; font-family: var(--font-display); font-size: 13px; font-weight: 800; color: #ffffff; letter-spacing: 1px; box-shadow: 0 0 20px rgba(255, 0, 68, 0.6); animation: pulseAlert 0.8s infinite alternate;">
+  <div id="hudDownedAlert"
+    style="display: none; position: absolute; top: 75px; left: 50%; transform: translateX(-50%); z-index: 20; background: rgba(255, 0, 68, 0.9); border: 1px solid #ffffff; border-radius: 20px; padding: 6px 20px; font-family: var(--font-display); font-size: 13px; font-weight: 800; color: #ffffff; letter-spacing: 1px; box-shadow: 0 0 20px rgba(255, 0, 68, 0.6); animation: pulseAlert 0.8s infinite alternate;">
     ⚡ TEAMMATE DOWN! STAND NEAR CORE TO REVIVE! ⚡
   </div>
 
   <!-- Bottom Cyber-Frame Decorative Bezel (Matching Reference) -->
   <div id="bottomCyberFrame" style="display: none;">
     <svg viewBox="0 0 1200 52" preserveAspectRatio="none">
-      <path class="cyber-bracket magenta" d="M 0,38 L 130,38 L 160,18 L 310,18 L 335,38 L 415,38" stroke="#ff00aa" stroke-width="2.6" fill="none" />
-      <path class="cyber-bracket cyan" d="M 425,38 L 452,48 L 748,48 L 775,38" stroke="#00f0ff" stroke-width="2.6" fill="none" />
-      <path class="cyber-bracket magenta" d="M 785,38 L 865,38 L 890,18 L 1040,18 L 1070,38 L 1200,38" stroke="#ff00aa" stroke-width="2.6" fill="none" />
+      <path class="cyber-bracket magenta" d="M 0,38 L 130,38 L 160,18 L 310,18 L 335,38 L 415,38" stroke="#ff00aa"
+        stroke-width="2.6" fill="none" />
+      <path class="cyber-bracket cyan" d="M 425,38 L 452,48 L 748,48 L 775,38" stroke="#00f0ff" stroke-width="2.6"
+        fill="none" />
+      <path class="cyber-bracket magenta" d="M 785,38 L 865,38 L 890,18 L 1040,18 L 1070,38 L 1200,38" stroke="#ff00aa"
+        stroke-width="2.6" fill="none" />
     </svg>
   </div>
 
@@ -1842,16 +1958,19 @@
       <div class="quick-actions-bar">
         <button class="quick-icon-btn" id="btnQuickProfile" title="Pilot Dossier / Profile">
           <svg viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+            <path
+              d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
           </svg>
         </button>
         <button class="quick-icon-btn" id="btnQuickAchievements" title="Achievements & Honors">
           <svg viewBox="0 0 24 24" fill="currentColor">
-            <path d="M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94A5.01 5.01 0 0 0 11 15.9V19H7v2h10v-2h-4v-3.1c1.88-.34 3.32-1.84 3.61-3.96C19.08 11.63 21 9.55 21 7V7c0-1.1-.9-2-2-2zM5 8V7h2v3.82C5.84 10.4 5 9.3 5 8zm14 0c0 1.3-.84 2.4-2 2.82V7h2v1z"/>
+            <path
+              d="M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94A5.01 5.01 0 0 0 11 15.9V19H7v2h10v-2h-4v-3.1c1.88-.34 3.32-1.84 3.61-3.96C19.08 11.63 21 9.55 21 7V7c0-1.1-.9-2-2-2zM5 8V7h2v3.82C5.84 10.4 5 9.3 5 8zm14 0c0 1.3-.84 2.4-2 2.82V7h2v1z" />
           </svg>
         </button>
         <button class="quick-icon-btn" id="btnQuickQuit" title="Power / Reload Simulation">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+            stroke-linejoin="round">
             <path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path>
             <line x1="12" y1="2" x2="12" y2="12"></line>
           </svg>
@@ -1879,7 +1998,8 @@
           <button class="mode-btn solo" id="btnMenuPlay">
             <div class="mode-icon-circle solo">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                <path
+                  d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
               </svg>
             </div>
             <div class="mode-text">
@@ -1891,7 +2011,8 @@
           <button class="mode-btn coop" id="btnMenuCoop">
             <div class="mode-icon-circle coop">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+                <path
+                  d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" />
               </svg>
             </div>
             <div class="mode-text">
@@ -1904,7 +2025,8 @@
         <!-- Row 2: Online Co-Op (LAN / WEB) -->
         <button class="menu-nav-btn online" id="btnMenuOnline">
           <div class="btn-left">
-            <svg class="online-svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#00ff88" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <svg class="online-svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#00ff88"
+              stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
               <path d="M5 12.55a11 11 0 0 1 14.08 0"></path>
               <path d="M1.42 9a16 16 0 0 1 21.16 0"></path>
               <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
@@ -1918,11 +2040,30 @@
           <span class="beta-pill">BETA</span>
         </button>
 
+        <button class="menu-nav-btn online" id="btnMenuBattleground"
+          style="border-color: rgba(255,54,223,.65); background: linear-gradient(90deg, rgba(0,229,255,.09), rgba(255,54,223,.12)); box-shadow: 0 0 18px rgba(255,54,223,.12);">
+          <div class="btn-left">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ff36df" stroke-width="2.2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="7" cy="8" r="3"></circle>
+              <circle cx="17" cy="8" r="3"></circle>
+              <path d="M2.5 19c.4-3.2 2-5 4.5-5s4.1 1.8 4.5 5M12.5 19c.4-3.2 2-5 4.5-5s4.1 1.8 4.5 5"></path>
+              <path d="M12 4v7M8.5 7.5h7"></path>
+            </svg>
+            <div class="btn-label-wrap"><span class="btn-main-label" style="color:#ff7dea;">MULTIPLAYER
+                BATTLEGROUND</span><span class="btn-sub-label">4V4 TEAM DEATHMATCH</span></div>
+          </div>
+          <span class="beta-pill" style="border-color:#ff36df;color:#ff7dea;background:rgba(255,54,223,.12);">NEW</span>
+        </button>
+
         <!-- Row 3: Tech Lab (Upgrades) -->
         <button class="menu-nav-btn" id="btnMenuTechLab">
           <div class="btn-left">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--neon-cyan)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--neon-cyan)" stroke-width="2.2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path
+                d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z">
+              </path>
             </svg>
             <div class="btn-label-wrap">
               <span class="btn-main-label">TECH LAB</span>
@@ -1935,8 +2076,11 @@
         <!-- Row 4: Arsenal Archive -->
         <button class="menu-nav-btn" id="btnMenuSynergies">
           <div class="btn-left">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--neon-cyan)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--neon-cyan)" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path
+                d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z">
+              </path>
               <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
               <line x1="12" y1="22.08" x2="12" y2="12"></line>
             </svg>
@@ -1949,7 +2093,8 @@
         <!-- Row 5: Lore & Controls -->
         <button class="menu-nav-btn" id="btnMenuLore">
           <div class="btn-left">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--neon-cyan)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--neon-cyan)" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
               <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
               <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
             </svg>
@@ -1962,9 +2107,12 @@
         <!-- Row 6: Settings -->
         <button class="menu-nav-btn" id="btnMenuSettings">
           <div class="btn-left">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--neon-cyan)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--neon-cyan)" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="3"></circle>
-              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+              <path
+                d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+              </path>
             </svg>
             <div class="btn-label-wrap">
               <span class="btn-main-label">SETTINGS</span>
@@ -1975,8 +2123,10 @@
         <!-- Row 7: Fullscreen (F11) -->
         <button class="menu-nav-btn" id="btnMenuFullscreen">
           <div class="btn-left">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--neon-cyan)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--neon-cyan)" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3">
+              </path>
             </svg>
             <div class="btn-label-wrap">
               <span class="btn-main-label">FULLSCREEN (F11)</span>
@@ -2002,12 +2152,17 @@
   <div class="screen-overlay" id="profileModal">
     <div class="modal-box" style="max-width: 520px;">
       <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 20px;">
-        <div style="width: 58px; height: 58px; border-radius: 50%; background: radial-gradient(circle, #00f0ff 0%, #050e26 70%); border: 2px solid #00f0ff; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 20px rgba(0, 240, 255, 0.6); font-size: 26px;">
+        <div
+          style="width: 58px; height: 58px; border-radius: 50%; background: radial-gradient(circle, #00f0ff 0%, #050e26 70%); border: 2px solid #00f0ff; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 20px rgba(0, 240, 255, 0.6); font-size: 26px;">
           ⚡
         </div>
         <div style="text-align: left;">
-          <h2 style="font-family: var(--font-display); font-size: 22px; color: #00f0ff; margin: 0; letter-spacing: 1.5px;">PILOT SPARK-01</h2>
-          <div id="profRankTitle" style="font-size: 12px; color: #ffe600; font-weight: 700; letter-spacing: 1px; margin-top: 2px;">RANK: SPECTRUM VANGUARD</div>
+          <h2
+            style="font-family: var(--font-display); font-size: 22px; color: #00f0ff; margin: 0; letter-spacing: 1.5px;">
+            PILOT SPARK-01</h2>
+          <div id="profRankTitle"
+            style="font-size: 12px; color: #ffe600; font-weight: 700; letter-spacing: 1px; margin-top: 2px;">RANK:
+            SPECTRUM VANGUARD</div>
         </div>
       </div>
 
@@ -2037,14 +2192,16 @@
   <!-- 1.2 ACHIEVEMENTS & MEDALS MODAL -->
   <div class="screen-overlay" id="achievementsModal">
     <div class="modal-box" style="max-width: 580px; max-height: 85vh; overflow-y: auto;">
-      <h2 style="font-family: var(--font-display); font-size: 24px; color: #ffe600; margin-bottom: 6px; text-shadow: 0 0 15px rgba(255, 230, 0, 0.4);">
+      <h2
+        style="font-family: var(--font-display); font-size: 24px; color: #ffe600; margin-bottom: 6px; text-shadow: 0 0 15px rgba(255, 230, 0, 0.4);">
         🏆 SPECTRUM MEDALS & ACHIEVEMENTS
       </h2>
       <p style="font-size: 13px; color: rgba(255,255,255,0.7); margin-bottom: 18px;">
         Conquer high-threat Void encounters to unlock protocol honors:
       </p>
 
-      <div id="achievementsList" style="display: flex; flex-direction: column; gap: 10px; width: 100%; margin-bottom: 20px;">
+      <div id="achievementsList"
+        style="display: flex; flex-direction: column; gap: 10px; width: 100%; margin-bottom: 20px;">
         <!-- Populated dynamically -->
       </div>
 
@@ -2077,7 +2234,8 @@
         <h2 style="font-family: var(--font-display); font-size: 24px; color: #00ff88; letter-spacing: 2px; margin: 0;">
           ONLINE CO-OP SECTOR RELAY
         </h2>
-        <div id="onlineRelayBadge" style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 700; background: rgba(0, 255, 136, 0.12); border: 1px solid #00ff88; color: #00ff88;">
+        <div id="onlineRelayBadge"
+          style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 700; background: rgba(0, 255, 136, 0.12); border: 1px solid #00ff88; color: #00ff88;">
           ● RELAY ONLINE
         </div>
       </div>
@@ -2086,67 +2244,94 @@
       </p>
 
       <!-- URL Share Bar -->
-      <div style="width: 100%; background: rgba(0, 240, 255, 0.08); border: 1px solid rgba(0, 240, 255, 0.3); border-radius: 8px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 18px;">
-        <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; color: rgba(255,255,255,0.85);">
-          <span style="color: var(--neon-cyan); font-weight: 700;">📡 GAME ADDRESS:</span> <span id="lanUrlDisplay" style="color: #ffe600; font-family: monospace;">http://localhost:5173/</span>
+      <div
+        style="width: 100%; background: rgba(0, 240, 255, 0.08); border: 1px solid rgba(0, 240, 255, 0.3); border-radius: 8px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 18px;">
+        <div
+          style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; color: rgba(255,255,255,0.85);">
+          <span style="color: var(--neon-cyan); font-weight: 700;">📡 GAME ADDRESS:</span> <span id="lanUrlDisplay"
+            style="color: #ffe600; font-family: monospace;">http://localhost:5173/</span>
         </div>
-        <button class="neon-btn secondary" id="btnCopyLanUrl" style="padding: 5px 12px; font-size: 11px; white-space: nowrap;">📋 COPY LINK</button>
+        <button class="neon-btn secondary" id="btnCopyLanUrl"
+          style="padding: 5px 12px; font-size: 11px; white-space: nowrap;">📋 COPY LINK</button>
       </div>
 
       <!-- 2 Cards: Host vs Join -->
-      <div class="online-cards-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; width: 100%; margin-bottom: 20px;">
+      <div class="online-cards-grid"
+        style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; width: 100%; margin-bottom: 20px;">
         <!-- HOST CARD -->
-        <div style="background: rgba(0, 240, 255, 0.06); border: 1px solid rgba(0, 240, 255, 0.4); border-radius: 10px; padding: 18px; text-align: center; display: flex; flex-direction: column; justify-content: space-between;">
+        <div
+          style="background: rgba(0, 240, 255, 0.06); border: 1px solid rgba(0, 240, 255, 0.4); border-radius: 10px; padding: 18px; text-align: center; display: flex; flex-direction: column; justify-content: space-between;">
           <div>
             <div style="font-size: 26px; margin-bottom: 4px;">👑</div>
-            <h3 style="font-family: var(--font-display); font-size: 16px; color: var(--neon-cyan); margin-bottom: 6px;">HOST SECTOR (P1)</h3>
+            <h3 style="font-family: var(--font-display); font-size: 16px; color: var(--neon-cyan); margin-bottom: 6px;">
+              HOST SECTOR (P1)</h3>
             <p style="font-size: 11px; color: rgba(255,255,255,0.65); line-height: 1.4; margin-bottom: 14px;">
               You play as <strong>Spark-01 (Cyan)</strong>. Create a room and send the 4-letter code to your friend.
             </p>
           </div>
 
-          <div id="hostRoomDisplay" style="display: none; margin-bottom: 12px; background: rgba(0, 0, 0, 0.4); border: 1px dashed var(--neon-yellow); border-radius: 8px; padding: 12px;">
+          <div id="hostRoomDisplay"
+            style="display: none; margin-bottom: 12px; background: rgba(0, 0, 0, 0.4); border: 1px dashed var(--neon-yellow); border-radius: 8px; padding: 12px;">
             <div style="font-size: 11px; color: rgba(255,255,255,0.6); letter-spacing: 1px;">YOUR SECTOR CODE:</div>
-            <div id="hostRoomCode" style="font-family: var(--font-display); font-size: 32px; color: #ffe600; letter-spacing: 6px; font-weight: 800; margin: 4px 0; text-shadow: 0 0 15px rgba(255,230,0,0.5);">----</div>
+            <div id="hostRoomCode"
+              style="font-family: var(--font-display); font-size: 32px; color: #ffe600; letter-spacing: 6px; font-weight: 800; margin: 4px 0; text-shadow: 0 0 15px rgba(255,230,0,0.5);">
+              ----</div>
             <div style="display: flex; gap: 6px; justify-content: center; margin-top: 8px;">
-              <button class="neon-btn secondary" id="btnCopyRoomCode" style="font-size: 10px; padding: 4px 8px;">📋 COPY CODE</button>
-              <button class="neon-btn secondary" id="btnCopyInviteLink" style="font-size: 10px; padding: 4px 8px;">🔗 COPY INVITE</button>
+              <button class="neon-btn secondary" id="btnCopyRoomCode" style="font-size: 10px; padding: 4px 8px;">📋 COPY
+                CODE</button>
+              <button class="neon-btn secondary" id="btnCopyInviteLink" style="font-size: 10px; padding: 4px 8px;">🔗
+                COPY INVITE</button>
             </div>
-            <div id="hostRoomStatus" style="font-size: 11px; color: #00f0ff; animation: pulseText 1.5s infinite; margin-top: 8px;">Waiting for Player 2 to connect...</div>
-            <button class="neon-btn" id="btnHostStartNow" style="width: 100%; margin-top: 10px; font-size: 12px; padding: 8px 10px; border-color: #00ff88; color: #00ff88; background: rgba(0, 255, 136, 0.15); box-shadow: 0 0 12px rgba(0,255,136,0.3);">🚀 DEPLOY NOW (P2 CAN HOT-JOIN)</button>
+            <div id="hostRoomStatus"
+              style="font-size: 11px; color: #00f0ff; animation: pulseText 1.5s infinite; margin-top: 8px;">Waiting for
+              Player 2 to connect...</div>
+            <button class="neon-btn" id="btnHostStartNow"
+              style="width: 100%; margin-top: 10px; font-size: 12px; padding: 8px 10px; border-color: #00ff88; color: #00ff88; background: rgba(0, 255, 136, 0.15); box-shadow: 0 0 12px rgba(0,255,136,0.3);">🚀
+              DEPLOY NOW (P2 CAN HOT-JOIN)</button>
           </div>
 
-          <button class="neon-btn" id="btnCreateRoom" style="width: 100%; font-size: 13px; padding: 11px;">CREATE HOST ROOM</button>
+          <button class="neon-btn" id="btnCreateRoom" style="width: 100%; font-size: 13px; padding: 11px;">CREATE HOST
+            ROOM</button>
         </div>
 
         <!-- JOIN CARD -->
-        <div style="background: rgba(255, 0, 170, 0.06); border: 1px solid rgba(255, 0, 170, 0.4); border-radius: 10px; padding: 18px; text-align: center; display: flex; flex-direction: column; justify-content: space-between;">
+        <div
+          style="background: rgba(255, 0, 170, 0.06); border: 1px solid rgba(255, 0, 170, 0.4); border-radius: 10px; padding: 18px; text-align: center; display: flex; flex-direction: column; justify-content: space-between;">
           <div>
             <div style="font-size: 26px; margin-bottom: 4px;">🚀</div>
-            <h3 style="font-family: var(--font-display); font-size: 16px; color: #ff00aa; margin-bottom: 6px;">JOIN SECTOR (P2)</h3>
+            <h3 style="font-family: var(--font-display); font-size: 16px; color: #ff00aa; margin-bottom: 6px;">JOIN
+              SECTOR (P2)</h3>
             <p style="font-size: 11px; color: rgba(255,255,255,0.65); line-height: 1.4; margin-bottom: 14px;">
               You play as <strong>Nova-02 (Magenta)</strong>. Enter the 4-letter room code from your host.
             </p>
           </div>
 
           <div>
-            <input type="text" id="inputRoomCode" maxlength="4" placeholder="CODE" style="width: 100%; text-transform: uppercase; text-align: center; font-family: var(--font-display); font-size: 22px; letter-spacing: 6px; font-weight: 800; padding: 8px; background: rgba(0,0,0,0.6); border: 2px solid #ff00aa; color: #fff; border-radius: 8px; margin-bottom: 8px; box-shadow: 0 0 15px rgba(255,0,170,0.25);">
-            <div id="joinRoomStatus" style="font-size: 11px; color: #ff00aa; margin-bottom: 8px; min-height: 16px; font-weight: 700;">Enter 4-letter Code</div>
+            <input type="text" id="inputRoomCode" maxlength="4" placeholder="CODE"
+              style="width: 100%; text-transform: uppercase; text-align: center; font-family: var(--font-display); font-size: 22px; letter-spacing: 6px; font-weight: 800; padding: 8px; background: rgba(0,0,0,0.6); border: 2px solid #ff00aa; color: #fff; border-radius: 8px; margin-bottom: 8px; box-shadow: 0 0 15px rgba(255,0,170,0.25);">
+            <div id="joinRoomStatus"
+              style="font-size: 11px; color: #ff00aa; margin-bottom: 8px; min-height: 16px; font-weight: 700;">Enter
+              4-letter Code</div>
           </div>
 
-          <button class="neon-btn" id="btnJoinRoom" style="width: 100%; font-size: 13px; padding: 11px; border-color: #ff00aa; color: #ff00aa; box-shadow: 0 0 15px rgba(255,0,170,0.35);">CONNECT & DEPLOY</button>
+          <button class="neon-btn" id="btnJoinRoom"
+            style="width: 100%; font-size: 13px; padding: 11px; border-color: #ff00aa; color: #ff00aa; box-shadow: 0 0 15px rgba(255,0,170,0.35);">CONNECT
+            & DEPLOY</button>
         </div>
       </div>
 
       <!-- Quick 3-Step Guide Banner -->
-      <div style="width: 100%; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 8px; padding: 12px 16px; margin-bottom: 18px; text-align: left;">
-        <div style="font-family: var(--font-display); font-size: 12px; color: var(--neon-yellow); margin-bottom: 6px; font-weight: 700;">
+      <div
+        style="width: 100%; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 8px; padding: 12px 16px; margin-bottom: 18px; text-align: left;">
+        <div
+          style="font-family: var(--font-display); font-size: 12px; color: var(--neon-yellow); margin-bottom: 6px; font-weight: 700;">
           💡 HOW TO PLAY TOGETHER:
         </div>
         <div style="font-size: 11px; color: rgba(255,255,255,0.7); line-height: 1.6;">
           • <strong>Step 1:</strong> Host clicks <strong>CREATE HOST ROOM</strong> to generate a room code.<br>
           • <strong>Step 2:</strong> Friend opens the game link in another tab or device on WiFi.<br>
-          • <strong>Step 3:</strong> Friend enters the code and clicks <strong>CONNECT & DEPLOY</strong> — you both jump straight into the arena!
+          • <strong>Step 3:</strong> Friend enters the code and clicks <strong>CONNECT & DEPLOY</strong> — you both jump
+          straight into the arena!
         </div>
       </div>
 
@@ -2162,7 +2347,9 @@
           SPECTRUM TECH LAB
         </h2>
         <div style="display: flex; gap: 12px; align-items: center;">
-          <button class="neon-btn secondary" id="btnTechLabRefund" style="padding: 6px 14px; font-size: 11px; letter-spacing: 1px;" title="Reset and refund all Spectrum Shards">
+          <button class="neon-btn secondary" id="btnTechLabRefund"
+            style="padding: 6px 14px; font-size: 11px; letter-spacing: 1px;"
+            title="Reset and refund all Spectrum Shards">
             REFUND ALL ↺
           </button>
           <div class="shards-pill">
@@ -2186,7 +2373,8 @@
   <!-- 4. UPGRADE LEVEL UP MODAL -->
   <div class="screen-overlay" id="upgradeModal">
     <div class="modal-box" style="max-width: 740px;">
-      <h2 style="font-family: var(--font-display); font-size: 26px; color: var(--neon-yellow); text-shadow: 0 0 16px var(--neon-yellow);">
+      <h2
+        style="font-family: var(--font-display); font-size: 26px; color: var(--neon-yellow); text-shadow: 0 0 16px var(--neon-yellow);">
         SPECTRUM EVOLUTION UNLOCKED
       </h2>
       <p style="font-size: 14px; color: rgba(255,255,255,0.7); margin-top: 4px;">
@@ -2227,7 +2415,8 @@
   <!-- 6. VICTORY / STAGE CLEAR MODAL -->
   <div class="screen-overlay" id="victoryModal">
     <div class="modal-box" style="max-width: 550px;">
-      <h2 style="font-family: var(--font-display); font-size: 28px; color: var(--neon-yellow); text-shadow: 0 0 20px var(--neon-yellow);">
+      <h2
+        style="font-family: var(--font-display); font-size: 28px; color: var(--neon-yellow); text-shadow: 0 0 20px var(--neon-yellow);">
         SECTOR PURIFIED! 🌟🌟🌟
       </h2>
       <p style="font-size: 14px; color: rgba(255,255,255,0.7); margin-top: 4px;">
@@ -2262,8 +2451,10 @@
 
   <!-- 7. GAME OVER MODAL -->
   <div class="screen-overlay" id="gameOverModal">
-    <div class="modal-box" style="max-width: 520px; border-color: rgba(255, 34, 85, 0.4); box-shadow: 0 0 35px rgba(255, 34, 85, 0.25);">
-      <h2 style="font-family: var(--font-display); font-size: 28px; color: var(--neon-red); text-shadow: 0 0 20px var(--neon-red);">
+    <div class="modal-box"
+      style="max-width: 520px; border-color: rgba(255, 34, 85, 0.4); box-shadow: 0 0 35px rgba(255, 34, 85, 0.25);">
+      <h2
+        style="font-family: var(--font-display); font-size: 28px; color: var(--neon-red); text-shadow: 0 0 20px var(--neon-red);">
         ENERGY COLLAPSE
       </h2>
       <p style="font-size: 14px; color: rgba(255,255,255,0.7); margin-top: 4px;">
@@ -2349,12 +2540,16 @@
         THE LAST SPARK — COMBAT DOSSIER
       </h2>
 
-      <div style="text-align: left; font-size: 14px; line-height: 1.6; color: rgba(255,255,255,0.85); display: flex; flex-direction: column; gap: 14px;">
+      <div
+        style="text-align: left; font-size: 14px; line-height: 1.6; color: rgba(255,255,255,0.85); display: flex; flex-direction: column; gap: 14px;">
         <p>
-          In a digital universe called <strong>The Spectrum</strong>, millions of colorful energy particles once lived peacefully. But a corruption known as <strong>The Void</strong> has turned particles into aggressive, unstable swarm dots.
+          In a digital universe called <strong>The Spectrum</strong>, millions of colorful energy particles once lived
+          peacefully. But a corruption known as <strong>The Void</strong> has turned particles into aggressive, unstable
+          swarm dots.
         </p>
         <p>
-          You control <strong>Spark-01</strong>, a tiny ball of living lightning. Survive the chaos, collect energy crystals, evolve your weapons, and destroy the Void Core Titans!
+          You control <strong>Spark-01</strong>, a tiny ball of living lightning. Survive the chaos, collect energy
+          crystals, evolve your weapons, and destroy the Void Core Titans!
         </p>
 
         <h3 style="font-family: var(--font-display); font-size: 16px; color: var(--neon-yellow); margin-top: 10px;">
@@ -2362,7 +2557,8 @@
         </h3>
         <ul style="padding-left: 20px;">
           <li><strong>WASD</strong>: Move Spark-01 with lightning inertia</li>
-          <li><strong>Mouse Cursor / Left Click</strong>: Aim & Fire weapons (or press <strong>C</strong> for Auto-Fire)</li>
+          <li><strong>Mouse Cursor / Left Click</strong>: Aim & Fire weapons (or press <strong>C</strong> for Auto-Fire)
+          </li>
           <li><strong>[Q] / Right Click</strong>: Lightning Dash</li>
           <li><strong>[E]</strong>: Aegis Orbital Shield</li>
           <li><strong>[R]</strong>: Electric Shockwave</li>
@@ -2387,8 +2583,10 @@
           CO-OP REVIVAL & SYNERGY
         </h3>
         <ul style="padding-left: 20px;">
-          <li><strong>⚡ Energy Tether Revive</strong>: If a player falls to 0 HP, stand within their distress radius for 2.2s to revive them with 45% HP!</li>
-          <li><strong>✨ Harmonic Convergence</strong>: When both players trigger Overdrive simultaneously, a screen-clearing plasma laser connects them, vaporizing enemies between them!</li>
+          <li><strong>⚡ Energy Tether Revive</strong>: If a player falls to 0 HP, stand within their distress radius for
+            2.2s to revive them with 45% HP!</li>
+          <li><strong>✨ Harmonic Convergence</strong>: When both players trigger Overdrive simultaneously, a
+            screen-clearing plasma laser connects them, vaporizing enemies between them!</li>
         </ul>
 
         <h3 style="font-family: var(--font-display); font-size: 16px; color: var(--neon-pink); margin-top: 10px;">
@@ -2399,9 +2597,12 @@
           <li><span style="color: #ffe600;">● Speeders (Yellow)</span>: Extremely fast, erratic bursts.</li>
           <li><span style="color: #aa00ff;">● Tanks (Purple)</span>: Massive armored orbs absorbing heavy fire.</li>
           <li><span style="color: #00ff66;">● Splitters (Green)</span>: Divide into mini-dots upon death.</li>
-          <li><span style="color: #0099ff;">● Snipers (Blue)</span>: Telegraph laser lines and fire long-range bolts.</li>
-          <li><span style="color: #ff6600;">● Exploders (Orange)</span>: Rapidly flash when close and explode with AoE blast!</li>
-          <li><span style="color: #ff0044;">● The Void Titan (Boss)</span>: Corrupted core with rotating lasers and bullet rings.</li>
+          <li><span style="color: #0099ff;">● Snipers (Blue)</span>: Telegraph laser lines and fire long-range bolts.
+          </li>
+          <li><span style="color: #ff6600;">● Exploders (Orange)</span>: Rapidly flash when close and explode with AoE
+            blast!</li>
+          <li><span style="color: #ff0044;">● The Void Titan (Boss)</span>: Corrupted core with rotating lasers and
+            bullet rings.</li>
         </ul>
       </div>
 
@@ -2412,67 +2613,85 @@
   <!-- 10. SPECTRUM ARSENAL ARCHIVE (SYNERGIES & EVOLUTIONS) MODAL -->
   <div class="screen-overlay" id="synergyModal">
     <div class="modal-box" style="max-width: 760px; max-height: 85vh; overflow-y: auto;">
-      <h2 style="font-family: var(--font-display); font-size: 26px; color: var(--neon-yellow); text-shadow: 0 0 16px var(--neon-yellow);">
+      <h2
+        style="font-family: var(--font-display); font-size: 26px; color: var(--neon-yellow); text-shadow: 0 0 16px var(--neon-yellow);">
         SPECTRUM ARSENAL ARCHIVE
       </h2>
       <p style="font-size: 13px; color: rgba(255,255,255,0.7); margin-top: 4px; margin-bottom: 20px;">
         Combine base weapons with passive catalysts to synthesize Legendary Evolutions:
       </p>
 
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; width: 100%; text-align: left;">
-        <div style="background: rgba(14, 20, 42, 0.85); border: 1px solid var(--neon-yellow); border-radius: 10px; padding: 16px; box-shadow: 0 0 15px rgba(255, 230, 0, 0.15);">
-          <div style="font-family: var(--font-display); font-size: 16px; color: #ffe600; font-weight: 800; display: flex; align-items: center; gap: 8px;">
+      <div
+        style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; width: 100%; text-align: left;">
+        <div
+          style="background: rgba(14, 20, 42, 0.85); border: 1px solid var(--neon-yellow); border-radius: 10px; padding: 16px; box-shadow: 0 0 15px rgba(255, 230, 0, 0.15);">
+          <div
+            style="font-family: var(--font-display); font-size: 16px; color: #ffe600; font-weight: 800; display: flex; align-items: center; gap: 8px;">
             <span>⚡👑</span> THUNDERSTORM RAILGUN
           </div>
           <div style="font-size: 12px; color: #00f0ff; margin-top: 6px; font-weight: 700;">
             FORMULA: Pulse Blaster + High Voltage (+20% Damage)
           </div>
           <div style="font-size: 13px; color: rgba(255,255,255,0.8); margin-top: 8px; line-height: 1.4;">
-            Fires piercing relativistic rail bolts (1600 speed) that discharge chain lightning arcs through adjacent swarms on every hit.
+            Fires piercing relativistic rail bolts (1600 speed) that discharge chain lightning arcs through adjacent
+            swarms on every hit.
           </div>
         </div>
 
-        <div style="background: rgba(14, 20, 42, 0.85); border: 1px solid #ffaa00; border-radius: 10px; padding: 16px; box-shadow: 0 0 15px rgba(255, 170, 0, 0.15);">
-          <div style="font-family: var(--font-display); font-size: 16px; color: #ffaa00; font-weight: 800; display: flex; align-items: center; gap: 8px;">
+        <div
+          style="background: rgba(14, 20, 42, 0.85); border: 1px solid #ffaa00; border-radius: 10px; padding: 16px; box-shadow: 0 0 15px rgba(255, 170, 0, 0.15);">
+          <div
+            style="font-family: var(--font-display); font-size: 16px; color: #ffaa00; font-weight: 800; display: flex; align-items: center; gap: 8px;">
             <span>💥👑</span> SUPERNOVA FLAK CANNON
           </div>
           <div style="font-size: 12px; color: #00f0ff; margin-top: 6px; font-weight: 700;">
             FORMULA: Plasma Spread + Twin Emitters (+1 Projectile)
           </div>
           <div style="font-size: 13px; color: rgba(255,255,255,0.8); margin-top: 8px; line-height: 1.4;">
-            Fires massive cluster shells that explode upon contact into high-velocity neon shrapnel rings tearing through packs.
+            Fires massive cluster shells that explode upon contact into high-velocity neon shrapnel rings tearing
+            through packs.
           </div>
         </div>
 
-        <div style="background: rgba(14, 20, 42, 0.85); border: 1px solid var(--neon-cyan); border-radius: 10px; padding: 16px; box-shadow: 0 0 15px rgba(0, 240, 255, 0.15);">
-          <div style="font-family: var(--font-display); font-size: 16px; color: var(--neon-cyan); font-weight: 800; display: flex; align-items: center; gap: 8px;">
+        <div
+          style="background: rgba(14, 20, 42, 0.85); border: 1px solid var(--neon-cyan); border-radius: 10px; padding: 16px; box-shadow: 0 0 15px rgba(0, 240, 255, 0.15);">
+          <div
+            style="font-family: var(--font-display); font-size: 16px; color: var(--neon-cyan); font-weight: 800; display: flex; align-items: center; gap: 8px;">
             <span>🕸️👑</span> TEMPEST WEB MATRIX
           </div>
           <div style="font-size: 12px; color: #00f0ff; margin-top: 6px; font-weight: 700;">
             FORMULA: Chain Arcs + Rapid Fire Coil (+25% Fire Rate)
           </div>
           <div style="font-size: 13px; color: rgba(255,255,255,0.8); margin-top: 8px; line-height: 1.4;">
-            Maintains a permanent electrocuting storm web frying up to 8 targets simultaneously with relentless ionizing arcs.
+            Maintains a permanent electrocuting storm web frying up to 8 targets simultaneously with relentless ionizing
+            arcs.
           </div>
         </div>
 
-        <div style="background: rgba(14, 20, 42, 0.85); border: 1px solid var(--neon-pink); border-radius: 10px; padding: 16px; box-shadow: 0 0 15px rgba(255, 0, 119, 0.15);">
-          <div style="font-family: var(--font-display); font-size: 16px; color: var(--neon-pink); font-weight: 800; display: flex; align-items: center; gap: 8px;">
+        <div
+          style="background: rgba(14, 20, 42, 0.85); border: 1px solid var(--neon-pink); border-radius: 10px; padding: 16px; box-shadow: 0 0 15px rgba(255, 0, 119, 0.15);">
+          <div
+            style="font-family: var(--font-display); font-size: 16px; color: var(--neon-pink); font-weight: 800; display: flex; align-items: center; gap: 8px;">
             <span>🌀👑</span> EVENT HORIZON VORTEX
           </div>
           <div style="font-size: 12px; color: #00f0ff; margin-top: 6px; font-weight: 700;">
             FORMULA: Orbital Drones + Aegis Matrix (Shield Upgrade)
           </div>
           <div style="font-size: 13px; color: rgba(255,255,255,0.8); margin-top: 8px; line-height: 1.4;">
-            4 relativistic dark energy orbs rotating at hyper-speed that suck nearby enemies into a gravitational singularity.
+            4 relativistic dark energy orbs rotating at hyper-speed that suck nearby enemies into a gravitational
+            singularity.
           </div>
         </div>
       </div>
 
-      <div style="margin-top: 20px; text-align: left; background: rgba(8, 12, 26, 0.75); border: 1px solid rgba(0, 240, 255, 0.25); border-radius: 8px; padding: 12px 16px;">
-        <span style="font-family: var(--font-display); font-size: 12px; color: var(--neon-cyan); letter-spacing: 1px; font-weight: 800;">TACTICAL GRAZE & BULLET-TIME:</span>
+      <div
+        style="margin-top: 20px; text-align: left; background: rgba(8, 12, 26, 0.75); border: 1px solid rgba(0, 240, 255, 0.25); border-radius: 8px; padding: 12px 16px;">
+        <span
+          style="font-family: var(--font-display); font-size: 12px; color: var(--neon-cyan); letter-spacing: 1px; font-weight: 800;">TACTICAL
+          GRAZE & BULLET-TIME:</span>
         <span style="font-size: 12px; color: rgba(255,255,255,0.75); margin-left: 6px;">
-          Skim close to enemy bullets to earn <strong>GRAZE XP</strong> and supercharge Overdrive. Dashing through enemy swarms triggers <strong>DODGE MATRIX bullet-time</strong>!
+          Skim close to enemy bullets to earn <strong>GRAZE XP</strong> and supercharge Overdrive. Dashing through enemy
+          swarms triggers <strong>DODGE MATRIX bullet-time</strong>!
         </span>
       </div>
 
@@ -2483,4 +2702,5 @@
   <!-- Main Game Loop Module -->
   <script type="module" src="./src/main.js"></script>
 </body>
+
 </html>

@@ -18,6 +18,8 @@ import { PowerupManager } from './entities/powerup.js';
 import { HazardManager } from './entities/hazard.js';
 import { spatialGrid } from './spatialHash.js';
 import { multiplayerManager } from './network/multiplayerManager.js';
+import { TeamDeathmatchGame } from './teamDeathmatch.js';
+import './teamDeathmatch.css';
 
 class NeonHavocGame {
   constructor() {
@@ -82,6 +84,11 @@ class NeonHavocGame {
 
     // Cache DOM Elements
     this._cacheDom();
+    this.battleground = new TeamDeathmatchGame(this.canvas, {
+      onEnter: () => this._enterBattleground(),
+      onExit: () => this._exitBattleground(),
+      onFullscreen: () => this.toggleFullscreen(),
+    });
     this._bindEvents();
     this._loadSettings();
     this._checkAutoJoin();
@@ -214,6 +221,7 @@ class NeonHavocGame {
       mainMenu: document.getElementById('mainMenu'),
       btnMenuCoop: document.getElementById('btnMenuCoop'),
       btnMenuOnline: document.getElementById('btnMenuOnline'),
+      btnMenuBattleground: document.getElementById('btnMenuBattleground'),
       onlineModal: document.getElementById('onlineModal'),
       onlineRelayBadge: document.getElementById('onlineRelayBadge'),
       lanUrlDisplay: document.getElementById('lanUrlDisplay'),
@@ -291,6 +299,9 @@ class NeonHavocGame {
     }
     if (this.dom.btnMenuOnline) {
       this.dom.btnMenuOnline.onclick = () => this.openOnlineModal();
+    }
+    if (this.dom.btnMenuBattleground) {
+      this.dom.btnMenuBattleground.onclick = () => this.battleground.openLobby();
     }
     if (this.dom.btnOnlineClose) {
       this.dom.btnOnlineClose.onclick = () => {
@@ -597,6 +608,7 @@ class NeonHavocGame {
 
     // Global Keydown & Shortcut Handler
     window.addEventListener('keydown', (e) => {
+      if (this.battleground?.active || this.battleground?.dom.Lobby.classList.contains('active')) return;
       if (e.code === 'KeyF' || e.code === 'F11') {
         e.preventDefault();
         this.toggleFullscreen();
@@ -1251,6 +1263,29 @@ class NeonHavocGame {
     this.state = 'MENU';
   }
 
+  _enterBattleground() {
+    this._hideAllOverlays();
+    this.dom.mainMenu.style.display = 'none';
+    this.dom.inGameHud.style.display = 'none';
+    this.dom.abilityTray.style.display = 'none';
+    if (this.dom.bottomCyberFrame) this.dom.bottomCyberFrame.style.display = 'none';
+    if (this.dom.virtualJoystickContainer) this.dom.virtualJoystickContainer.style.display = 'none';
+    soundEngine.stopMusic();
+    this.state = 'BATTLEGROUND';
+    this.lastTime = performance.now();
+  }
+
+  _exitBattleground() {
+    this._hideAllOverlays();
+    this.dom.mainMenu.style.display = 'flex';
+    this.dom.inGameHud.style.display = 'none';
+    this.dom.abilityTray.style.display = 'none';
+    if (this.dom.bottomCyberFrame) this.dom.bottomCyberFrame.style.display = 'none';
+    if (this.dom.virtualJoystickContainer) this.dom.virtualJoystickContainer.style.display = 'none';
+    this.state = 'MENU';
+    this.lastTime = performance.now();
+  }
+
   triggerLevelUp(resetReroll = true) {
     this.state = 'UPGRADE_MODAL';
     if (resetReroll) this.rerollsRemaining = 1;
@@ -1512,6 +1547,11 @@ class NeonHavocGame {
 
       const dt = Math.max(0.001, Math.min(0.064, rawDt * this.timeDilation));
 
+      if (this.state === 'BATTLEGROUND') {
+        this.battleground.frame(Math.min(0.05, rawDt));
+        return;
+      }
+
       // FPS Meter
       this.frameCount++;
       this.fpsTimer += dt;
@@ -1528,7 +1568,10 @@ class NeonHavocGame {
       if (this.renderer.hitStopTimer > 0) {
         this.renderer.hitStopTimer = Math.max(0, this.renderer.hitStopTimer - dt);
         this.particlePool.update(dt);
-        this.renderer.updateCamera(dt, this.player ? this.player.x : 0, this.player ? this.player.y : 0, !!this.activeBoss, this.player ? this.player.isOverdrive : false);
+        const camTarget = (this.gameMode === 'ONLINE_CLIENT' && this.player2) ? this.player2 : this.player;
+        const camX = camTarget ? camTarget.x : (GAME_CONFIG.ARENA_WIDTH / 2);
+        const camY = camTarget ? camTarget.y : (GAME_CONFIG.ARENA_HEIGHT / 2);
+        this.renderer.updateCamera(dt, camX, camY, !!this.activeBoss, camTarget ? camTarget.isOverdrive : false);
         this.render();
         return;
       }
@@ -1923,15 +1966,29 @@ class NeonHavocGame {
 
     // 11. Check Game Over
     if (this.isCoop) {
-      const p1Dead = this.player.isDowned && this.player.downedTimer <= 0;
-      const p2Dead = this.player2 && this.player2.isDowned && this.player2.downedTimer <= 0;
-      const bothDowned = (this.player.isDowned || this.player.health <= 0) && (this.player2.isDowned || this.player2.health <= 0);
-      if (bothDowned || (p1Dead && p2Dead)) {
-        this.onGameOver();
-        return;
+      const p1Dead = this.player && (this.player.isDowned && this.player.downedTimer <= 0 || (this.player.health <= 0 && !this.player.isDowned));
+      const p2Dead = this.player2 && (this.player2.isDowned && this.player2.downedTimer <= 0 || (this.player2.health <= 0 && !this.player2.isDowned));
+      const p1Downed = this.player && (this.player.isDowned || this.player.health <= 0);
+      const p2Downed = this.player2 && (this.player2.isDowned || this.player2.health <= 0);
+
+      if (this.player && !this.player2) {
+        if (p1Dead) {
+          this.onGameOver();
+          return;
+        }
+      } else if (!this.player && this.player2) {
+        if (p2Dead) {
+          this.onGameOver();
+          return;
+        }
+      } else if (this.player && this.player2) {
+        if ((p1Downed && p2Downed) || (p1Dead && p2Dead)) {
+          this.onGameOver();
+          return;
+        }
       }
     } else {
-      if (player.health <= 0) {
+      if (player && player.health <= 0) {
         this.onGameOver();
         return;
       }
@@ -1943,6 +2000,7 @@ class NeonHavocGame {
 
   _updateHud() {
     const p = (this.gameMode === 'ONLINE_CLIENT' && this.player2) ? this.player2 : this.player;
+    if (!p) return;
     const w = this.waveManager;
 
     const hpPct = Math.max(0, (p.health / p.maxHealth) * 100);
@@ -2109,57 +2167,67 @@ class NeonHavocGame {
   }
 
   render() {
-    this.renderer.beginFrame();
-    const ctx = this.renderer.ctx;
-
-    if (this.state === 'PLAYING' || this.state === 'UPGRADE_MODAL' || this.state === 'PAUSED') {
-      // 1. Draw Hazards (Energy Pylons)
-      this.hazardManager.draw(ctx);
-
-      // 2. Draw Powerup Pickups
-      this.powerupManager.draw(ctx);
-
-      // 3. Draw Crystals
-      this.crystalPool.draw(ctx);
-
-      // 4. Draw Weapon Arcs (Lightning)
-      this.weaponSystem.draw(ctx);
-
-      // 5. Draw Bullets
-      this.bulletPool.draw(ctx);
-
-      // 6. Draw Enemies
-      for (let i = 0; i < this.enemies.length; i++) {
-        this.enemies[i].draw(ctx);
-      }
-
-      // 7. Draw Players & Co-Op Revival Tether
-      if (this.isReviving && this.reviveP1 && this.reviveP2) {
-        this.renderer.drawReviveTether(this.reviveP1, this.reviveP2, this.reviveProg);
-      }
-      if (this.player) {
-        this.player.draw(ctx);
-      }
-      if (this.player2) {
-        this.player2.draw(ctx);
-      }
-
-      // 8. Draw Particles
-      this.particlePool.draw(ctx);
-
-      // 9. Draw Floating Combat Text
-      if (saveManager.data.settings.damageNumbers) {
-        this.floatingTexts.draw(ctx);
-      }
-    }
-
     const localPlayer = (this.gameMode === 'ONLINE_CLIENT' && this.player2) ? this.player2 : this.player;
     const teammate = (this.gameMode === 'ONLINE_CLIENT') ? this.player : this.player2;
-    this.renderer.endFrame(localPlayer);
 
-    // 10. Holographic Tactical Radar (rendered on top screen HUD with off-screen teammate radar)
-    if (this.state === 'PLAYING' || this.state === 'PAUSED') {
-      this.renderer.drawRadar(localPlayer, this.enemies, this.powerupManager, this.activeBoss, teammate);
+    try {
+      this.renderer.beginFrame();
+      const ctx = this.renderer.ctx;
+
+      if (this.state === 'PLAYING' || this.state === 'UPGRADE_MODAL' || this.state === 'PAUSED') {
+        // 1. Draw Hazards (Energy Pylons)
+        try { this.hazardManager.draw(ctx); } catch (e) { /* hazard render guard */ }
+
+        // 2. Draw Powerup Pickups
+        try { this.powerupManager.draw(ctx); } catch (e) { /* powerup render guard */ }
+
+        // 3. Draw Crystals
+        try { this.crystalPool.draw(ctx); } catch (e) { /* crystal render guard */ }
+
+        // 4. Draw Weapon Arcs (Lightning)
+        try { this.weaponSystem.draw(ctx); } catch (e) { /* weapon render guard */ }
+
+        // 5. Draw Bullets
+        try { this.bulletPool.draw(ctx); } catch (e) { /* bullet render guard */ }
+
+        // 6. Draw Enemies
+        for (let i = 0; i < this.enemies.length; i++) {
+          try {
+            this.enemies[i].draw(ctx);
+          } catch (e) { /* enemy render guard */ }
+        }
+
+        // 7. Draw Players & Co-Op Revival Tether
+        try {
+          if (this.isReviving && this.reviveP1 && this.reviveP2) {
+            this.renderer.drawReviveTether(this.reviveP1, this.reviveP2, this.reviveProg);
+          }
+          if (this.player) {
+            this.player.draw(ctx);
+          }
+          if (this.player2) {
+            this.player2.draw(ctx);
+          }
+        } catch (e) { /* player render guard */ }
+
+        // 8. Draw Particles
+        try { this.particlePool.draw(ctx); } catch (e) { /* particle render guard */ }
+
+        // 9. Draw Floating Combat Text
+        if (saveManager.data.settings.damageNumbers) {
+          try { this.floatingTexts.draw(ctx); } catch (e) { /* text render guard */ }
+        }
+      }
+    } finally {
+      // Guaranteed endFrame restore
+      this.renderer.endFrame(localPlayer);
+
+      // 10. Holographic Tactical Radar (rendered on top screen HUD with off-screen teammate radar)
+      if (this.state === 'PLAYING' || this.state === 'PAUSED') {
+        try {
+          this.renderer.drawRadar(localPlayer, this.enemies, this.powerupManager, this.activeBoss, teammate);
+        } catch (e) { /* radar render guard */ }
+      }
     }
   }
 }

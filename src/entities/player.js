@@ -212,12 +212,15 @@ export class Player {
       this.dashTimer = this.dashDuration;
       soundEngine.playDash();
 
-      // Dash burst in movement direction or facing angle
-      const moveLen = Math.hypot(input.moveX, input.moveY);
-      const dashAngle = moveLen > 0.1 ? Math.atan2(input.moveY, input.moveX) : input.aimAngle;
+      // Dash burst in movement direction or facing angle (strictly guarded against NaN)
+      const moveLen = Math.hypot(input.moveX || 0, input.moveY || 0);
+      const rawAim = (input && input.aimAngle !== undefined && !isNaN(input.aimAngle)) ? input.aimAngle : (this.aimAngle || 0);
+      const dashAngle = (moveLen > 0.1 && !isNaN(moveLen)) ? Math.atan2(input.moveY, input.moveX) : rawAim;
       const dashSpeed = 950;
       this.vx = Math.cos(dashAngle) * dashSpeed;
       this.vy = Math.sin(dashAngle) * dashSpeed;
+      if (!isFinite(this.vx) || isNaN(this.vx)) this.vx = 0;
+      if (!isFinite(this.vy) || isNaN(this.vy)) this.vy = 0;
 
       particlePool.spawnShockwave(this.x, this.y, '#00ffff', 90);
     }
@@ -244,23 +247,25 @@ export class Player {
       // Remote network interpolation with dead reckoning (ultra-smooth 60/120fps)
       const snapDist = Math.hypot(this.targetNetX - this.x, this.targetNetY - this.y);
       if (snapDist > 250) {
-        this.x = this.targetNetX;
-        this.y = this.targetNetY;
+        this.x = isFinite(this.targetNetX) ? this.targetNetX : this.x;
+        this.y = isFinite(this.targetNetY) ? this.targetNetY : this.y;
       } else {
         const lerpFactor = Math.min(1.0, dt * 20);
-        this.x += (this.targetNetX - this.x) * lerpFactor;
-        this.y += (this.targetNetY - this.y) * lerpFactor;
+        if (isFinite(this.targetNetX)) this.x += (this.targetNetX - this.x) * lerpFactor;
+        if (isFinite(this.targetNetY)) this.y += (this.targetNetY - this.y) * lerpFactor;
       }
-      this.vx = this.targetNetVx;
-      this.vy = this.targetNetVy;
+      this.vx = isFinite(this.targetNetVx) ? this.targetNetVx : 0;
+      this.vy = isFinite(this.targetNetVy) ? this.targetNetVy : 0;
     } else {
       // Normal local movement
-      const speed = this.baseSpeed * this.stats.moveSpeedMult * (this.isOverdrive ? 1.45 : 1.0) * (this.invulnPowerupTimer > 0 ? 1.75 : 1.0);
-      const targetVx = input.moveX * speed;
-      const targetVy = input.moveY * speed;
+      const speed = this.baseSpeed * (this.stats.moveSpeedMult || 1.0) * (this.isOverdrive ? 1.45 : 1.0) * (this.invulnPowerupTimer > 0 ? 1.75 : 1.0);
+      const targetVx = (input.moveX || 0) * speed;
+      const targetVy = (input.moveY || 0) * speed;
 
       this.vx += (targetVx - this.vx) * 0.22;
       this.vy += (targetVy - this.vy) * 0.22;
+      if (!isFinite(this.vx) || isNaN(this.vx)) this.vx = 0;
+      if (!isFinite(this.vy) || isNaN(this.vy)) this.vy = 0;
     }
 
     // Apply movement (Local players only; remote position is directly interpolated above)
@@ -268,6 +273,10 @@ export class Player {
       this.x += this.vx * dt;
       this.y += this.vy * dt;
     }
+
+    // Guard against non-finite corruption
+    if (!isFinite(this.x) || isNaN(this.x)) this.x = GAME_CONFIG.ARENA_WIDTH / 2;
+    if (!isFinite(this.y) || isNaN(this.y)) this.y = GAME_CONFIG.ARENA_HEIGHT / 2;
 
     // Arena boundary clamp
     const pad = this.radius + 20;
@@ -516,17 +525,19 @@ export class Player {
       const tipX = this.x + Math.cos(ta) * (currentRadius + thrusterLen);
       const tipY = this.y + Math.sin(ta) * (currentRadius + thrusterLen);
 
-      const jetGrad = ctx.createLinearGradient(tx, ty, tipX, tipY);
-      jetGrad.addColorStop(0, '#ffffff');
-      jetGrad.addColorStop(0.3, auraColor);
-      jetGrad.addColorStop(1, 'rgba(0, 240, 255, 0)');
+      if (isFinite(tx) && isFinite(ty) && isFinite(tipX) && isFinite(tipY) && (tx !== tipX || ty !== tipY)) {
+        const jetGrad = ctx.createLinearGradient(tx, ty, tipX, tipY);
+        jetGrad.addColorStop(0, '#ffffff');
+        jetGrad.addColorStop(0.3, auraColor);
+        jetGrad.addColorStop(1, 'rgba(0, 240, 255, 0)');
 
-      ctx.strokeStyle = jetGrad;
-      ctx.lineWidth = 3.2;
-      ctx.beginPath();
-      ctx.moveTo(tx, ty);
-      ctx.lineTo(tipX, tipY);
-      ctx.stroke();
+        ctx.strokeStyle = jetGrad;
+        ctx.lineWidth = 3.2;
+        ctx.beginPath();
+        ctx.moveTo(tx, ty);
+        ctx.lineTo(tipX, tipY);
+        ctx.stroke();
+      }
     }
 
     // C. Concentric Cyber Flange Arcs (Matching Reference Art from user screenshot)
@@ -610,7 +621,11 @@ export class Player {
     ctx.strokeStyle = tagCol;
     ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.roundRect(this.x - tagW / 2, badgeY - 7, tagW, 14, 4);
+    if (ctx.roundRect) {
+      ctx.roundRect(this.x - tagW / 2, badgeY - 7, tagW, 14, 4);
+    } else {
+      ctx.rect(this.x - tagW / 2, badgeY - 7, tagW, 14);
+    }
     ctx.fill();
     ctx.stroke();
 
@@ -690,7 +705,11 @@ export class Player {
     ctx.strokeStyle = '#ff0055';
     ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.roundRect(this.x - tw / 2, this.y - 28, tw, 16, 4);
+    if (ctx.roundRect) {
+      ctx.roundRect(this.x - tw / 2, this.y - 28, tw, 16, 4);
+    } else {
+      ctx.rect(this.x - tw / 2, this.y - 28, tw, 16);
+    }
     ctx.fill();
     ctx.stroke();
 

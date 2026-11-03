@@ -43,6 +43,7 @@ class SpringGrid {
   }
 
   applyExplosion(x, y, force = 45, radius = 220) {
+    if (!isFinite(x) || !isFinite(y) || isNaN(x) || isNaN(y)) return;
     const minC = Math.max(0, Math.floor((x - radius) / this.spacing));
     const maxC = Math.min(this.cols - 1, Math.ceil((x + radius) / this.spacing));
     const minR = Math.max(0, Math.floor((y - radius) / this.spacing));
@@ -247,27 +248,45 @@ export class Renderer {
       baseZoom = 0.88;
     }
 
-    if (player2Distance > 400) {
+    if (player2Distance > 400 && isFinite(player2Distance)) {
       // Dynamic Co-op Zoom: smoothly expand viewport when players split up
       const coopZoomFactor = Math.max(0.72, 1.0 - (player2Distance - 400) / 1800);
       baseZoom = Math.min(baseZoom, coopZoomFactor);
     }
 
-    this.camera.targetZoom = baseZoom;
+    this.camera.targetZoom = (isFinite(baseZoom) && baseZoom > 0.2) ? baseZoom : 1.0;
     this.camera.zoom += (this.camera.targetZoom - this.camera.zoom) * 0.12;
+    if (!isFinite(this.camera.zoom) || this.camera.zoom <= 0.2) {
+      this.camera.zoom = 1.0;
+    }
 
-    // Smoothly lerp camera center to target world position
+    // Smoothly lerp camera center to target world position (strictly guarded against NaN)
+    const validTargetX = (isFinite(targetX) && !isNaN(targetX)) ? targetX : (isFinite(this.camera.x) ? this.camera.x : GAME_CONFIG.ARENA_WIDTH / 2);
+    const validTargetY = (isFinite(targetY) && !isNaN(targetY)) ? targetY : (isFinite(this.camera.y) ? this.camera.y : GAME_CONFIG.ARENA_HEIGHT / 2);
+
     const lerpSpeed = 0.16;
-    this.camera.x += (targetX - this.camera.x) * lerpSpeed;
-    this.camera.y += (targetY - this.camera.y) * lerpSpeed;
+    this.camera.x += (validTargetX - this.camera.x) * lerpSpeed;
+    this.camera.y += (validTargetY - this.camera.y) * lerpSpeed;
+
+    if (!isFinite(this.camera.x) || isNaN(this.camera.x)) this.camera.x = GAME_CONFIG.ARENA_WIDTH / 2;
+    if (!isFinite(this.camera.y) || isNaN(this.camera.y)) this.camera.y = GAME_CONFIG.ARENA_HEIGHT / 2;
 
     // Visible half-extent in world units
-    const halfViewW = (this.width / 2) / this.camera.zoom;
-    const halfViewH = (this.height / 2) / this.camera.zoom;
+    const safeZoom = Math.max(0.4, Math.min(2.0, this.camera.zoom));
+    const halfViewW = (this.width / 2) / safeZoom;
+    const halfViewH = (this.height / 2) / safeZoom;
 
     // Clamp camera center so visible view never extends beyond arena boundaries
-    this.camera.x = Math.max(halfViewW, Math.min(GAME_CONFIG.ARENA_WIDTH - halfViewW, this.camera.x));
-    this.camera.y = Math.max(halfViewH, Math.min(GAME_CONFIG.ARENA_HEIGHT - halfViewH, this.camera.y));
+    if (halfViewW < GAME_CONFIG.ARENA_WIDTH / 2) {
+      this.camera.x = Math.max(halfViewW, Math.min(GAME_CONFIG.ARENA_WIDTH - halfViewW, this.camera.x));
+    } else {
+      this.camera.x = GAME_CONFIG.ARENA_WIDTH / 2;
+    }
+    if (halfViewH < GAME_CONFIG.ARENA_HEIGHT / 2) {
+      this.camera.y = Math.max(halfViewH, Math.min(GAME_CONFIG.ARENA_HEIGHT - halfViewH, this.camera.y));
+    } else {
+      this.camera.y = GAME_CONFIG.ARENA_HEIGHT / 2;
+    }
 
     // Trauma decay
     if (this.camera.trauma > 0) {
@@ -311,7 +330,11 @@ export class Renderer {
   }
 
   beginFrame() {
+    if (this.width <= 0 || this.height <= 0) return;
     const ctx = this.ctx;
+
+    // Guaranteed transform reset: prevents any matrix scaling or translation leakage between frames
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, this.width, this.height);
 
     // Deep space background fill
@@ -320,21 +343,31 @@ export class Renderer {
 
     ctx.save();
 
-    // Camera transform with Trauma Shake & Rotation
-    const shake = this.camera.trauma * this.camera.trauma;
-    const shakeX = (Math.random() - 0.5) * shake * this.camera.maxShakeOffset;
-    const shakeY = (Math.random() - 0.5) * shake * this.camera.maxShakeOffset;
-    const shakeAngle = (Math.random() - 0.5) * shake * this.camera.maxShakeAngle;
+    // Guard camera properties strictly against NaN/corrupt non-finite values
+    if (!isFinite(this.camera.x) || isNaN(this.camera.x)) this.camera.x = GAME_CONFIG.ARENA_WIDTH / 2;
+    if (!isFinite(this.camera.y) || isNaN(this.camera.y)) this.camera.y = GAME_CONFIG.ARENA_HEIGHT / 2;
+    if (!isFinite(this.camera.zoom) || this.camera.zoom <= 0.2 || isNaN(this.camera.zoom)) this.camera.zoom = 1.0;
 
-    ctx.translate(this.width / 2 + shakeX, this.height / 2 + shakeY);
-    if (shakeAngle !== 0) {
+    // Camera transform with Trauma Shake & Rotation
+    const shake = isFinite(this.camera.trauma) ? (this.camera.trauma * this.camera.trauma) : 0;
+    const maxOffset = isFinite(this.camera.maxShakeOffset) ? this.camera.maxShakeOffset : 18;
+    const maxAngle = isFinite(this.camera.maxShakeAngle) ? this.camera.maxShakeAngle : 0.05;
+    const shakeX = (Math.random() - 0.5) * shake * maxOffset;
+    const shakeY = (Math.random() - 0.5) * shake * maxOffset;
+    const shakeAngle = (Math.random() - 0.5) * shake * maxAngle;
+
+    const tx = this.width / 2 + (isFinite(shakeX) ? shakeX : 0);
+    const ty = this.height / 2 + (isFinite(shakeY) ? shakeY : 0);
+    ctx.translate(tx, ty);
+    if (shakeAngle !== 0 && isFinite(shakeAngle)) {
       ctx.rotate(shakeAngle);
     }
-    ctx.scale(this.camera.zoom, this.camera.zoom);
+    const safeZoom = Math.max(0.4, Math.min(2.0, this.camera.zoom));
+    ctx.scale(safeZoom, safeZoom);
     ctx.translate(-this.camera.x, -this.camera.y);
 
-    const halfViewW = (this.width / 2) / this.camera.zoom;
-    const halfViewH = (this.height / 2) / this.camera.zoom;
+    const halfViewW = (this.width / 2) / safeZoom;
+    const halfViewH = (this.height / 2) / safeZoom;
 
     // 1. Volumetric Deep Indigo Center Illumination (Matching Reference Image)
     const spaceGrad = ctx.createRadialGradient(
@@ -477,7 +510,11 @@ export class Renderer {
   }
 
   endFrame(player = null) {
-    this.ctx.restore();
+    try {
+      this.ctx.restore();
+    } catch (e) {
+      this.ctx.setTransform(1, 0, 0, 1, 0, 0);
+    }
     this._drawVignette(this.ctx, player);
     if (this.glitchTimer > 0) {
       this._drawGlitch(this.ctx);
@@ -557,44 +594,47 @@ export class Renderer {
   }
 
   _drawVignette(ctx, player = null) {
+    if (this.width <= 0 || this.height <= 0) return;
     ctx.save();
-    const grad = ctx.createRadialGradient(
-      this.width / 2,
-      this.height / 2,
-      this.width * 0.35,
-      this.width / 2,
-      this.height / 2,
-      this.width * 0.78
-    );
-    grad.addColorStop(0, 'rgba(0,0,0,0)');
-    grad.addColorStop(1, 'rgba(3, 5, 12, 0.75)');
-
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, this.width, this.height);
-
-    // 30X Low Health Danger Vignette Pulse
-    if (player && player.health / player.maxHealth < 0.35) {
-      const pulse = 0.22 + Math.sin(this.gridPulse * 2.5) * 0.12;
-      const redGrad = ctx.createRadialGradient(
+    try {
+      const grad = ctx.createRadialGradient(
         this.width / 2,
         this.height / 2,
-        this.width * 0.25,
+        this.width * 0.35,
         this.width / 2,
         this.height / 2,
-        this.width * 0.75
+        this.width * 0.78
       );
-      redGrad.addColorStop(0, 'rgba(255, 0, 50, 0)');
-      redGrad.addColorStop(1, `rgba(255, 0, 50, ${pulse})`);
-      ctx.fillStyle = redGrad;
-      ctx.fillRect(0, 0, this.width, this.height);
-    }
+      grad.addColorStop(0, 'rgba(0,0,0,0)');
+      grad.addColorStop(1, 'rgba(3, 5, 12, 0.75)');
 
-    ctx.restore();
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, this.width, this.height);
+
+      // 30X Low Health Danger Vignette Pulse
+      if (player && player.maxHealth > 0 && (player.health / player.maxHealth < 0.35)) {
+        const pulse = 0.22 + Math.sin(this.gridPulse * 2.5) * 0.12;
+        const redGrad = ctx.createRadialGradient(
+          this.width / 2,
+          this.height / 2,
+          this.width * 0.25,
+          this.width / 2,
+          this.height / 2,
+          this.width * 0.75
+        );
+        redGrad.addColorStop(0, 'rgba(255, 0, 50, 0)');
+        redGrad.addColorStop(1, `rgba(255, 0, 50, ${pulse})`);
+        ctx.fillStyle = redGrad;
+        ctx.fillRect(0, 0, this.width, this.height);
+      }
+    } finally {
+      ctx.restore();
+    }
   }
 
   // ---- HOLOGRAPHIC TACTICAL RADAR (MINIMAP) ----
   drawRadar(player, enemies, powerupPool, activeBoss, teammate = null) {
-    if (!player) return;
+    if (!player || !isFinite(player.x) || !isFinite(player.y) || this.width <= 0 || this.height <= 0) return;
 
     const ctx = this.ctx;
     // Responsive sizing for mobile vs desktop

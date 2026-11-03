@@ -44,22 +44,26 @@ export class FloatingText {
   }
 
   draw(ctx) {
-    if (!this.active) return;
-    const alpha = Math.max(0, this.life / this.maxLife);
+    if (!this.active || !isFinite(this.x) || !isFinite(this.y)) return;
+    const alpha = Math.max(0, Math.min(1, this.life / this.maxLife));
+    if (!isFinite(alpha)) return;
 
     ctx.save();
-    ctx.globalAlpha = alpha;
-    ctx.font = `bold ${this.size}px 'Rajdhani', sans-serif`;
-    ctx.textAlign = 'center';
+    try {
+      ctx.globalAlpha = alpha;
+      ctx.font = `bold ${this.size}px 'Rajdhani', sans-serif`;
+      ctx.textAlign = 'center';
 
-    // High performance dark neon outline
-    ctx.lineWidth = this.isCrit ? 3.5 : 2.5;
-    ctx.strokeStyle = 'rgba(0, 0, 0, 0.85)';
-    ctx.strokeText(this.text, this.x, this.y);
+      // High performance dark neon outline
+      ctx.lineWidth = this.isCrit ? 3.5 : 2.5;
+      ctx.strokeStyle = 'rgba(0, 0, 0, 0.85)';
+      ctx.strokeText(this.text, this.x, this.y);
 
-    ctx.fillStyle = this.color;
-    ctx.fillText(this.text, this.x, this.y);
-    ctx.restore();
+      ctx.fillStyle = this.color;
+      ctx.fillText(this.text, this.x, this.y);
+    } finally {
+      ctx.restore();
+    }
   }
 }
 

@@ -84,19 +84,33 @@ export class Enemy {
     // Resolve target player (in co-op, target closest non-downed player)
     let targetPlayer = player;
     if (Array.isArray(player)) {
-      const alivePlayers = player.filter(p => !p.isDowned);
-      const candidates = alivePlayers.length > 0 ? alivePlayers : player;
-      let closest = candidates[0];
-      let minD = Math.hypot(this.x - closest.x, this.y - closest.y);
-      for (let i = 1; i < candidates.length; i++) {
-        const d = Math.hypot(this.x - candidates[i].x, this.y - candidates[i].y);
-        if (d < minD) {
-          minD = d;
-          closest = candidates[i];
+      const alivePlayers = player.filter(p => p && !p.isDowned);
+      const candidates = alivePlayers.length > 0 ? alivePlayers : player.filter(p => !!p);
+      if (candidates.length > 0) {
+        let closest = candidates[0];
+        let minD = Math.hypot(this.x - closest.x, this.y - closest.y);
+        for (let i = 1; i < candidates.length; i++) {
+          const d = Math.hypot(this.x - candidates[i].x, this.y - candidates[i].y);
+          if (d < minD) {
+            minD = d;
+            closest = candidates[i];
+          }
         }
+        targetPlayer = closest;
+      } else {
+        targetPlayer = null;
       }
-      targetPlayer = closest;
     }
+
+    if (!targetPlayer) {
+      targetPlayer = { x: GAME_CONFIG.ARENA_WIDTH / 2, y: GAME_CONFIG.ARENA_HEIGHT / 2, chronoFreezeTimer: 0 };
+    }
+
+    // Guard enemy position and velocity against corruption
+    if (!isFinite(this.x) || isNaN(this.x)) this.x = GAME_CONFIG.ARENA_WIDTH / 2;
+    if (!isFinite(this.y) || isNaN(this.y)) this.y = GAME_CONFIG.ARENA_HEIGHT / 2;
+    if (!isFinite(this.vx) || isNaN(this.vx)) this.vx = 0;
+    if (!isFinite(this.vy) || isNaN(this.vy)) this.vy = 0;
 
     // Chrono Freeze active? Immobilize!
     if (targetPlayer.chronoFreezeTimer > 0) {
@@ -510,21 +524,21 @@ export class Enemy {
   }
 
   draw(ctx) {
-    if (!this.active || this.isDead) return;
+    if (!this.active || this.isDead || !isFinite(this.x) || !isFinite(this.y)) return;
 
     ctx.save();
-
-    // 1. Sniper telegraph laser line
-    if (this.isAiming) {
-      ctx.strokeStyle = 'rgba(0, 200, 255, 0.45)';
-      ctx.lineWidth = 1.5;
-      ctx.setLineDash([6, 4]);
-      ctx.beginPath();
-      ctx.moveTo(this.x, this.y);
-      ctx.lineTo(this.aimTarget.x, this.aimTarget.y);
-      ctx.stroke();
-      ctx.setLineDash([]);
-    }
+    try {
+      // 1. Sniper telegraph laser line
+      if (this.isAiming && this.aimTarget && isFinite(this.aimTarget.x) && isFinite(this.aimTarget.y)) {
+        ctx.strokeStyle = 'rgba(0, 200, 255, 0.45)';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([6, 4]);
+        ctx.beginPath();
+        ctx.moveTo(this.x, this.y);
+        ctx.lineTo(this.aimTarget.x, this.aimTarget.y);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
 
     // 2. Boss Laser Telegraph Beam
     if (this.isBoss) {
@@ -638,35 +652,39 @@ export class Enemy {
       // Outer blazing flame plume trailing behind
       const gradEndX = this.x + Math.cos(tailAngle) * tailLen;
       const gradEndY = this.y + Math.sin(tailAngle) * tailLen;
-      const flameGrad = ctx.createLinearGradient(this.x, this.y, gradEndX, gradEndY);
-      flameGrad.addColorStop(0, '#ff00aa');
-      flameGrad.addColorStop(0.35, '#ff2255');
-      flameGrad.addColorStop(0.7, '#ff8800');
-      flameGrad.addColorStop(1, 'rgba(255, 200, 0, 0)');
+      if (isFinite(this.x) && isFinite(this.y) && isFinite(gradEndX) && isFinite(gradEndY) && (this.x !== gradEndX || this.y !== gradEndY)) {
+        const flameGrad = ctx.createLinearGradient(this.x, this.y, gradEndX, gradEndY);
+        flameGrad.addColorStop(0, '#ff00aa');
+        flameGrad.addColorStop(0.35, '#ff2255');
+        flameGrad.addColorStop(0.7, '#ff8800');
+        flameGrad.addColorStop(1, 'rgba(255, 200, 0, 0)');
 
-      ctx.fillStyle = flameGrad;
-      ctx.beginPath();
-      ctx.moveTo(this.x + Math.cos(moveAngle + Math.PI / 2) * tailWidth, this.y + Math.sin(moveAngle + Math.PI / 2) * tailWidth);
-      ctx.lineTo(gradEndX, gradEndY);
-      ctx.lineTo(this.x + Math.cos(moveAngle - Math.PI / 2) * tailWidth, this.y + Math.sin(moveAngle - Math.PI / 2) * tailWidth);
-      ctx.closePath();
-      ctx.fill();
+        ctx.fillStyle = flameGrad;
+        ctx.beginPath();
+        ctx.moveTo(this.x + Math.cos(moveAngle + Math.PI / 2) * tailWidth, this.y + Math.sin(moveAngle + Math.PI / 2) * tailWidth);
+        ctx.lineTo(gradEndX, gradEndY);
+        ctx.lineTo(this.x + Math.cos(moveAngle - Math.PI / 2) * tailWidth, this.y + Math.sin(moveAngle - Math.PI / 2) * tailWidth);
+        ctx.closePath();
+        ctx.fill();
+      }
 
       // Inner hot-orange flame core stream
       const innerTailLen = tailLen * 0.65;
       const inEndX = this.x + Math.cos(tailAngle) * innerTailLen;
       const inEndY = this.y + Math.sin(tailAngle) * innerTailLen;
-      const innerFlameGrad = ctx.createLinearGradient(this.x, this.y, inEndX, inEndY);
-      innerFlameGrad.addColorStop(0, '#ffe600');
-      innerFlameGrad.addColorStop(0.5, '#ff6600');
-      innerFlameGrad.addColorStop(1, 'rgba(255, 50, 0, 0)');
-      ctx.fillStyle = innerFlameGrad;
-      ctx.beginPath();
-      ctx.moveTo(this.x + Math.cos(moveAngle + Math.PI / 2) * (tailWidth * 0.5), this.y + Math.sin(moveAngle + Math.PI / 2) * (tailWidth * 0.5));
-      ctx.lineTo(inEndX, inEndY);
-      ctx.lineTo(this.x + Math.cos(moveAngle - Math.PI / 2) * (tailWidth * 0.5), this.y + Math.sin(moveAngle - Math.PI / 2) * (tailWidth * 0.5));
-      ctx.closePath();
-      ctx.fill();
+      if (isFinite(this.x) && isFinite(this.y) && isFinite(inEndX) && isFinite(inEndY) && (this.x !== inEndX || this.y !== inEndY)) {
+        const innerFlameGrad = ctx.createLinearGradient(this.x, this.y, inEndX, inEndY);
+        innerFlameGrad.addColorStop(0, '#ffe600');
+        innerFlameGrad.addColorStop(0.5, '#ff6600');
+        innerFlameGrad.addColorStop(1, 'rgba(255, 50, 0, 0)');
+        ctx.fillStyle = innerFlameGrad;
+        ctx.beginPath();
+        ctx.moveTo(this.x + Math.cos(moveAngle + Math.PI / 2) * (tailWidth * 0.5), this.y + Math.sin(moveAngle + Math.PI / 2) * (tailWidth * 0.5));
+        ctx.lineTo(inEndX, inEndY);
+        ctx.lineTo(this.x + Math.cos(moveAngle - Math.PI / 2) * (tailWidth * 0.5), this.y + Math.sin(moveAngle - Math.PI / 2) * (tailWidth * 0.5));
+        ctx.closePath();
+        ctx.fill();
+      }
 
       // Spherical glossy magenta body
       ctx.fillStyle = this.flashTimer > 0 ? '#ffffff' : '#ff0066';
@@ -772,7 +790,8 @@ export class Enemy {
       ctx.lineWidth = 1;
       ctx.strokeRect(barX, barY, barW, barH);
     }
-
-    ctx.restore();
+    } finally {
+      ctx.restore();
+    }
   }
 }

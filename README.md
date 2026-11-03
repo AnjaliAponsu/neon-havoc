@@ -56,6 +56,26 @@ Open your browser to:
 
 *(Or run `npm.cmd run dev` inside `d:\Games\MyGames`)*.
 
+### Team Deathmatch Multiplayer
+
+1. Run `npm.cmd run dev` and open the local game URL.
+2. Select **Multiplayer Battleground** from the main menu.
+3. Enter your callsign and choose a weapon. **Find Public Match** joins an available public arena. **Create Private Room** creates an invite-only room with a five-character code.
+4. Friends open the same game address and join by code or invite link. The lobby shows actual players and empty slots. There are no automatically inserted bots.
+5. Select teams and **Ready Up**. With at least one connected player on each team, all-ready starts a ten-second countdown. A lobby with opponents also starts after its sixty-second waiting period. Rooms hold up to four people per team, and late joins fill available slots.
+
+The match server runs at 30 Hz and owns movement, projectiles, damage, abilities, pickups, eliminations, respawns, team scores, and overtime. Hold `Tab` for the scoreboard and press `Enter` for chat.
+
+Deathmatch controls: WASD/arrows to move; mouse to aim; hold left click to fire; Q/Shift to dash; E for Aegis; R for Wave; F/Space for Meteor; X to reload. Escape opens the match menu while the online game continues. Touch players drag the right control to aim and fire. Team chat reaches only teammates.
+
+For friends on the same Wi-Fi, share this computer's LAN address (for example, `http://192.168.1.20:5173`), not `localhost`. All clients must reach the same running server.
+
+For a production server, run `npm.cmd run build` followed by `npm.cmd run server`. Port 3001 serves both the built game and the WebSocket endpoint at `/ws`; `PORT` can override it. Internet play requires this server to be publicly reachable behind HTTPS with WebSocket upgrades forwarded to `/ws`. GitHub Pages alone hosts static files and cannot run the match server. For separate hosting, use the lobby's **Server address** setting or build with `VITE_MULTIPLAYER_URL=wss://your-server.example/ws`.
+
+Connections have a 45-second reservation and retry automatically after disruption. Rematch returns the same players to their room's ready lobby. Host controls are reassigned when the host disconnects.
+
+Validation: `node --test server/teamDeathmatchServer.test.js` covers eight separate WebSocket clients, shared public matchmaking, capacity, ready/countdown, server-owned combat, team chat, reconnect, respawn, friendly fire, spawn protection, shield absorption, overtime and swept movement through cover.
+
 ---
 
 ## 🎮 Controls

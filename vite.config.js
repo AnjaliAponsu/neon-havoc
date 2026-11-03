@@ -8,12 +8,18 @@ export default defineConfig({
       name: 'neon-havoc-multiplayer-relay',
       configureServer(server) {
         setupMultiplayerServer(server.httpServer);
+      },
+      configurePreviewServer(server) {
+        setupMultiplayerServer(server.httpServer);
       }
     }
   ],
   server: {
     host: true,
-    port: 5173
+    port: 5173,
+    watch: {
+      ignored: ['**/scratch/**', '**/*.tmp', '**/node_modules/**']
+    }
   }
 });
 

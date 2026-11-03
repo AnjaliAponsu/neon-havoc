@@ -59,66 +59,71 @@ export class Particle {
   }
 
   draw(ctx) {
-    if (!this.active) return;
-    const alpha = Math.max(0, this.life / this.maxLife);
+    if (!this.active || !isFinite(this.x) || !isFinite(this.y) || !isFinite(this.size) || this.size <= 0) return;
+    const alpha = Math.max(0, Math.min(1, this.life / this.maxLife));
+    if (!isFinite(alpha)) return;
 
     ctx.save();
-    ctx.globalAlpha = alpha;
+    try {
+      ctx.globalAlpha = alpha;
 
-    if (this.type === 'ring') {
-      ctx.strokeStyle = this.color;
-      ctx.lineWidth = Math.max(1, 2.8 * alpha);
-      ctx.beginPath();
-      ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-      ctx.stroke();
-    } else if (this.type === 'line_spark') {
-      ctx.strokeStyle = this.color;
-      ctx.lineWidth = Math.max(1, 2.2 * alpha);
-      ctx.beginPath();
-      ctx.moveTo(this.x, this.y);
-      ctx.lineTo(this.x - this.vx * 0.045, this.y - this.vy * 0.045);
-      ctx.stroke();
-    } else if (this.type === 'smoke_puff') {
-      ctx.fillStyle = this.color;
-      ctx.beginPath();
-      ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-      ctx.fill();
-    } else if (this.type === 'starburst') {
-      // 8-Pointed Explosive Hit Starburst (Matching reference image impact flash)
-      ctx.translate(this.x, this.y);
-      ctx.rotate(this.rotation);
+      if (this.type === 'ring') {
+        ctx.strokeStyle = this.color;
+        ctx.lineWidth = Math.max(1, 2.8 * alpha);
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.stroke();
+      } else if (this.type === 'line_spark') {
+        ctx.strokeStyle = this.color;
+        ctx.lineWidth = Math.max(1, 2.2 * alpha);
+        ctx.beginPath();
+        ctx.moveTo(this.x, this.y);
+        const lx = this.x - (isFinite(this.vx) ? this.vx * 0.045 : 0);
+        const ly = this.y - (isFinite(this.vy) ? this.vy * 0.045 : 0);
+        ctx.lineTo(lx, ly);
+        ctx.stroke();
+      } else if (this.type === 'smoke_puff') {
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (this.type === 'starburst') {
+        // 8-Pointed Explosive Hit Starburst (Matching reference image impact flash)
+        ctx.translate(this.x, this.y);
+        ctx.rotate(isFinite(this.rotation) ? this.rotation : 0);
 
-      const rOuter = this.size * 1.6;
-      const rInner = this.size * 0.45;
-      const points = 8;
+        const rOuter = this.size * 1.6;
+        const rInner = this.size * 0.45;
+        const points = 8;
 
-      // Radiant outer burst
-      ctx.fillStyle = this.color || '#ffcc00';
-      ctx.beginPath();
-      for (let i = 0; i < points * 2; i++) {
-        const r = i % 2 === 0 ? rOuter : rInner;
-        const angle = (i * Math.PI) / points;
-        const px = Math.cos(angle) * r;
-        const py = Math.sin(angle) * r;
-        if (i === 0) ctx.moveTo(px, py);
-        else ctx.lineTo(px, py);
+        // Radiant outer burst
+        ctx.fillStyle = this.color || '#ffcc00';
+        ctx.beginPath();
+        for (let i = 0; i < points * 2; i++) {
+          const r = i % 2 === 0 ? rOuter : rInner;
+          const angle = (i * Math.PI) / points;
+          const px = Math.cos(angle) * r;
+          const py = Math.sin(angle) * r;
+          if (i === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
+        }
+        ctx.closePath();
+        ctx.fill();
+
+        // Bright white-hot center core
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(0, 0, rInner * 0.75, 0, Math.PI * 2);
+        ctx.fill();
+      } else {
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, Math.max(0.5, this.size * alpha), 0, Math.PI * 2);
+        ctx.fill();
       }
-      ctx.closePath();
-      ctx.fill();
-
-      // Bright white-hot center core
-      ctx.fillStyle = '#ffffff';
-      ctx.beginPath();
-      ctx.arc(0, 0, rInner * 0.75, 0, Math.PI * 2);
-      ctx.fill();
-    } else {
-      ctx.fillStyle = this.color;
-      ctx.beginPath();
-      ctx.arc(this.x, this.y, Math.max(0.5, this.size * alpha), 0, Math.PI * 2);
-      ctx.fill();
+    } finally {
+      ctx.restore();
     }
-
-    ctx.restore();
   }
 }
 

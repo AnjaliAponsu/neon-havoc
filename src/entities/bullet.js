@@ -71,53 +71,57 @@ export class Bullet {
   }
 
   draw(ctx) {
-    if (!this.active) return;
+    if (!this.active || !isFinite(this.x) || !isFinite(this.y)) return;
 
     // Fast glow halo via cached sprite
     glowCache.drawGlow(ctx, this.x, this.y, this.radius * (this.isCrit ? 1.6 : 1.2), this.color, 0.7);
 
     ctx.save();
-    ctx.fillStyle = this.color;
+    try {
+      ctx.fillStyle = this.color;
 
-    const angle = Math.atan2(this.vy, this.vx);
-    ctx.translate(this.x, this.y);
-    ctx.rotate(angle);
+      const angle = (isFinite(this.vx) && isFinite(this.vy)) ? Math.atan2(this.vy, this.vx) : 0;
+      ctx.translate(this.x, this.y);
+      ctx.rotate(angle);
 
-    if (this.isEnemy) {
-      // Enemy projectile: Pulsing spherical energy orb
-      ctx.beginPath();
-      ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
-      ctx.fill();
+      if (this.isEnemy) {
+        // Enemy projectile: Pulsing spherical energy orb
+        ctx.beginPath();
+        ctx.arc(0, 0, Math.max(1, this.radius), 0, Math.PI * 2);
+        ctx.fill();
 
-      // Corrupted center
-      ctx.fillStyle = '#ffffff';
-      ctx.beginPath();
-      ctx.arc(0, 0, this.radius * 0.45, 0, Math.PI * 2);
-      ctx.fill();
-    } else {
-      // Player projectile: Sleek glowing rounded plasma energy bolt
-      const length = this.radius * 2.2;
-      const r = this.radius;
+        // Corrupted center
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(0, 0, Math.max(0.5, this.radius * 0.45), 0, Math.PI * 2);
+        ctx.fill();
+      } else {
+        // Player projectile: Sleek glowing rounded plasma energy bolt
+        const length = Math.max(1, (this.radius || 4) * 2.2);
+        const r = Math.max(1, this.radius || 4);
 
-      // Soft trailing plasma bloom
-      const tailGrad = ctx.createLinearGradient(-length * 1.2, 0, r, 0);
-      tailGrad.addColorStop(0, 'rgba(0, 240, 255, 0)');
-      tailGrad.addColorStop(0.6, this.color);
-      tailGrad.addColorStop(1, '#ffffff');
+        if (isFinite(length) && isFinite(r)) {
+          // Soft trailing plasma bloom
+          const tailGrad = ctx.createLinearGradient(-length * 1.2, 0, r, 0);
+          tailGrad.addColorStop(0, 'rgba(0, 240, 255, 0)');
+          tailGrad.addColorStop(0.6, this.color);
+          tailGrad.addColorStop(1, '#ffffff');
 
-      ctx.fillStyle = tailGrad;
-      ctx.beginPath();
-      ctx.ellipse(0, 0, length, r, 0, 0, Math.PI * 2);
-      ctx.fill();
+          ctx.fillStyle = tailGrad;
+          ctx.beginPath();
+          ctx.ellipse(0, 0, length, r, 0, 0, Math.PI * 2);
+          ctx.fill();
 
-      // Brilliant white-hot circular core
-      ctx.fillStyle = '#ffffff';
-      ctx.beginPath();
-      ctx.arc(r * 0.3, 0, r * 0.6, 0, Math.PI * 2);
-      ctx.fill();
+          // Brilliant white-hot circular core
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath();
+          ctx.arc(r * 0.3, 0, r * 0.6, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+    } finally {
+      ctx.restore();
     }
-
-    ctx.restore();
   }
 }
 

@@ -77,53 +77,54 @@ export class Crystal {
   }
 
   draw(ctx) {
-    if (!this.active) return;
+    if (!this.active || !isFinite(this.x) || !isFinite(this.y)) return;
 
     const pulse = 1 + Math.sin(this.pulseTimer) * 0.12;
-    const r = this.radius * pulse;
+    const r = Math.max(1, (this.radius || 5) * pulse);
 
     // Fast glow via cached sprite (warm golden aura)
     glowCache.drawGlow(ctx, this.x, this.y, r * 1.6, '#ffe600', 0.65);
 
     ctx.save();
+    try {
+      // 1. Faceted Golden Diamond Geometry (Matching Reference Image)
+      // Left highlight facet
+      ctx.fillStyle = '#fff176';
+      ctx.beginPath();
+      ctx.moveTo(this.x, this.y - r * 1.35);
+      ctx.lineTo(this.x - r, this.y);
+      ctx.lineTo(this.x, this.y + r * 1.35);
+      ctx.closePath();
+      ctx.fill();
 
-    // 1. Faceted Golden Diamond Geometry (Matching Reference Image)
-    // Left highlight facet
-    ctx.fillStyle = '#fff176';
-    ctx.beginPath();
-    ctx.moveTo(this.x, this.y - r * 1.35);
-    ctx.lineTo(this.x - r, this.y);
-    ctx.lineTo(this.x, this.y + r * 1.35);
-    ctx.closePath();
-    ctx.fill();
+      // Right shaded facet
+      ctx.fillStyle = '#ffaa00';
+      ctx.beginPath();
+      ctx.moveTo(this.x, this.y - r * 1.35);
+      ctx.lineTo(this.x + r, this.y);
+      ctx.lineTo(this.x, this.y + r * 1.35);
+      ctx.closePath();
+      ctx.fill();
 
-    // Right shaded facet
-    ctx.fillStyle = '#ffaa00';
-    ctx.beginPath();
-    ctx.moveTo(this.x, this.y - r * 1.35);
-    ctx.lineTo(this.x + r, this.y);
-    ctx.lineTo(this.x, this.y + r * 1.35);
-    ctx.closePath();
-    ctx.fill();
+      // Sharp diamond facet border
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(this.x, this.y - r * 1.35);
+      ctx.lineTo(this.x + r, this.y);
+      ctx.lineTo(this.x, this.y + r * 1.35);
+      ctx.lineTo(this.x - r, this.y);
+      ctx.closePath();
+      ctx.stroke();
 
-    // Sharp diamond facet border
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(this.x, this.y - r * 1.35);
-    ctx.lineTo(this.x + r, this.y);
-    ctx.lineTo(this.x, this.y + r * 1.35);
-    ctx.lineTo(this.x - r, this.y);
-    ctx.closePath();
-    ctx.stroke();
-
-    // Gleaming center spark
-    ctx.fillStyle = '#ffffff';
-    ctx.beginPath();
-    ctx.arc(this.x - r * 0.15, this.y - r * 0.25, r * 0.28, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.restore();
+      // Gleaming center spark
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(this.x - r * 0.15, this.y - r * 0.25, Math.max(0.5, r * 0.28), 0, Math.PI * 2);
+      ctx.fill();
+    } finally {
+      ctx.restore();
+    }
   }
 }
 

@@ -1,8 +1,14 @@
 // NEON HAVOC - High-Speed WebSocket Multiplayer Relay Server
 import { WebSocketServer, WebSocket } from 'ws';
+import { setupTeamDeathmatch } from './teamDeathmatchServer.js';
 
 export function setupMultiplayerServer(httpServer) {
-  const wss = new WebSocketServer({ noServer: true });
+  const wss = new WebSocketServer({ noServer: true, maxPayload: 65536 });
+  setupTeamDeathmatch(wss);
+  httpServer.on('close', () => {
+    for (const client of wss.clients) client.terminate();
+    wss.close();
+  });
   const rooms = new Map(); // roomCode -> { host: ws, client: ws, sector: null }
 
   httpServer.on('upgrade', (request, socket, head) => {

@@ -42,47 +42,49 @@ export class EnergyPylon {
   }
 
   draw(ctx) {
-    if (!this.active) return;
+    if (!this.active || !isFinite(this.x) || !isFinite(this.y)) return;
     const pulse = 1 + Math.sin(this.animTimer) * 0.08;
-    const r = this.radius * pulse;
+    const r = Math.max(1, (this.radius || 28) * pulse);
 
     ctx.save();
-    glowCache.drawGlow(ctx, this.x, this.y, r * 1.5, '#00f0ff', 0.85);
+    try {
+      glowCache.drawGlow(ctx, this.x, this.y, r * 1.5, '#00f0ff', 0.85);
 
-    // Outer hexagonal core
-    ctx.strokeStyle = this.flashTimer > 0 ? '#ffffff' : '#00f0ff';
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    for (let i = 0; i < 6; i++) {
-      const a = (i * Math.PI) / 3 + this.animTimer * 0.2;
-      const hx = this.x + Math.cos(a) * r;
-      const hy = this.y + Math.sin(a) * r;
-      if (i === 0) ctx.moveTo(hx, hy);
-      else ctx.lineTo(hx, hy);
+      // Outer hexagonal core
+      ctx.strokeStyle = this.flashTimer > 0 ? '#ffffff' : '#00f0ff';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      for (let i = 0; i < 6; i++) {
+        const a = (i * Math.PI) / 3 + this.animTimer * 0.2;
+        const hx = this.x + Math.cos(a) * r;
+        const hy = this.y + Math.sin(a) * r;
+        if (i === 0) ctx.moveTo(hx, hy);
+        else ctx.lineTo(hx, hy);
+      }
+      ctx.closePath();
+      ctx.stroke();
+
+      // Inner glowing power crystal
+      ctx.fillStyle = '#00ffff';
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, r * 0.45, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, r * 0.2, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Health ring
+      const hpPct = Math.max(0, this.health / (this.maxHealth || 150));
+      ctx.strokeStyle = '#ffe600';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, r + 7, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * hpPct);
+      ctx.stroke();
+    } finally {
+      ctx.restore();
     }
-    ctx.closePath();
-    ctx.stroke();
-
-    // Inner glowing power crystal
-    ctx.fillStyle = '#00ffff';
-    ctx.beginPath();
-    ctx.arc(this.x, this.y, r * 0.45, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.fillStyle = '#ffffff';
-    ctx.beginPath();
-    ctx.arc(this.x, this.y, r * 0.2, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Health ring
-    const hpPct = Math.max(0, this.health / this.maxHealth);
-    ctx.strokeStyle = '#ffe600';
-    ctx.lineWidth = 2.5;
-    ctx.beginPath();
-    ctx.arc(this.x, this.y, r + 7, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * hpPct);
-    ctx.stroke();
-
-    ctx.restore();
   }
 }
 

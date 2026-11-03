@@ -522,59 +522,68 @@ export class WeaponSystem {
 
   draw(ctx) {
     // 1. Harmonic Convergence Electric Synergy Beam
-    if (this.harmonicActive && this.p1Pos && this.p2Pos) {
+    if (this.harmonicActive && this.p1Pos && this.p2Pos &&
+        isFinite(this.p1Pos.x) && isFinite(this.p1Pos.y) && isFinite(this.p2Pos.x) && isFinite(this.p2Pos.y)) {
       ctx.save();
-      // Outer intense resonance glow
-      ctx.strokeStyle = 'rgba(255, 0, 180, 0.4)';
-      ctx.lineWidth = 14;
-      ctx.beginPath();
-      ctx.moveTo(this.p1Pos.x, this.p1Pos.y);
-      ctx.lineTo(this.p2Pos.x, this.p2Pos.y);
-      ctx.stroke();
+      try {
+        // Outer intense resonance glow
+        ctx.strokeStyle = 'rgba(255, 0, 180, 0.4)';
+        ctx.lineWidth = 14;
+        ctx.beginPath();
+        ctx.moveTo(this.p1Pos.x, this.p1Pos.y);
+        ctx.lineTo(this.p2Pos.x, this.p2Pos.y);
+        ctx.stroke();
 
-      // Inner electric laser beam
-      ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 4;
-      ctx.beginPath();
-      ctx.moveTo(this.p1Pos.x, this.p1Pos.y);
-      ctx.lineTo(this.p2Pos.x, this.p2Pos.y);
-      ctx.stroke();
-      ctx.restore();
+        // Inner electric laser beam
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(this.p1Pos.x, this.p1Pos.y);
+        ctx.lineTo(this.p2Pos.x, this.p2Pos.y);
+        ctx.stroke();
+      } finally {
+        ctx.restore();
+      }
     }
 
-    if (this.lightningArcs.length === 0) return;
+    if (!this.lightningArcs || this.lightningArcs.length === 0) return;
 
     ctx.save();
-    for (let i = 0; i < this.lightningArcs.length; i++) {
-      const arc = this.lightningArcs[i];
-      const alpha = arc.life / arc.maxLife;
+    try {
+      for (let i = 0; i < this.lightningArcs.length; i++) {
+        const arc = this.lightningArcs[i];
+        if (!arc || !isFinite(arc.x1) || !isFinite(arc.y1) || !isFinite(arc.x2) || !isFinite(arc.y2)) continue;
+        const alpha = Math.max(0, Math.min(1, arc.life / (arc.maxLife || 1)));
+        if (!isFinite(alpha)) continue;
 
-      const segments = 4;
-      const dx = (arc.x2 - arc.x1) / segments;
-      const dy = (arc.y2 - arc.y1) / segments;
+        const segments = 4;
+        const dx = (arc.x2 - arc.x1) / segments;
+        const dy = (arc.y2 - arc.y1) / segments;
 
-      ctx.beginPath();
-      ctx.moveTo(arc.x1, arc.y1);
-      for (let s = 1; s < segments; s++) {
-        const perpX = -dy * 0.4;
-        const perpY = dx * 0.4;
-        const jitter = (Math.random() - 0.5) * 1.5;
-        const sx = arc.x1 + dx * s + perpX * jitter;
-        const sy = arc.y1 + dy * s + perpY * jitter;
-        ctx.lineTo(sx, sy);
+        ctx.beginPath();
+        ctx.moveTo(arc.x1, arc.y1);
+        for (let s = 1; s < segments; s++) {
+          const perpX = -dy * 0.4;
+          const perpY = dx * 0.4;
+          const jitter = (Math.random() - 0.5) * 1.5;
+          const sx = arc.x1 + dx * s + perpX * jitter;
+          const sy = arc.y1 + dy * s + perpY * jitter;
+          ctx.lineTo(sx, sy);
+        }
+        ctx.lineTo(arc.x2, arc.y2);
+
+        // Outer luminous glow
+        ctx.strokeStyle = `rgba(0, 240, 255, ${0.4 * alpha})`;
+        ctx.lineWidth = 6.5 * alpha;
+        ctx.stroke();
+
+        // Intense white lightning core
+        ctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`;
+        ctx.lineWidth = 2.2 * alpha;
+        ctx.stroke();
       }
-      ctx.lineTo(arc.x2, arc.y2);
-
-      // Outer luminous glow
-      ctx.strokeStyle = `rgba(0, 240, 255, ${0.4 * alpha})`;
-      ctx.lineWidth = 6.5 * alpha;
-      ctx.stroke();
-
-      // Intense white lightning core
-      ctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`;
-      ctx.lineWidth = 2.2 * alpha;
-      ctx.stroke();
+    } finally {
+      ctx.restore();
     }
-    ctx.restore();
   }
 }

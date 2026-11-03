@@ -78,13 +78,15 @@ export class GlowCache {
   }
 
   drawGlow(ctx, x, y, radius, color, alpha = 1.0) {
+    if (!isFinite(x) || !isFinite(y) || !isFinite(radius) || radius <= 0) return;
     const sprite = this.getSprite(color, radius);
+    if (!sprite) return;
     const drawSize = radius * 3;
     const half = drawSize / 2;
 
     if (alpha < 1.0) {
       const prevAlpha = ctx.globalAlpha;
-      ctx.globalAlpha = prevAlpha * alpha;
+      ctx.globalAlpha = Math.max(0, Math.min(1, prevAlpha * alpha));
       ctx.drawImage(sprite, x - half, y - half, drawSize, drawSize);
       ctx.globalAlpha = prevAlpha;
     } else {
