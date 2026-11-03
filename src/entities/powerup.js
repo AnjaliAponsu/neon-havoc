@@ -41,191 +41,120 @@ export class Powerup {
   }
 
   draw(ctx) {
-    if (!this.active || !this.type) return;
+    if (!this.active) return;
     const pulse = 1 + Math.sin(this.animTimer) * 0.08;
-    const bob = Math.sin(this.animTimer * 1.5) * 5;
-    const s = (this.radius || 17) * pulse;
+    const bob = Math.sin(this.animTimer * 1.5) * 4;
+    const s = (this.radius || 16) * pulse;
     const px = this.x;
     const py = this.y + bob;
 
     ctx.save();
-    // Luscious neon aura
-    glowCache.drawGlow(ctx, px, py, s * 2.2, this.type.color, 0.85);
+    glowCache.drawGlow(ctx, px, py, s * 1.8, this.type.color, 0.8);
 
     ctx.translate(px, py);
 
     // 3D Isometric Cube Dimensions
     const dx = s * 0.866; // cos(30 deg)
     const dy = s * 0.5;   // sin(30 deg)
-    const h = s * 1.15;
+    const h = s * 1.1;
 
-    // Ground Drop-Shadow with soft colored bounce underneath
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+    // Ground Drop-Shadow (Soft floating shadow)
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.38)';
     ctx.beginPath();
-    ctx.ellipse(0, dy * 2 + 14 - bob * 0.8, dx * 1.05, dy * 0.75, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, dy * 2 + 12 - bob * 0.8, dx * 0.95, dy * 0.7, 0, 0, Math.PI * 2);
     ctx.fill();
-    glowCache.drawGlow(ctx, 0, dy * 2 + 14 - bob * 0.8, s * 1.3, this.type.color, 0.4);
 
-    // Parametric functions for Left Face & Right Face
-    const pLeft = (u, v) => ({
-      x: -dx * (1 - u),
-      y: -h + dy + u * dy + v * h,
-    });
-    const pRight = (u, v) => ({
-      x: u * dx,
-      y: -h + 2 * dy - u * dy + v * h,
-    });
-
-    // 1. Face 1: Top Diamond Face
+    // Face 1: Top Diamond Face
     ctx.beginPath();
     ctx.moveTo(0, -h);
     ctx.lineTo(dx, -h + dy);
     ctx.lineTo(0, -h + dy * 2);
     ctx.lineTo(-dx, -h + dy);
     ctx.closePath();
-    ctx.fillStyle = 'rgba(16, 32, 60, 0.94)';
+    ctx.fillStyle = 'rgba(18, 32, 58, 0.92)';
     ctx.fill();
     ctx.strokeStyle = this.type.color;
-    ctx.lineWidth = 2.0;
+    ctx.lineWidth = 1.8;
     ctx.stroke();
 
-    // Top Face Inner Accent Diamond
+    // Top Face Inner Accent Border
     ctx.beginPath();
-    ctx.moveTo(0, -h + 3.5);
-    ctx.lineTo(dx - 5, -h + dy + 1.2);
-    ctx.lineTo(0, -h + dy * 2 - 3.5);
-    ctx.lineTo(-dx + 5, -h + dy + 1.2);
+    ctx.moveTo(0, -h + 3);
+    ctx.lineTo(dx - 4, -h + dy + 1);
+    ctx.lineTo(0, -h + dy * 2 - 3);
+    ctx.lineTo(-dx + 4, -h + dy + 1);
     ctx.closePath();
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
     ctx.lineWidth = 1;
     ctx.stroke();
 
-    // 2. Face 2: Left Side Face (Primary Isometric Front Face)
+    // Face 2: Left Side Face
     ctx.beginPath();
     ctx.moveTo(-dx, -h + dy);
     ctx.lineTo(0, -h + dy * 2);
     ctx.lineTo(0, dy * 2);
     ctx.lineTo(-dx, dy);
     ctx.closePath();
-    ctx.fillStyle = 'rgba(10, 18, 38, 0.96)';
+    ctx.fillStyle = 'rgba(10, 18, 36, 0.94)';
     ctx.fill();
     ctx.strokeStyle = this.type.color;
-    ctx.lineWidth = 2.0;
+    ctx.lineWidth = 1.8;
     ctx.stroke();
 
-    // 3. Face 3: Right Side Face
+    // Face 3: Right Side Face
     ctx.beginPath();
     ctx.moveTo(0, -h + dy * 2);
     ctx.lineTo(dx, -h + dy);
     ctx.lineTo(dx, dy);
     ctx.lineTo(0, dy * 2);
     ctx.closePath();
-    ctx.fillStyle = 'rgba(6, 12, 28, 0.96)';
+    ctx.fillStyle = 'rgba(14, 24, 48, 0.96)';
     ctx.fill();
     ctx.strokeStyle = this.type.color;
-    ctx.lineWidth = 2.0;
+    ctx.lineWidth = 1.8;
     ctx.stroke();
 
-    // Right Face Inner Accent Border
-    const r0 = pRight(0.18, 0.18);
-    const r1 = pRight(0.82, 0.18);
-    const r2 = pRight(0.82, 0.82);
-    const r3 = pRight(0.18, 0.82);
-    ctx.beginPath();
-    ctx.moveTo(r0.x, r0.y);
-    ctx.lineTo(r1.x, r1.y);
-    ctx.lineTo(r2.x, r2.y);
-    ctx.lineTo(r3.x, r3.y);
-    ctx.closePath();
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
-    ctx.lineWidth = 1;
-    ctx.stroke();
-
-    // 4. Left Face Inner Glowing Square Frame (Matching Reference Image)
-    const q0 = pLeft(0.16, 0.16);
-    const q1 = pLeft(0.84, 0.16);
-    const q2 = pLeft(0.84, 0.84);
-    const q3 = pLeft(0.16, 0.84);
-    ctx.beginPath();
-    ctx.moveTo(q0.x, q0.y);
-    ctx.lineTo(q1.x, q1.y);
-    ctx.lineTo(q2.x, q2.y);
-    ctx.lineTo(q3.x, q3.y);
-    ctx.closePath();
+    // Inner glowing symbol on front face
+    ctx.fillStyle = '#ffffff';
     ctx.strokeStyle = this.type.color;
-    ctx.lineWidth = 2.2;
-    ctx.stroke();
+    ctx.lineWidth = 2.5;
 
-    // 5. Symbol inside Inner Square Frame (Matching Reference Image)
     if (this.type.id === 'heal' || this.type.id === 'heart' || this.type.icon === '❤️' || this.type.icon === '➕') {
-      // Isometric '+' Cross with White Core (Health Crate)
-      const drawIsoPoly = (points, fillCol) => {
-        ctx.fillStyle = fillCol;
-        ctx.beginPath();
-        for (let i = 0; i < points.length; i++) {
-          const pt = pLeft(points[i][0], points[i][1]);
-          if (i === 0) ctx.moveTo(pt.x, pt.y);
-          else ctx.lineTo(pt.x, pt.y);
-        }
-        ctx.closePath();
-        ctx.fill();
-      };
+      // Glowing '+' Cross Emblem (Health Crate - Matching Reference Image)
+      const cx = 0;
+      const cy = -h * 0.2;
+      const cw = 4.5;
+      const cl = 12;
+      ctx.fillStyle = '#00f0ff';
+      ctx.fillRect(cx - cw / 2, cy - cl / 2, cw, cl);
+      ctx.fillRect(cx - cl / 2, cy - cw / 2, cl, cw);
 
-      // Outer cyan cross arms
-      const crossOuter = [
-        [0.42, 0.26], [0.58, 0.26], [0.58, 0.42], [0.74, 0.42],
-        [0.74, 0.58], [0.58, 0.58], [0.58, 0.74], [0.42, 0.74],
-        [0.42, 0.58], [0.26, 0.58], [0.26, 0.42], [0.42, 0.42]
-      ];
-      drawIsoPoly(crossOuter, '#00f0ff');
-
-      // Inner white-hot cross
-      const crossInner = [
-        [0.46, 0.32], [0.54, 0.32], [0.54, 0.46], [0.68, 0.46],
-        [0.68, 0.54], [0.54, 0.54], [0.54, 0.68], [0.46, 0.68],
-        [0.46, 0.54], [0.32, 0.54], [0.32, 0.46], [0.46, 0.46]
-      ];
-      drawIsoPoly(crossInner, '#ffffff');
-
-    } else if (this.type.id === 'boost' || this.type.id === 'overdrive' || this.type.id === 'battery' || this.type.icon === '⏫') {
-      // Isometric Double Chevron '⏫' (Buff Crate)
-      const drawIsoChevron = (uCenter, vTip, vWing, thick) => {
-        const tip = pLeft(uCenter, vTip);
-        const lWing = pLeft(uCenter - 0.24, vWing);
-        const rWing = pLeft(uCenter + 0.24, vWing);
-
-        ctx.strokeStyle = '#ffe600';
-        ctx.lineWidth = thick;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-        ctx.beginPath();
-        ctx.moveTo(lWing.x, lWing.y);
-        ctx.lineTo(tip.x, tip.y);
-        ctx.lineTo(rWing.x, rWing.y);
-        ctx.stroke();
-
-        // White core highlight line
-        ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = thick * 0.45;
-        ctx.beginPath();
-        ctx.moveTo(lWing.x, lWing.y);
-        ctx.lineTo(tip.x, tip.y);
-        ctx.lineTo(rWing.x, rWing.y);
-        ctx.stroke();
-      };
-
+      // White inner core
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(cx - cw / 4, cy - cl / 4, cw / 2, cl / 2);
+      ctx.fillRect(cx - cl / 4, cy - cw / 4, cl / 2, cw / 2);
+    } else if (this.type.id === 'boost' || this.type.id === 'overdrive' || this.type.id === 'multishot') {
+      // Glowing '⏫' Double Chevrons (Buff Crate - Matching Reference Image)
+      const cx = 0;
+      const cy = -h * 0.2;
+      ctx.strokeStyle = '#ffe600';
+      ctx.lineWidth = 2.6;
+      ctx.beginPath();
       // Lower chevron
-      drawIsoChevron(0.5, 0.52, 0.70, 3.2);
+      ctx.moveTo(-6, cy + 3);
+      ctx.lineTo(0, cy - 3);
+      ctx.lineTo(6, cy + 3);
       // Upper chevron
-      drawIsoChevron(0.5, 0.30, 0.48, 3.2);
+      ctx.moveTo(-6, cy - 4);
+      ctx.lineTo(0, cy - 10);
+      ctx.lineTo(6, cy - 4);
+      ctx.stroke();
     } else {
-      // Centered fallback glyph
-      const cp = pLeft(0.5, 0.5);
-      ctx.font = 'bold 15px sans-serif';
+      // Centered Icon / Emoji
+      ctx.font = 'bold 14px sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillStyle = '#ffffff';
-      ctx.fillText(this.type.icon || '⚡', cp.x, cp.y);
+      ctx.fillText(this.type.icon || '⚡', 0, -h * 0.2);
     }
 
     ctx.restore();

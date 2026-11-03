@@ -79,12 +79,14 @@ export class WaveManager {
       }
     }
 
-    // 1. Process queued summons safely (bounded batch)
-    const summonBatch = this.spawnQueue.splice(0, 30);
-    for (let i = 0; i < summonBatch.length; i++) {
-      const q = summonBatch[i];
+    // 1. Process queued summons (capped to prevent CPU lock)
+    while (this.spawnQueue.length > 0 && enemies.length < 90) {
+      const q = this.spawnQueue.shift();
       const waveMult = 1 + (this.currentWave - 1) * 0.12;
       enemies.push(new Enemy(q.type, q.x, q.y, waveMult));
+    }
+    if (enemies.length >= 90) {
+      this.spawnQueue.length = 0;
     }
 
     // 2. Continuous arena spawning
@@ -96,8 +98,10 @@ export class WaveManager {
   }
 
   _spawnWaveBatch(player, enemies) {
-    const baseCount = 2 + Math.floor(this.currentWave * 0.75);
-    const count = Math.min(26, baseCount);
+    if (enemies.length >= 80) return;
+    const baseCount = 2 + Math.floor(this.currentWave * 0.7);
+    const count = Math.min(16, Math.min(baseCount, 80 - enemies.length));
+    if (count <= 0) return;
     const types = this._getEligibleTypes();
 
     const targetPlayer = this._getTargetPlayer(player);

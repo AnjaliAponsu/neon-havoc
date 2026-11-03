@@ -178,32 +178,36 @@ export class Enemy {
       this.shootTimer -= dt;
       if (this.shootTimer <= 0.6 && !this.isAiming) {
         this.isAiming = true;
-        this.aimTarget.x = player.x;
-        this.aimTarget.y = player.y;
+        this.aimTarget.x = targetPlayer ? targetPlayer.x : this.x;
+        this.aimTarget.y = targetPlayer ? targetPlayer.y : this.y;
       }
 
-      if (this.isAiming) {
-        this.aimTarget.x += (player.x - this.aimTarget.x) * 0.1;
-        this.aimTarget.y += (player.y - this.aimTarget.y) * 0.1;
+      if (this.isAiming && targetPlayer) {
+        const tx = targetPlayer.x !== undefined ? targetPlayer.x : this.aimTarget.x;
+        const ty = targetPlayer.y !== undefined ? targetPlayer.y : this.aimTarget.y;
+        this.aimTarget.x += (tx - this.aimTarget.x) * 0.1;
+        this.aimTarget.y += (ty - this.aimTarget.y) * 0.1;
       }
 
       if (this.shootTimer <= 0) {
         const shootAngle = Math.atan2(this.aimTarget.y - this.y, this.aimTarget.x - this.x);
-        bulletPool.spawn(
-          this.x,
-          this.y,
-          shootAngle,
-          680,
-          25,
-          950,
-          1,
-          true,
-          COLORS.BULLET_SNIPER,
-          5,
-          false,
-          'sniper'
-        );
-        soundEngine.playPistol();
+        if (!isNaN(shootAngle)) {
+          bulletPool.spawn(
+            this.x,
+            this.y,
+            shootAngle,
+            680,
+            25,
+            950,
+            1,
+            true,
+            COLORS.BULLET_SNIPER,
+            5,
+            false,
+            'sniper'
+          );
+          soundEngine.playPistol();
+        }
         this.shootTimer = 2.4;
         this.isAiming = false;
       }
@@ -426,7 +430,7 @@ export class Enemy {
     }
 
     // 3. Gravitational Singularity Pulse (draws player inward slightly)
-    if (dist < 550 && dist > 80) {
+    if (dist < 550 && dist > 80 && player && !player.isDowned && !isNaN(player.x)) {
       const pullForce = (1 - dist / 550) * 80 * dt;
       player.x -= Math.cos(angleToPlayer) * pullForce;
       player.y -= Math.sin(angleToPlayer) * pullForce;

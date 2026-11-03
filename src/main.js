@@ -1,6 +1,6 @@
 // NEON HAVOC — 30X Master Game Loop, Spatial Hash Grid, Fast Glow & UI/UX
 
-import { GAME_CONFIG, SECTORS, META_UPGRADES, ENEMY_TYPES, COLORS, MULTIPLAYER_CONFIG, POWERUP_TYPES } from './constants.js';
+import { GAME_CONFIG, SECTORS, META_UPGRADES, ENEMY_TYPES, COLORS, MULTIPLAYER_CONFIG } from './constants.js';
 import { soundEngine } from './audio.js';
 import { saveManager } from './saveManager.js';
 import { InputManager } from './input.js';
@@ -160,12 +160,6 @@ class NeonHavocGame {
       hudFullscreenBtn: document.getElementById('hudFullscreenBtn'),
       hudComboBadge: document.getElementById('hudComboBadge'),
       hudComboText: document.getElementById('hudComboText'),
-      hudPlayerOrb: document.getElementById('hudPlayerOrb'),
-      p2HudContainer: document.getElementById('p2HudContainer'),
-      p2HpFill: document.getElementById('p2HpFill'),
-      p2ShieldFill: document.getElementById('p2ShieldFill'),
-      p2HpText: document.getElementById('p2HpText'),
-      p2HudLevelBadge: document.getElementById('p2HudLevelBadge'),
       hudDownedAlert: document.getElementById('hudDownedAlert'),
 
       // Abilities
@@ -445,7 +439,6 @@ class NeonHavocGame {
           this.player2.isRemote = true;
           this.players = [this.player, this.player2];
           this.isCoop = true;
-          if (this.dom.p2HudContainer) this.dom.p2HudContainer.style.display = 'none';
           this.floatingTexts.spawn(this.player2.x, this.player2.y - 45, 'NOVA-02 JOINED! 🚀', '#ff00aa', '#00f0ff', true, 22);
         }
       } else {
@@ -488,19 +481,11 @@ class NeonHavocGame {
         this.player2 = null;
         this.players = [this.player];
         this.isCoop = false;
-        if (this.dom.p2HudContainer) this.dom.p2HudContainer.style.display = 'none';
       }
     };
 
     multiplayerManager.onPeerStateCb = (payload) => {
-      if (this.gameMode === 'ONLINE_HOST' && payload.p2) {
-        if (!this.player2) {
-          const metaMods = this._calculateMetaModifiers();
-          this.player2 = new Player(payload.p2.x || (this.player ? this.player.x + 60 : 1660), payload.p2.y || (this.player ? this.player.y : 1200), metaMods, 2);
-          this.player2.isRemote = true;
-          this.players = [this.player, this.player2];
-          this.isCoop = true;
-        }
+      if (this.gameMode === 'ONLINE_HOST' && payload.p2 && this.player2) {
         this.player2.targetNetX = payload.p2.x;
         this.player2.targetNetY = payload.p2.y;
         this.player2.targetNetVx = payload.p2.vx || 0;
@@ -510,14 +495,7 @@ class NeonHavocGame {
         if (payload.p2.hp !== undefined) this.player2.health = payload.p2.hp;
         if (payload.p2.isDashing && !this.player2.isDashing) this.player2.dash(soundEngine, this.particlePool);
         if (payload.p2.isOverdrive && !this.player2.isOverdrive) this.player2.activateOverdrive(soundEngine, this.particlePool);
-      } else if (this.gameMode === 'ONLINE_CLIENT' && payload.p1) {
-        if (!this.player) {
-          const metaMods = this._calculateMetaModifiers();
-          this.player = new Player(payload.p1.x || (this.player2 ? this.player2.x - 60 : 1540), payload.p1.y || (this.player2 ? this.player2.y : 1200), metaMods, 1);
-          this.player.isRemote = true;
-          this.players = [this.player, this.player2];
-          this.isCoop = true;
-        }
+      } else if (this.gameMode === 'ONLINE_CLIENT' && payload.p1 && this.player) {
         this.player.targetNetX = payload.p1.x;
         this.player.targetNetY = payload.p1.y;
         this.player.targetNetVx = payload.p1.vx || 0;
@@ -611,14 +589,9 @@ class NeonHavocGame {
         this.runCrystals += 50;
         saveManager.addShards(25);
         soundEngine.playLevelUp();
-        if (this.pendingLevelUps > 0) {
-          this.pendingLevelUps--;
-          this.triggerLevelUp();
-        } else {
-          this._hideOverlay(this.dom.upgradeModal);
-          this.state = 'PLAYING';
-          this.lastTime = performance.now();
-        }
+        this._hideOverlay(this.dom.upgradeModal);
+        this.state = 'PLAYING';
+        this.lastTime = performance.now();
       };
     }
 
@@ -659,14 +632,9 @@ class NeonHavocGame {
           this.runCrystals += 50;
           saveManager.addShards(25);
           soundEngine.playLevelUp();
-          if (this.pendingLevelUps > 0) {
-            this.pendingLevelUps--;
-            this.triggerLevelUp();
-          } else {
-            this._hideOverlay(this.dom.upgradeModal);
-            this.state = 'PLAYING';
-            this.lastTime = performance.now();
-          }
+          this._hideOverlay(this.dom.upgradeModal);
+          this.state = 'PLAYING';
+          this.lastTime = performance.now();
         }
       } else if (this.state === 'GAME_OVER') {
         if (e.code === 'KeyR' || e.code === 'Space') {
@@ -1241,34 +1209,12 @@ class NeonHavocGame {
       this.players = [this.player];
     }
 
-    if (this.dom.p2HudContainer) {
-      this.dom.p2HudContainer.style.display = 'none';
-    }
-    if (this.dom.hudPlayerOrb) {
-      if (this.gameMode === 'ONLINE_CLIENT') {
-        this.dom.hudPlayerOrb.classList.add('p2-orb');
-      } else {
-        this.dom.hudPlayerOrb.classList.remove('p2-orb');
-      }
-    }
-
     // Anchor camera immediately at local player location
     const camInitPlayer = (this.gameMode === 'ONLINE_CLIENT' && this.player2) ? this.player2 : this.player;
     this.renderer.camera.x = camInitPlayer.x;
     this.renderer.camera.y = camInitPlayer.y;
 
     this.waveManager = new WaveManager(this.currentSector);
-    this.pendingLevelUps = 0;
-
-    // Spawn initial battleground crates & crystals (Matching Reference Screenshot)
-    this.powerupManager.spawn(spawnX - 350, spawnY - 50, POWERUP_TYPES.HEAL);
-    this.powerupManager.spawn(spawnX + 380, spawnY + 90, POWERUP_TYPES.BOOST || POWERUP_TYPES.BATTERY);
-    // Initial scattered golden crystals
-    for (let c = 0; c < 6; c++) {
-      const a = (c * Math.PI * 2) / 6 + 0.35;
-      const d = 190 + (c % 2) * 90;
-      this.crystalPool.spawn(spawnX + Math.cos(a) * d, spawnY + Math.sin(a) * d, 10);
-    }
 
     // Audio & State
     soundEngine.startMusic();
@@ -1325,15 +1271,10 @@ class NeonHavocGame {
         upg.apply(this.player2);
       }
       soundEngine.playLevelUp();
-      if (this.pendingLevelUps > 0) {
-        this.pendingLevelUps--;
-        this.triggerLevelUp();
-      } else {
-        this._hideOverlay(this.dom.upgradeModal);
-        this.state = 'PLAYING';
-        this.lastTime = performance.now();
-        this.input.resetActions();
-      }
+      this._hideOverlay(this.dom.upgradeModal);
+      this.state = 'PLAYING';
+      this.lastTime = performance.now();
+      this.input.resetActions();
     }
   }
 
@@ -1388,12 +1329,6 @@ class NeonHavocGame {
       this.player.invulnPowerupTimer = 6.0;
     } else if (type.id === 'heal') {
       this.player.health = Math.min(this.player.maxHealth, this.player.health + this.player.maxHealth * 0.5);
-    } else if (type.id === 'boost') {
-      this.player.overdriveCharge = Math.min(100, this.player.overdriveCharge + 40);
-      this.player.stats.fireRateMult *= 1.35;
-      setTimeout(() => {
-        if (this.player) this.player.stats.fireRateMult /= 1.35;
-      }, 8000);
     }
   }
 
@@ -1550,14 +1485,10 @@ class NeonHavocGame {
   }
 
   gameLoop(currentTime) {
-    // 1. Immediately schedule next frame so no uncaught error can permanently freeze the game loop
-    requestAnimationFrame((t) => this.gameLoop(t));
-
-    // 2. Safe clamped delta time calculation
-    const rawDt = this.lastTime ? Math.max(0.001, Math.min(0.08, (currentTime - this.lastTime) / 1000)) : 0.016;
+    const rawDt = (currentTime - this.lastTime) / 1000;
     this.lastTime = currentTime;
 
-    // 3. Dodge Matrix Bullet-Time Dilation
+    // 30X Dodge Matrix Bullet-Time Dilation
     if (this.bulletTimeTimer > 0) {
       this.bulletTimeTimer -= rawDt;
       this.timeDilation = 0.35;
@@ -1568,18 +1499,11 @@ class NeonHavocGame {
       this.timeDilation = 1.0;
     }
 
-    // 4. Hit-stop crunch (scales down dt for impact weight, NEVER stalls or freezes gameLoop)
-    let hitStopScale = 1.0;
-    if (this.renderer && this.renderer.hitStopTimer > 0) {
-      this.renderer.hitStopTimer = Math.max(0, this.renderer.hitStopTimer - rawDt);
-      hitStopScale = 0.25;
-    }
+    const dt = Math.min(0.08, rawDt * this.timeDilation);
 
-    const dt = Math.max(0.001, Math.min(0.08, rawDt * this.timeDilation * hitStopScale));
-
-    // 5. FPS Meter
+    // FPS Meter
     this.frameCount++;
-    this.fpsTimer += rawDt;
+    this.fpsTimer += dt;
     if (this.fpsTimer >= 0.5) {
       this.fps = Math.round(this.frameCount / this.fpsTimer);
       this.frameCount = 0;
@@ -1589,15 +1513,22 @@ class NeonHavocGame {
       }
     }
 
-    // 6. Safe Update and Render with Error Boundary
-    try {
-      if (this.state === 'PLAYING') {
-        this.update(dt);
-      }
+    // Hit-stop crunch freeze handling
+    if (this.renderer.hitStopTimer > 0) {
+      this.renderer.hitStopTimer -= dt;
+      this.particlePool.update(dt);
+      this.renderer.updateCamera(dt, this.player ? this.player.x : 0, this.player ? this.player.y : 0, !!this.activeBoss, this.player ? this.player.isOverdrive : false);
       this.render();
-    } catch (err) {
-      console.error('[Neon Havoc] Exception during gameLoop update/render:', err);
+      requestAnimationFrame((t) => this.gameLoop(t));
+      return;
     }
+
+    if (this.state === 'PLAYING') {
+      this.update(dt);
+    }
+
+    this.render();
+    requestAnimationFrame((t) => this.gameLoop(t));
   }
 
   update(dt) {
@@ -1891,11 +1822,7 @@ class NeonHavocGame {
         this.player2.addXp(xpGained, soundEngine, this.floatingTexts);
       }
       if (leveledUp) {
-        if (this.state === 'PLAYING') {
-          this.triggerLevelUp();
-        } else {
-          this.pendingLevelUps = (this.pendingLevelUps || 0) + 1;
-        }
+        this.triggerLevelUp();
       }
     });
 
@@ -1991,12 +1918,9 @@ class NeonHavocGame {
   }
 
   _updateHud() {
-    // In Online Client mode, Player 2 is the local player on this screen; otherwise Player 1
     const p = (this.gameMode === 'ONLINE_CLIENT' && this.player2) ? this.player2 : this.player;
-    if (!p) return;
     const w = this.waveManager;
 
-    // 1. Local Player's Health & Shield (Only relevant personal stats)
     const hpPct = Math.max(0, (p.health / p.maxHealth) * 100);
     this.dom.hpFill.style.width = `${hpPct}%`;
 
@@ -2006,25 +1930,6 @@ class NeonHavocGame {
 
     const shieldPct = p.maxShield > 0 ? (p.shield / p.maxShield) * 100 : 0;
     this.dom.shieldFill.style.width = `${shieldPct}%`;
-
-    // 2. Hide redundant duplicate teammate health/power component
-    if (this.dom.p2HudContainer) {
-      this.dom.p2HudContainer.style.display = 'none';
-    }
-
-    // 3. What IS relevant to each other in multiplayer: Alert when teammate is downed!
-    const teammate = (this.gameMode === 'ONLINE_CLIENT') ? this.player : this.player2;
-    if (teammate && (teammate.isDowned || teammate.health <= 0)) {
-      if (this.dom.hudDownedAlert) {
-        this.dom.hudDownedAlert.style.display = 'block';
-        const secLeft = Math.max(0, Math.ceil(teammate.downedTimer || 0));
-        this.dom.hudDownedAlert.textContent = `⚠️ TEAMMATE DOWNED! STAND NEAR THEM TO REVIVE (${secLeft}s)`;
-      }
-    } else {
-      if (this.dom.hudDownedAlert) {
-        this.dom.hudDownedAlert.style.display = 'none';
-      }
-    }
 
     const xpPct = Math.min(100, (p.xp / p.xpToNextLevel) * 100);
     this.dom.xpBarFill.style.width = `${xpPct}%`;
@@ -2236,10 +2141,14 @@ class NeonHavocGame {
 }
 
 // Initialize on window load
-if (document.readyState === 'loading') {
-  window.addEventListener('DOMContentLoaded', () => {
+function initGame() {
+  if (!window.game) {
     window.game = new NeonHavocGame();
-  });
+  }
+}
+
+if (document.readyState === 'loading') {
+  window.addEventListener('DOMContentLoaded', initGame);
 } else {
-  window.game = new NeonHavocGame();
+  initGame();
 }

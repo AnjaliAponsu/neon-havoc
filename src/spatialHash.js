@@ -15,9 +15,10 @@ export class SpatialHashGrid {
   }
 
   insert(entity) {
-    if (!entity || !Number.isFinite(entity.x) || !Number.isFinite(entity.y)) return;
+    if (!entity || isNaN(entity.x) || isNaN(entity.y)) return;
     const cx = Math.floor(entity.x / this.cellSize);
     const cy = Math.floor(entity.y / this.cellSize);
+    if (isNaN(cx) || isNaN(cy)) return;
     const key = this._hash(cx, cy);
 
     let cell = this.cells.get(key);
@@ -29,12 +30,12 @@ export class SpatialHashGrid {
   }
 
   queryNearby(x, y, radius = 60, callback) {
-    if (!Number.isFinite(x) || !Number.isFinite(y)) return;
-    const r = Math.max(1, radius || 60);
-    const minCx = Math.floor((x - r) / this.cellSize);
-    const maxCx = Math.floor((x + r) / this.cellSize);
-    const minCy = Math.floor((y - r) / this.cellSize);
-    const maxCy = Math.floor((y + r) / this.cellSize);
+    if (isNaN(x) || isNaN(y) || isNaN(radius)) return;
+    const minCx = Math.floor((x - radius) / this.cellSize);
+    const maxCx = Math.floor((x + radius) / this.cellSize);
+    const minCy = Math.floor((y - radius) / this.cellSize);
+    const maxCy = Math.floor((y + radius) / this.cellSize);
+    if (isNaN(minCx) || isNaN(maxCx) || isNaN(minCy) || isNaN(maxCy)) return;
 
     for (let cx = minCx; cx <= maxCx; cx++) {
       for (let cy = minCy; cy <= maxCy; cy++) {
