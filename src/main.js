@@ -160,6 +160,7 @@ class NeonHavocGame {
       hudFullscreenBtn: document.getElementById('hudFullscreenBtn'),
       hudComboBadge: document.getElementById('hudComboBadge'),
       hudComboText: document.getElementById('hudComboText'),
+      hudPlayerOrb: document.getElementById('hudPlayerOrb'),
       p2HudContainer: document.getElementById('p2HudContainer'),
       p2HpFill: document.getElementById('p2HpFill'),
       p2ShieldFill: document.getElementById('p2ShieldFill'),
@@ -444,7 +445,7 @@ class NeonHavocGame {
           this.player2.isRemote = true;
           this.players = [this.player, this.player2];
           this.isCoop = true;
-          if (this.dom.p2HudContainer) this.dom.p2HudContainer.style.display = 'flex';
+          if (this.dom.p2HudContainer) this.dom.p2HudContainer.style.display = 'none';
           this.floatingTexts.spawn(this.player2.x, this.player2.y - 45, 'NOVA-02 JOINED! 🚀', '#ff00aa', '#00f0ff', true, 22);
         }
       } else {
@@ -1227,7 +1228,14 @@ class NeonHavocGame {
     }
 
     if (this.dom.p2HudContainer) {
-      this.dom.p2HudContainer.style.display = this.player2 ? 'flex' : 'none';
+      this.dom.p2HudContainer.style.display = 'none';
+    }
+    if (this.dom.hudPlayerOrb) {
+      if (this.gameMode === 'ONLINE_CLIENT') {
+        this.dom.hudPlayerOrb.classList.add('p2-orb');
+      } else {
+        this.dom.hudPlayerOrb.classList.remove('p2-orb');
+      }
     }
 
     // Anchor camera immediately at local player location
@@ -1969,9 +1977,12 @@ class NeonHavocGame {
   }
 
   _updateHud() {
-    const p = this.player;
+    // In Online Client mode, Player 2 is the local player on this screen; otherwise Player 1
+    const p = (this.gameMode === 'ONLINE_CLIENT' && this.player2) ? this.player2 : this.player;
+    if (!p) return;
     const w = this.waveManager;
 
+    // 1. Local Player's Health & Shield (Only relevant personal stats)
     const hpPct = Math.max(0, (p.health / p.maxHealth) * 100);
     this.dom.hpFill.style.width = `${hpPct}%`;
 
@@ -1982,15 +1993,23 @@ class NeonHavocGame {
     const shieldPct = p.maxShield > 0 ? (p.shield / p.maxShield) * 100 : 0;
     this.dom.shieldFill.style.width = `${shieldPct}%`;
 
-    // Player 2 Co-Op HUD Update
-    if (this.player2 && this.dom.p2HpFill) {
-      const p2HpPct = Math.max(0, (this.player2.health / this.player2.maxHealth) * 100);
-      this.dom.p2HpFill.style.width = `${p2HpPct}%`;
-      if (this.dom.p2HpText) {
-        this.dom.p2HpText.textContent = this.player2.isDowned ? 'DOWNED!' : `${Math.ceil(this.player2.health)} HP`;
+    // 2. Hide redundant duplicate teammate health/power component
+    if (this.dom.p2HudContainer) {
+      this.dom.p2HudContainer.style.display = 'none';
+    }
+
+    // 3. What IS relevant to each other in multiplayer: Alert when teammate is downed!
+    const teammate = (this.gameMode === 'ONLINE_CLIENT') ? this.player : this.player2;
+    if (teammate && (teammate.isDowned || teammate.health <= 0)) {
+      if (this.dom.hudDownedAlert) {
+        this.dom.hudDownedAlert.style.display = 'block';
+        const secLeft = Math.max(0, Math.ceil(teammate.downedTimer || 0));
+        this.dom.hudDownedAlert.textContent = `⚠️ TEAMMATE DOWNED! STAND NEAR THEM TO REVIVE (${secLeft}s)`;
       }
-      const p2ShieldPct = this.player2.maxShield > 0 ? (this.player2.shield / this.player2.maxShield) * 100 : 0;
-      if (this.dom.p2ShieldFill) this.dom.p2ShieldFill.style.width = `${p2ShieldPct}%`;
+    } else {
+      if (this.dom.hudDownedAlert) {
+        this.dom.hudDownedAlert.style.display = 'none';
+      }
     }
 
     const xpPct = Math.min(100, (p.xp / p.xpToNextLevel) * 100);

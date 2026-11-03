@@ -1708,7 +1708,7 @@
     <!-- Left: Health, Shield, Level, FPS -->
     <div class="hud-left">
       <div class="hud-status-panel">
-        <div class="hud-player-orb">
+        <div class="hud-player-orb" id="hudPlayerOrb">
           <div class="orb-core"></div>
         </div>
         <div class="hud-bars-col">
@@ -1727,8 +1727,8 @@
       <div class="hud-fps-text" id="fpsCounter">144 FPS</div>
     </div>
 
-    <!-- Player 2 (Nova-02) HUD - Shown in Co-op -->
-    <div class="hud-left" id="p2HudContainer" style="display: none;">
+    <!-- Player 2 (Nova-02) HUD - Hidden in multiplayer (Each player views only their own stats) -->
+    <div class="hud-left" id="p2HudContainer" style="display: none !important;">
       <div class="hud-status-panel p2-panel">
         <div class="hud-player-orb p2-orb">
           <div class="orb-core"></div>
