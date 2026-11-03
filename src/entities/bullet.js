@@ -95,41 +95,38 @@ export class Bullet {
       ctx.arc(0, 0, this.radius * 0.45, 0, Math.PI * 2);
       ctx.fill();
     } else {
-      // Player projectile: Streamlined Glowing Plasma Dart (Matching Reference Image)
-      const dartLen = this.radius * 2.8;
-      const dartW = this.radius * 1.1;
+      // Player projectile: Smooth Glowing Rounded Plasma Bolt / Capsule (Matching Reference Image)
+      const boltLen = this.radius * 2.8;
+      const boltW = this.radius * 1.0;
 
-      // Soft glow tail plume
-      const tailGrad = ctx.createLinearGradient(-dartLen * 1.4, 0, dartLen * 0.5, 0);
+      // 1. Soft trailing plasma aura
+      const tailGrad = ctx.createLinearGradient(-boltLen * 1.4, 0, boltLen * 0.4, 0);
       tailGrad.addColorStop(0, 'rgba(0, 240, 255, 0)');
-      tailGrad.addColorStop(1, this.color);
+      tailGrad.addColorStop(0.5, this.color);
+      tailGrad.addColorStop(1, 'rgba(255, 255, 255, 0.9)');
       ctx.fillStyle = tailGrad;
       ctx.beginPath();
-      ctx.moveTo(dartLen * 0.6, 0);
-      ctx.lineTo(-dartLen * 1.4, -dartW * 0.45);
-      ctx.lineTo(-dartLen * 1.4, dartW * 0.45);
-      ctx.closePath();
+      ctx.ellipse(-boltLen * 0.2, 0, boltLen * 0.7, boltW * 1.35, 0, 0, Math.PI * 2);
       ctx.fill();
 
-      // Dart aerodynamic body
+      // 2. Smooth Rounded Plasma Capsule Body (No sharp/triangular edges)
       ctx.fillStyle = this.color;
       ctx.beginPath();
-      ctx.moveTo(dartLen, 0);
-      ctx.lineTo(-dartLen * 0.3, -dartW);
-      ctx.lineTo(-dartLen * 0.8, -dartW * 0.4);
-      ctx.lineTo(-dartLen * 0.8, dartW * 0.4);
-      ctx.lineTo(-dartLen * 0.3, dartW);
-      ctx.closePath();
+      if (ctx.roundRect) {
+        ctx.roundRect(-boltLen * 0.5, -boltW, boltLen, boltW * 2, boltW);
+      } else {
+        ctx.ellipse(0, 0, boltLen * 0.5, boltW, 0, 0, Math.PI * 2);
+      }
       ctx.fill();
 
-      // Brilliant white-hot core & tip
+      // 3. Brilliant White-Hot Glowing Rounded Core
       ctx.fillStyle = '#ffffff';
       ctx.beginPath();
-      ctx.moveTo(dartLen, 0);
-      ctx.lineTo(0, -dartW * 0.45);
-      ctx.lineTo(-dartLen * 0.4, 0);
-      ctx.lineTo(0, dartW * 0.45);
-      ctx.closePath();
+      if (ctx.roundRect) {
+        ctx.roundRect(-boltLen * 0.35, -boltW * 0.5, boltLen * 0.7, boltW, boltW * 0.5);
+      } else {
+        ctx.ellipse(0, 0, boltLen * 0.35, boltW * 0.5, 0, 0, Math.PI * 2);
+      }
       ctx.fill();
     }
 

@@ -79,9 +79,10 @@ export class WaveManager {
       }
     }
 
-    // 1. Process queued summons
-    while (this.spawnQueue.length > 0) {
-      const q = this.spawnQueue.shift();
+    // 1. Process queued summons safely (bounded batch)
+    const summonBatch = this.spawnQueue.splice(0, 30);
+    for (let i = 0; i < summonBatch.length; i++) {
+      const q = summonBatch[i];
       const waveMult = 1 + (this.currentWave - 1) * 0.12;
       enemies.push(new Enemy(q.type, q.x, q.y, waveMult));
     }

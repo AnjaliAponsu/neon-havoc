@@ -596,9 +596,14 @@ class NeonHavocGame {
         this.runCrystals += 50;
         saveManager.addShards(25);
         soundEngine.playLevelUp();
-        this._hideOverlay(this.dom.upgradeModal);
-        this.state = 'PLAYING';
-        this.lastTime = performance.now();
+        if (this.pendingLevelUps > 0) {
+          this.pendingLevelUps--;
+          this.triggerLevelUp();
+        } else {
+          this._hideOverlay(this.dom.upgradeModal);
+          this.state = 'PLAYING';
+          this.lastTime = performance.now();
+        }
       };
     }
 
@@ -639,9 +644,14 @@ class NeonHavocGame {
           this.runCrystals += 50;
           saveManager.addShards(25);
           soundEngine.playLevelUp();
-          this._hideOverlay(this.dom.upgradeModal);
-          this.state = 'PLAYING';
-          this.lastTime = performance.now();
+          if (this.pendingLevelUps > 0) {
+            this.pendingLevelUps--;
+            this.triggerLevelUp();
+          } else {
+            this._hideOverlay(this.dom.upgradeModal);
+            this.state = 'PLAYING';
+            this.lastTime = performance.now();
+          }
         }
       } else if (this.state === 'GAME_OVER') {
         if (e.code === 'KeyR' || e.code === 'Space') {
@@ -1226,6 +1236,17 @@ class NeonHavocGame {
     this.renderer.camera.y = camInitPlayer.y;
 
     this.waveManager = new WaveManager(this.currentSector);
+    this.pendingLevelUps = 0;
+
+    // Spawn initial battleground crates & crystals (Matching Reference Screenshot)
+    this.powerupManager.spawn(spawnX - 350, spawnY - 50, POWERUP_TYPES.HEAL);
+    this.powerupManager.spawn(spawnX + 380, spawnY + 90, POWERUP_TYPES.BOOST || POWERUP_TYPES.BATTERY);
+    // Initial scattered golden crystals
+    for (let c = 0; c < 6; c++) {
+      const a = (c * Math.PI * 2) / 6 + 0.35;
+      const d = 190 + (c % 2) * 90;
+      this.crystalPool.spawn(spawnX + Math.cos(a) * d, spawnY + Math.sin(a) * d, 10);
+    }
 
     // Audio & State
     soundEngine.startMusic();
@@ -1282,10 +1303,15 @@ class NeonHavocGame {
         upg.apply(this.player2);
       }
       soundEngine.playLevelUp();
-      this._hideOverlay(this.dom.upgradeModal);
-      this.state = 'PLAYING';
-      this.lastTime = performance.now();
-      this.input.resetActions();
+      if (this.pendingLevelUps > 0) {
+        this.pendingLevelUps--;
+        this.triggerLevelUp();
+      } else {
+        this._hideOverlay(this.dom.upgradeModal);
+        this.state = 'PLAYING';
+        this.lastTime = performance.now();
+        this.input.resetActions();
+      }
     }
   }
 
@@ -1340,6 +1366,12 @@ class NeonHavocGame {
       this.player.invulnPowerupTimer = 6.0;
     } else if (type.id === 'heal') {
       this.player.health = Math.min(this.player.maxHealth, this.player.health + this.player.maxHealth * 0.5);
+    } else if (type.id === 'boost') {
+      this.player.overdriveCharge = Math.min(100, this.player.overdriveCharge + 40);
+      this.player.stats.fireRateMult *= 1.35;
+      setTimeout(() => {
+        if (this.player) this.player.stats.fireRateMult /= 1.35;
+      }, 8000);
     }
   }
 
@@ -1496,10 +1528,14 @@ class NeonHavocGame {
   }
 
   gameLoop(currentTime) {
-    const rawDt = (currentTime - this.lastTime) / 1000;
+    // 1. Immediately schedule next frame so no uncaught error can permanently freeze the game loop
+    requestAnimationFrame((t) => this.gameLoop(t));
+
+    // 2. Safe clamped delta time calculation
+    const rawDt = this.lastTime ? Math.max(0.001, Math.min(0.08, (currentTime - this.lastTime) / 1000)) : 0.016;
     this.lastTime = currentTime;
 
-    // 30X Dodge Matrix Bullet-Time Dilation
+    // 3. Dodge Matrix Bullet-Time Dilation
     if (this.bulletTimeTimer > 0) {
       this.bulletTimeTimer -= rawDt;
       this.timeDilation = 0.35;
@@ -1510,11 +1546,18 @@ class NeonHavocGame {
       this.timeDilation = 1.0;
     }
 
-    const dt = Math.min(0.08, rawDt * this.timeDilation);
+    // 4. Hit-stop crunch (scales down dt for impact weight, NEVER stalls or freezes gameLoop)
+    let hitStopScale = 1.0;
+    if (this.renderer && this.renderer.hitStopTimer > 0) {
+      this.renderer.hitStopTimer = Math.max(0, this.renderer.hitStopTimer - rawDt);
+      hitStopScale = 0.25;
+    }
 
-    // FPS Meter
+    const dt = Math.max(0.001, Math.min(0.08, rawDt * this.timeDilation * hitStopScale));
+
+    // 5. FPS Meter
     this.frameCount++;
-    this.fpsTimer += dt;
+    this.fpsTimer += rawDt;
     if (this.fpsTimer >= 0.5) {
       this.fps = Math.round(this.frameCount / this.fpsTimer);
       this.frameCount = 0;
@@ -1524,22 +1567,15 @@ class NeonHavocGame {
       }
     }
 
-    // Hit-stop crunch freeze handling
-    if (this.renderer.hitStopTimer > 0) {
-      this.renderer.hitStopTimer -= dt;
-      this.particlePool.update(dt);
-      this.renderer.updateCamera(dt, this.player ? this.player.x : 0, this.player ? this.player.y : 0, !!this.activeBoss, this.player ? this.player.isOverdrive : false);
+    // 6. Safe Update and Render with Error Boundary
+    try {
+      if (this.state === 'PLAYING') {
+        this.update(dt);
+      }
       this.render();
-      requestAnimationFrame((t) => this.gameLoop(t));
-      return;
+    } catch (err) {
+      console.error('[Neon Havoc] Exception during gameLoop update/render:', err);
     }
-
-    if (this.state === 'PLAYING') {
-      this.update(dt);
-    }
-
-    this.render();
-    requestAnimationFrame((t) => this.gameLoop(t));
   }
 
   update(dt) {
@@ -1833,7 +1869,11 @@ class NeonHavocGame {
         this.player2.addXp(xpGained, soundEngine, this.floatingTexts);
       }
       if (leveledUp) {
-        this.triggerLevelUp();
+        if (this.state === 'PLAYING') {
+          this.triggerLevelUp();
+        } else {
+          this.pendingLevelUps = (this.pendingLevelUps || 0) + 1;
+        }
       }
     });
 

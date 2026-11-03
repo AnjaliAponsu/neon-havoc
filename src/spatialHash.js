@@ -15,6 +15,7 @@ export class SpatialHashGrid {
   }
 
   insert(entity) {
+    if (!entity || !Number.isFinite(entity.x) || !Number.isFinite(entity.y)) return;
     const cx = Math.floor(entity.x / this.cellSize);
     const cy = Math.floor(entity.y / this.cellSize);
     const key = this._hash(cx, cy);
@@ -28,10 +29,12 @@ export class SpatialHashGrid {
   }
 
   queryNearby(x, y, radius = 60, callback) {
-    const minCx = Math.floor((x - radius) / this.cellSize);
-    const maxCx = Math.floor((x + radius) / this.cellSize);
-    const minCy = Math.floor((y - radius) / this.cellSize);
-    const maxCy = Math.floor((y + radius) / this.cellSize);
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+    const r = Math.max(1, radius || 60);
+    const minCx = Math.floor((x - r) / this.cellSize);
+    const maxCx = Math.floor((x + r) / this.cellSize);
+    const minCy = Math.floor((y - r) / this.cellSize);
+    const maxCy = Math.floor((y + r) / this.cellSize);
 
     for (let cx = minCx; cx <= maxCx; cx++) {
       for (let cy = minCy; cy <= maxCy; cy++) {

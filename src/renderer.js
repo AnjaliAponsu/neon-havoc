@@ -162,29 +162,43 @@ export class Renderer {
 
     // Ambient Floating Hexagonal Debris (Matching Reference Image Background)
     this.bgHexagons = [];
-    const hexCount = 28;
+    const hexCount = 85;
     for (let i = 0; i < hexCount; i++) {
       this.bgHexagons.push({
         x: Math.random() * GAME_CONFIG.ARENA_WIDTH,
         y: Math.random() * GAME_CONFIG.ARENA_HEIGHT,
-        size: 26 + Math.random() * 24,
+        size: 24 + Math.random() * 26,
         rotation: (Math.random() - 0.5) * 0.6,
         pulseSpeed: 0.4 + Math.random() * 0.6,
         offset: Math.random() * Math.PI * 2,
       });
     }
 
-    // Ambient Glowing Crystal Formations (Corners & Borders Matching Reference Image)
+    // Ambient Glowing Crystal Formations (Spawn Area & Arena Grid Matching Reference Image)
+    const cX = GAME_CONFIG.ARENA_WIDTH / 2;
+    const cY = GAME_CONFIG.ARENA_HEIGHT / 2;
     this.crystalFormations = [
-      // Bottom-Right Cyan Crystal Cluster (As in reference screenshot)
-      { x: GAME_CONFIG.ARENA_WIDTH - 140, y: GAME_CONFIG.ARENA_HEIGHT - 120, color: '#00f0ff', count: 6, scale: 1.2 },
-      { x: GAME_CONFIG.ARENA_WIDTH - 240, y: GAME_CONFIG.ARENA_HEIGHT - 70, color: '#00f0ff', count: 4, scale: 0.9 },
-      // Bottom-Left Purple/Magenta Crystal Cluster (As in reference screenshot)
-      { x: 120, y: GAME_CONFIG.ARENA_HEIGHT - 130, color: '#d000ff', count: 5, scale: 1.1 },
-      { x: 220, y: GAME_CONFIG.ARENA_HEIGHT - 80, color: '#ff00aa', count: 4, scale: 0.85 },
-      // Top-Left & Top-Right Ambient Crystals
-      { x: 140, y: 130, color: '#9933ff', count: 4, scale: 0.8 },
-      { x: GAME_CONFIG.ARENA_WIDTH - 150, y: 140, color: '#00f0ff', count: 5, scale: 0.9 },
+      // Primary Viewport Formations (Matching Reference Screenshot around Spawn)
+      { x: cX + 460, y: cY + 280, color: '#00f0ff', count: 6, scale: 1.25 },
+      { x: cX + 380, y: cY + 320, color: '#00f0ff', count: 4, scale: 0.95 },
+      { x: cX - 480, y: cY + 260, color: '#d000ff', count: 6, scale: 1.2 },
+      { x: cX - 400, y: cY + 310, color: '#ff00aa', count: 4, scale: 0.9 },
+      { x: cX - 460, y: cY - 280, color: '#9933ff', count: 4, scale: 0.9 },
+      { x: cX + 480, y: cY - 260, color: '#00f0ff', count: 5, scale: 1.0 },
+
+      // Arena Outer Formations
+      { x: 220, y: 220, color: '#9933ff', count: 5, scale: 1.1 },
+      { x: GAME_CONFIG.ARENA_WIDTH - 220, y: 220, color: '#00f0ff', count: 6, scale: 1.2 },
+      { x: 220, y: GAME_CONFIG.ARENA_HEIGHT - 220, color: '#d000ff', count: 6, scale: 1.2 },
+      { x: GAME_CONFIG.ARENA_WIDTH - 220, y: GAME_CONFIG.ARENA_HEIGHT - 220, color: '#00f0ff', count: 7, scale: 1.3 },
+      { x: cX, y: 180, color: '#00f0ff', count: 5, scale: 1.0 },
+      { x: cX, y: GAME_CONFIG.ARENA_HEIGHT - 180, color: '#d000ff', count: 5, scale: 1.0 },
+      { x: 180, y: cY, color: '#d000ff', count: 5, scale: 1.0 },
+      { x: GAME_CONFIG.ARENA_WIDTH - 180, y: cY, color: '#00f0ff', count: 5, scale: 1.0 },
+      { x: cX - 800, y: cY - 500, color: '#9933ff', count: 4, scale: 0.9 },
+      { x: cX + 800, y: cY - 500, color: '#00f0ff', count: 4, scale: 0.9 },
+      { x: cX - 800, y: cY + 500, color: '#ff00aa', count: 4, scale: 0.9 },
+      { x: cX + 800, y: cY + 500, color: '#00f0ff', count: 4, scale: 0.9 },
     ];
 
     this.resize();

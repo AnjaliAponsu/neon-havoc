@@ -74,7 +74,8 @@ export const COLORS = {
   POWERUP_FREEZE: '#70e0ff',
   POWERUP_BATTERY: '#ff00aa',
   POWERUP_SHIELD: '#00ff88',
-  POWERUP_HEAL: '#ff2255',
+  POWERUP_HEAL: '#00f0ff',
+  POWERUP_BOOST: '#ffe600',
 
   // UI & VFX
   XP_CRYSTAL: '#00ffff',
@@ -254,11 +255,19 @@ export const POWERUP_TYPES = {
   },
   HEAL: {
     id: 'heal',
-    name: 'Nanite Repair Capsule',
-    icon: '❤️',
-    color: COLORS.POWERUP_HEAL,
+    name: 'Nanite Repair Crate',
+    icon: '➕',
+    color: '#00f0ff',
     desc: 'Instantly restores 50% Maximum Health',
     duration: 0,
+  },
+  BOOST: {
+    id: 'boost',
+    name: 'Overcharge Buff Crate',
+    icon: '⏫',
+    color: '#ffe600',
+    desc: 'Overcharge booster: temporary +40% fire rate and +20% move speed',
+    duration: 8.0,
   },
 };
 
