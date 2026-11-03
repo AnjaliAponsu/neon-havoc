@@ -1,0 +1,13 @@
+[gd_scene load_steps=3 format=3 uid="uid://boss_scene_01"]
+
+[ext_resource type="Script" path="res://scripts/Boss.gd" id="1_boss"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_boss"]
+radius = 65.0
+
+[node name="VoidTitan" type="CharacterBody2D" groups=["boss", "enemies"]]
+script = ExtResource("1_boss")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_boss")
+

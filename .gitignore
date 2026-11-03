@@ -1,0 +1,9 @@
+node_modules/
+dist/
+scratch/
+.godot/
+.DS_Store
+Thumbs.db
+*.log
+.vscode/
+.idea/

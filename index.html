@@ -1,0 +1,2123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-touch-fullscreen" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#070913">
+  <title>NEON HAVOC — 2D Bullet-Hell Survival</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --neon-cyan: #00f0ff;
+      --neon-pink: #ff0077;
+      --neon-purple: #9933ff;
+      --neon-yellow: #ffe600;
+      --neon-red: #ff2255;
+      --dark-bg: #070913;
+      --panel-bg: rgba(10, 14, 28, 0.88);
+      --panel-border: rgba(0, 240, 255, 0.35);
+      --font-display: 'Orbitron', -apple-system, sans-serif;
+      --font-body: 'Rajdhani', -apple-system, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body, html {
+      width: 100%;
+      height: 100%;
+      height: 100dvh;
+      overflow: hidden;
+      background-color: var(--dark-bg);
+      font-family: var(--font-body);
+      color: #ffffff;
+      touch-action: none;
+      -webkit-touch-callout: none;
+    }
+
+    /* iOS / iPhone Standalone Fullscreen Mode */
+    html.ios-fullscreen-mode, body.ios-fullscreen-mode {
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 100vw !important;
+      height: 100dvh !important;
+      overflow: hidden !important;
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+
+    html.ios-fullscreen-mode #gameCanvas {
+      width: 100vw !important;
+      height: 100dvh !important;
+    }
+
+    #gameCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      z-index: 1;
+    }
+
+    /* ---- TOP XP BAR ---- */
+    #xpBarContainer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 10px;
+      background: rgba(0, 20, 40, 0.7);
+      z-index: 10;
+      border-bottom: 1px solid rgba(0, 240, 255, 0.2);
+    }
+
+    #xpBarFill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #00f0ff, #ffe600);
+      box-shadow: 0 0 12px #00f0ff;
+      transition: width 0.15s ease-out;
+    }
+
+    /* ---- IN-GAME HUD ---- */
+    #inGameHud {
+      position: absolute;
+      top: 14px;
+      left: 0;
+      width: 100%;
+      padding: 12px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    .hud-left {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .hp-container {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(8, 12, 24, 0.75);
+      padding: 8px 16px;
+      border-radius: 8px;
+      border: 1px solid var(--panel-border);
+      backdrop-filter: blur(8px);
+    }
+
+    .hearts {
+      display: flex;
+      gap: 4px;
+      font-size: 20px;
+      color: var(--neon-red);
+      text-shadow: 0 0 10px var(--neon-red);
+    }
+
+    .hp-bars {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      width: 140px;
+    }
+
+    .bar-bg {
+      height: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    #hpFill {
+      height: 100%;
+      width: 100%;
+      background: var(--neon-red);
+      box-shadow: 0 0 8px var(--neon-red);
+      transition: width 0.1s ease;
+    }
+
+    #shieldFill {
+      height: 100%;
+      width: 0%;
+      background: var(--neon-cyan);
+      box-shadow: 0 0 8px var(--neon-cyan);
+      transition: width 0.1s ease;
+    }
+
+    .level-badge {
+      font-family: var(--font-display);
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--neon-yellow);
+      text-shadow: 0 0 8px var(--neon-yellow);
+    }
+
+    .hud-center {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .wave-badge {
+      font-family: var(--font-display);
+      font-size: 18px;
+      letter-spacing: 2px;
+      color: #ffffff;
+      text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+    }
+
+    .timer-display {
+      font-family: var(--font-display);
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--neon-cyan);
+      text-shadow: 0 0 12px var(--neon-cyan);
+    }
+
+    /* Boss HUD Bar */
+    #bossHudBar {
+      display: none;
+      width: 320px;
+      background: rgba(20, 0, 10, 0.85);
+      border: 1px solid var(--neon-red);
+      border-radius: 6px;
+      padding: 6px 12px;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      box-shadow: 0 0 16px rgba(255, 0, 80, 0.4);
+    }
+
+    .boss-name {
+      font-family: var(--font-display);
+      font-size: 12px;
+      letter-spacing: 1.5px;
+      color: var(--neon-red);
+      text-shadow: 0 0 8px var(--neon-red);
+    }
+
+    .boss-hp-bg {
+      width: 100%;
+      height: 10px;
+      background: rgba(0, 0, 0, 0.7);
+      border-radius: 5px;
+      overflow: hidden;
+    }
+
+    #bossHpFill {
+      height: 100%;
+      width: 100%;
+      background: linear-gradient(90deg, #ff0055, #ffaa00);
+      box-shadow: 0 0 10px #ff0055;
+      transition: width 0.1s ease;
+    }
+
+    .hud-right {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      pointer-events: auto;
+    }
+
+    .shards-pill {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(8, 12, 24, 0.75);
+      border: 1px solid rgba(255, 230, 0, 0.4);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-family: var(--font-display);
+      font-size: 16px;
+      color: var(--neon-yellow);
+      text-shadow: 0 0 8px var(--neon-yellow);
+      backdrop-filter: blur(8px);
+    }
+
+    .hud-btn {
+      background: rgba(8, 12, 24, 0.75);
+      border: 1px solid var(--panel-border);
+      color: #ffffff;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      font-size: 18px;
+      transition: all 0.2s ease;
+      backdrop-filter: blur(8px);
+    }
+
+    .hud-btn:hover {
+      border-color: var(--neon-cyan);
+      box-shadow: 0 0 14px var(--neon-cyan);
+      transform: scale(1.05);
+    }
+
+    /* ---- BOTTOM ABILITY BAR (Styled like prompt storyboard!) ---- */
+    #abilityTray {
+      position: absolute;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 16px;
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    .ability-slot {
+      width: 72px;
+      height: 72px;
+      background: rgba(8, 14, 28, 0.85);
+      border: 2px solid rgba(0, 240, 255, 0.4);
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+      transition: all 0.2s ease;
+      pointer-events: auto;
+      cursor: pointer;
+    }
+
+    .ability-slot.ready {
+      border-color: var(--neon-cyan);
+      box-shadow: 0 0 16px rgba(0, 240, 255, 0.45);
+    }
+
+    .ability-slot.overdrive-slot {
+      border-color: rgba(255, 0, 119, 0.4);
+    }
+
+    .ability-slot.overdrive-slot.ready {
+      border-color: var(--neon-pink);
+      box-shadow: 0 0 24px rgba(255, 0, 119, 0.8);
+      animation: pulseOverdrive 1.2s infinite alternate;
+    }
+
+    @keyframes pulseOverdrive {
+      from { transform: scale(1); box-shadow: 0 0 16px var(--neon-pink); }
+      to { transform: scale(1.06); box-shadow: 0 0 28px var(--neon-pink); }
+    }
+
+    @keyframes pulseAlert {
+      from { transform: translateX(-50%) scale(0.96); opacity: 0.85; }
+      to { transform: translateX(-50%) scale(1.04); opacity: 1.0; }
+    }
+
+    @keyframes pulseText {
+      0%, 100% { opacity: 0.6; }
+      50% { opacity: 1.0; }
+    }
+
+    .ability-icon {
+      font-size: 26px;
+      margin-bottom: 2px;
+    }
+
+    .ability-key {
+      font-family: var(--font-display);
+      font-size: 11px;
+      font-weight: 700;
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    .cooldown-overlay {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 0%;
+      background: rgba(0, 0, 0, 0.75);
+      pointer-events: none;
+      transition: height 0.08s linear;
+    }
+
+    /* ---- SCREENS & MODALS OVERLAYS ---- */
+    .screen-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: none;
+      justify-content: center;
+      align-items: center;
+      background: rgba(4, 6, 14, 0.88);
+      backdrop-filter: blur(14px);
+      z-index: 100;
+      opacity: 0;
+      transition: opacity 0.25s ease;
+    }
+
+    .screen-overlay.active {
+      display: flex;
+      opacity: 1;
+    }
+
+    .modal-box {
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      box-shadow: 0 0 35px rgba(0, 240, 255, 0.25);
+      border-radius: 16px;
+      padding: 32px 40px;
+      max-width: 650px;
+      width: 90%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+
+    /* ---- MAIN MENU SCREEN (MATCHING REFERENCE UI) ---- */
+    #mainMenu {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle at 50% 50%, rgba(3, 7, 20, 0.15) 0%, rgba(2, 4, 14, 0.55) 100%),
+                  url('./assets/menu-bg.jpg?v=2') center center / cover no-repeat;
+      z-index: 50;
+      overflow: hidden;
+      box-shadow: inset 0 0 100px rgba(0, 0, 0, 0.85);
+    }
+
+    /* Top Bar & Quick Actions */
+    .menu-top-bar {
+      position: absolute;
+      top: 20px;
+      left: 0;
+      width: 100%;
+      padding: 0 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      pointer-events: none;
+      z-index: 60;
+    }
+
+    .cyber-corner-tl {
+      width: 80px;
+      height: 48px;
+      border-top: 3px solid #ff00aa;
+      border-left: 3px solid #00f0ff;
+      border-top-left-radius: 8px;
+      position: relative;
+      filter: drop-shadow(0 0 10px rgba(0, 240, 255, 0.8));
+    }
+
+    .cyber-corner-tl::after {
+      content: '';
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      width: 22px;
+      height: 2px;
+      background: #00f0ff;
+      box-shadow: 0 0 8px #00f0ff;
+    }
+
+    .quick-actions-bar {
+      display: flex;
+      gap: 12px;
+      pointer-events: auto;
+    }
+
+    .quick-icon-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: rgba(8, 18, 42, 0.7);
+      border: 1.5px solid rgba(0, 240, 255, 0.45);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5), inset 0 0 8px rgba(0, 240, 255, 0.15);
+      transition: all 0.22s cubic-bezier(0.25, 1, 0.5, 1);
+      outline: none;
+    }
+
+    .quick-icon-btn:hover {
+      border-color: #00f0ff;
+      background: rgba(0, 240, 255, 0.28);
+      box-shadow: 0 0 22px rgba(0, 240, 255, 0.7), inset 0 0 12px rgba(0, 240, 255, 0.3);
+      transform: translateY(-2px) scale(1.05);
+    }
+
+    .quick-icon-btn svg {
+      width: 20px;
+      height: 20px;
+      stroke: #00f0ff;
+      fill: none;
+      transition: stroke 0.2s, transform 0.2s;
+    }
+
+    .quick-icon-btn:hover svg {
+      stroke: #ffffff;
+      filter: drop-shadow(0 0 6px #00f0ff);
+      transform: scale(1.1);
+    }
+
+    /* Center Menu Wrap */
+    .menu-content-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 55;
+      transition: transform 0.3s ease;
+    }
+
+    /* Menu Header */
+    .menu-header {
+      margin-bottom: 12px;
+      text-align: center;
+    }
+
+    .menu-title {
+      font-family: var(--font-display);
+      font-size: 52px;
+      font-weight: 900;
+      letter-spacing: 6px;
+      margin-bottom: 2px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      line-height: 1;
+      text-transform: uppercase;
+    }
+
+    .title-neon {
+      background: linear-gradient(135deg, #00f0ff 0%, #3ca0ff 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 0 22px rgba(0, 240, 255, 0.9));
+    }
+
+    .title-havoc {
+      background: linear-gradient(135deg, #ff0077 0%, #ff6600 50%, #ffe600 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 0 22px rgba(255, 110, 0, 0.9));
+    }
+
+    .menu-sub-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      margin-top: 6px;
+    }
+
+    .cyber-wing {
+      height: 2px;
+      width: 50px;
+      position: relative;
+    }
+
+    .cyber-wing.left {
+      background: linear-gradient(90deg, transparent, rgba(0, 240, 255, 0.8));
+    }
+
+    .cyber-wing.left::after {
+      content: '';
+      position: absolute;
+      right: 0;
+      top: -3px;
+      width: 6px;
+      height: 8px;
+      border-right: 2px solid #00f0ff;
+      border-top: 2px solid #00f0ff;
+      transform: skewX(-30deg);
+    }
+
+    .cyber-wing.right {
+      background: linear-gradient(90deg, rgba(0, 240, 255, 0.8), transparent);
+    }
+
+    .cyber-wing.right::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: -3px;
+      width: 6px;
+      height: 8px;
+      border-left: 2px solid #00f0ff;
+      border-top: 2px solid #00f0ff;
+      transform: skewX(30deg);
+    }
+
+    .sub-text {
+      font-family: var(--font-display);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 4px;
+      color: rgba(220, 240, 255, 0.9);
+      text-shadow: 0 0 10px rgba(0, 240, 255, 0.6);
+    }
+
+    /* Central Menu Card */
+    .menu-center-card {
+      width: 410px;
+      max-width: calc(100vw - 36px);
+      background: linear-gradient(180deg, rgba(8, 18, 44, 0.86) 0%, rgba(4, 10, 26, 0.94) 100%);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 2px solid #00f0ff;
+      border-radius: 26px;
+      padding: 18px 20px;
+      box-shadow: 0 18px 50px rgba(0, 0, 0, 0.85), inset 0 0 25px rgba(0, 240, 255, 0.16), 0 0 35px rgba(0, 240, 255, 0.35);
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+      position: relative;
+    }
+
+    /* Split Modes Row */
+    .menu-mode-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      width: 100%;
+      margin-bottom: 2px;
+    }
+
+    .mode-btn {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      border-radius: 16px;
+      cursor: pointer;
+      font-family: var(--font-display);
+      text-align: left;
+      transition: all 0.22s cubic-bezier(0.25, 1, 0.5, 1);
+      position: relative;
+      outline: none;
+    }
+
+    .mode-btn.solo {
+      background: linear-gradient(180deg, rgba(0, 240, 255, 0.22) 0%, rgba(0, 160, 255, 0.08) 100%);
+      border: 2px solid #00f0ff;
+      box-shadow: 0 0 18px rgba(0, 240, 255, 0.35), inset 0 0 12px rgba(0, 240, 255, 0.15);
+    }
+
+    .mode-btn.solo:hover {
+      background: linear-gradient(180deg, rgba(0, 240, 255, 0.36) 0%, rgba(0, 160, 255, 0.18) 100%);
+      box-shadow: 0 0 28px rgba(0, 240, 255, 0.7), inset 0 0 18px rgba(0, 240, 255, 0.3);
+      transform: translateY(-2px);
+    }
+
+    .mode-btn.coop {
+      background: linear-gradient(180deg, rgba(224, 36, 195, 0.22) 0%, rgba(160, 20, 180, 0.08) 100%);
+      border: 2px solid #e024c3;
+      box-shadow: 0 0 18px rgba(224, 36, 195, 0.35), inset 0 0 12px rgba(224, 36, 195, 0.15);
+    }
+
+    .mode-btn.coop:hover {
+      background: linear-gradient(180deg, rgba(224, 36, 195, 0.36) 0%, rgba(160, 20, 180, 0.18) 100%);
+      box-shadow: 0 0 28px rgba(224, 36, 195, 0.7), inset 0 0 18px rgba(224, 36, 195, 0.3);
+      transform: translateY(-2px);
+    }
+
+    .mode-icon-circle {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .mode-icon-circle.solo svg {
+      fill: #00f0ff;
+      filter: drop-shadow(0 0 6px #00f0ff);
+    }
+
+    .mode-icon-circle.coop svg {
+      fill: #ff00aa;
+      filter: drop-shadow(0 0 6px #ff00aa);
+    }
+
+    .mode-text {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.15;
+    }
+
+    .mode-text .title {
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      color: #ffffff;
+    }
+
+    .mode-text .sub {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: rgba(255, 255, 255, 0.85);
+    }
+
+    /* Menu Navigation Capsule Buttons */
+    .menu-nav-btn {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px;
+      border-radius: 14px;
+      background: rgba(10, 24, 52, 0.65);
+      border: 1.5px solid rgba(0, 240, 255, 0.45);
+      color: #ffffff;
+      cursor: pointer;
+      font-family: var(--font-display);
+      transition: all 0.2s cubic-bezier(0.25, 1, 0.5, 1);
+      outline: none;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    }
+
+    .menu-nav-btn:hover {
+      background: rgba(0, 240, 255, 0.22);
+      border-color: #00f0ff;
+      box-shadow: 0 0 20px rgba(0, 240, 255, 0.55);
+      transform: translateY(-2px);
+    }
+
+    .menu-nav-btn.online {
+      background: linear-gradient(90deg, rgba(0, 255, 136, 0.2) 0%, rgba(0, 180, 100, 0.08) 100%);
+      border: 2px solid #00ff88;
+      box-shadow: 0 0 18px rgba(0, 255, 136, 0.4);
+    }
+
+    .menu-nav-btn.online:hover {
+      background: linear-gradient(90deg, rgba(0, 255, 136, 0.32) 0%, rgba(0, 180, 100, 0.18) 100%);
+      box-shadow: 0 0 26px rgba(0, 255, 136, 0.7);
+      border-color: #00ff88;
+    }
+
+    .btn-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .btn-left svg {
+      flex-shrink: 0;
+      stroke: var(--neon-cyan);
+      filter: drop-shadow(0 0 4px rgba(0, 240, 255, 0.5));
+    }
+
+    .menu-nav-btn.online .btn-left svg {
+      stroke: #00ff88;
+      filter: drop-shadow(0 0 6px #00ff88);
+    }
+
+    .btn-label-wrap {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      text-align: left;
+    }
+
+    .btn-main-label {
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      color: #ffffff;
+    }
+
+    .btn-sub-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.65);
+      letter-spacing: 0.5px;
+    }
+
+    .beta-pill {
+      background: #00ff88;
+      color: #04140b;
+      font-family: var(--font-display);
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: 1.5px;
+      padding: 3px 8px;
+      border-radius: 6px;
+      box-shadow: 0 0 12px rgba(0, 255, 136, 0.85);
+    }
+
+    .menu-notif-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #ff00aa;
+      box-shadow: 0 0 12px #ff00aa;
+      animation: pulseGlow 1.8s infinite;
+    }
+
+    @keyframes pulseGlow {
+      0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+        box-shadow: 0 0 12px #ff00aa;
+      }
+      50% {
+        opacity: 0.5;
+        transform: scale(0.85);
+        box-shadow: 0 0 4px #ff00aa;
+      }
+    }
+
+    /* Menu Footer Bar */
+    .menu-footer-bar {
+      position: absolute;
+      bottom: 18px;
+      left: 0;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 32px;
+      pointer-events: none;
+      z-index: 60;
+    }
+
+    .menu-version-text {
+      font-family: var(--font-display);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: rgba(0, 240, 255, 0.6);
+      pointer-events: auto;
+    }
+
+    .menu-protocol-pill {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 6px 18px;
+      background: rgba(10, 18, 38, 0.55);
+      border: 1px solid rgba(0, 240, 255, 0.28);
+      border-radius: 20px;
+      backdrop-filter: blur(8px);
+      font-family: var(--font-display);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      color: rgba(255, 255, 255, 0.65);
+    }
+
+    .protocol-divider {
+      color: #00f0ff;
+      font-weight: 900;
+    }
+
+    .corner-bracket-br {
+      width: 32px;
+      height: 32px;
+      border-right: 2px solid rgba(0, 240, 255, 0.45);
+      border-bottom: 2px solid rgba(0, 240, 255, 0.45);
+      border-bottom-right-radius: 6px;
+    }
+
+    /* Mobile & Compact Screen Responsiveness */
+    @media (max-width: 650px) {
+      .menu-top-bar {
+        padding: 0 16px;
+        top: 14px;
+      }
+      .cyber-corner-tl {
+        width: 44px;
+        height: 28px;
+      }
+      .quick-icon-btn {
+        width: 38px;
+        height: 38px;
+      }
+      .menu-center-card {
+        width: min(360px, 94vw);
+        padding: 14px 14px;
+        gap: 8px;
+      }
+      .menu-title {
+        font-size: 38px;
+        letter-spacing: 4px;
+      }
+      .sub-text {
+        font-size: 10px;
+        letter-spacing: 2px;
+      }
+      .menu-footer-bar {
+        padding: 0 16px;
+        bottom: 12px;
+      }
+      .menu-protocol-pill {
+        font-size: 9px;
+        padding: 4px 10px;
+        letter-spacing: 1px;
+      }
+      .modal-box {
+        width: 95vw !important;
+        max-width: 95vw !important;
+        padding: 16px !important;
+      }
+      .online-cards-grid {
+        grid-template-columns: 1fr !important;
+      }
+      #abilityTray {
+        bottom: 12px !important;
+        gap: 8px !important;
+      }
+      .ability-slot {
+        width: 54px !important;
+        height: 54px !important;
+      }
+      .ability-icon {
+        font-size: 20px !important;
+      }
+      .ability-key {
+        font-size: 8px !important;
+      }
+      #inGameHud {
+        padding: 8px 12px;
+      }
+      .hud-left {
+        gap: 4px;
+      }
+      .bar-container {
+        width: 140px !important;
+        height: 12px !important;
+      }
+      .upgrade-cards-container {
+        flex-direction: column !important;
+        align-items: center !important;
+        gap: 12px !important;
+      }
+      .upgrade-card {
+        width: 100% !important;
+        max-width: 320px !important;
+        padding: 14px !important;
+      }
+    }
+
+    @media (max-height: 750px) {
+      .menu-content-wrap {
+        transform: scale(0.85);
+        transform-origin: center center;
+      }
+    }
+
+    @media (max-height: 550px) {
+      #mainMenu {
+        justify-content: flex-start;
+        overflow-y: auto;
+        padding: 16px 0 50px 0;
+      }
+      .menu-content-wrap {
+        transform: scale(0.74);
+        transform-origin: top center;
+        margin-top: 40px;
+      }
+      #abilityTray {
+        bottom: 6px !important;
+      }
+    }
+
+    .game-logo {
+      font-family: var(--font-display);
+      font-size: 64px;
+      font-weight: 900;
+      letter-spacing: 6px;
+      background: linear-gradient(135deg, #00f0ff 0%, #ff0077 50%, #ffe600 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 30px rgba(0, 240, 255, 0.4);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+    }
+
+    .game-subtitle {
+      font-family: var(--font-display);
+      font-size: 16px;
+      letter-spacing: 4px;
+      color: rgba(255, 255, 255, 0.7);
+      margin-bottom: 40px;
+    }
+
+    .menu-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      width: 280px;
+    }
+
+    .neon-btn {
+      font-family: var(--font-display);
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      padding: 14px 24px;
+      background: rgba(0, 240, 255, 0.08);
+      border: 1px solid var(--neon-cyan);
+      color: #ffffff;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 0 0 12px rgba(0, 240, 255, 0.2);
+      transition: all 0.2s ease;
+      text-transform: uppercase;
+    }
+
+    .neon-btn:hover {
+      background: var(--neon-cyan);
+      color: #000000;
+      box-shadow: 0 0 24px var(--neon-cyan);
+      transform: translateY(-2px);
+    }
+
+    .neon-btn.secondary {
+      border-color: rgba(255, 255, 255, 0.3);
+      background: rgba(255, 255, 255, 0.05);
+      box-shadow: none;
+    }
+
+    .neon-btn.secondary:hover {
+      background: rgba(255, 255, 255, 0.2);
+      color: #ffffff;
+      border-color: #ffffff;
+      box-shadow: 0 0 16px rgba(255, 255, 255, 0.4);
+    }
+
+    .neon-btn.danger {
+      border-color: var(--neon-red);
+      background: rgba(255, 34, 85, 0.1);
+      box-shadow: 0 0 12px rgba(255, 34, 85, 0.3);
+    }
+
+    .neon-btn.danger:hover {
+      background: var(--neon-red);
+      color: #ffffff;
+      box-shadow: 0 0 24px var(--neon-red);
+    }
+
+    /* ---- UPGRADE SELECTION MODAL ---- */
+    .upgrade-cards-container {
+      display: flex;
+      gap: 20px;
+      margin-top: 24px;
+      width: 100%;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .upgrade-card {
+      background: rgba(14, 20, 38, 0.95);
+      border: 2px solid rgba(0, 240, 255, 0.4);
+      border-radius: 12px;
+      padding: 24px 20px;
+      width: 200px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: pointer;
+      transition: all 0.22s ease;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
+    }
+
+    .upgrade-card:hover {
+      border-color: var(--neon-cyan);
+      box-shadow: 0 0 24px var(--neon-cyan);
+      transform: translateY(-6px) scale(1.03);
+    }
+
+    .upgrade-card.rare {
+      border-color: var(--neon-purple);
+    }
+    .upgrade-card.rare:hover {
+      box-shadow: 0 0 24px var(--neon-purple);
+    }
+
+    .upgrade-card.epic {
+      border-color: var(--neon-yellow);
+    }
+    .upgrade-card.epic:hover {
+      box-shadow: 0 0 24px var(--neon-yellow);
+    }
+
+    .upgrade-icon {
+      font-size: 38px;
+      margin-bottom: 12px;
+    }
+
+    .upgrade-title {
+      font-family: var(--font-display);
+      font-size: 15px;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 8px;
+    }
+
+    .upgrade-rarity {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      margin-bottom: 12px;
+      font-weight: 700;
+    }
+
+    .rarity-common { background: rgba(0, 240, 255, 0.2); color: var(--neon-cyan); }
+    .rarity-rare { background: rgba(153, 51, 255, 0.25); color: var(--neon-purple); }
+    .rarity-epic { background: rgba(255, 230, 0, 0.25); color: var(--neon-yellow); }
+    .rarity-legendary { background: rgba(255, 0, 119, 0.3); color: #ff0077; font-weight: 900; }
+
+    .upgrade-card.legendary {
+      border-color: #ff0077;
+      background: radial-gradient(circle at center, rgba(38, 12, 34, 0.95), rgba(14, 20, 38, 0.98));
+    }
+    .upgrade-card.legendary:hover {
+      box-shadow: 0 0 32px #ff0077;
+    }
+
+    .upgrade-desc {
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.75);
+      line-height: 1.4;
+    }
+
+    /* ---- TECH LAB (META UPGRADES) ---- */
+    .tech-lab-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+      width: 100%;
+      margin: 20px 0;
+      max-height: 400px;
+      overflow-y: auto;
+      padding-right: 8px;
+    }
+
+    .tech-item {
+      background: rgba(16, 22, 44, 0.8);
+      border: 1px solid var(--panel-border);
+      border-radius: 10px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 6px;
+      text-align: left;
+    }
+
+    .tech-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+    }
+
+    .tech-name {
+      font-family: var(--font-display);
+      font-size: 15px;
+      color: var(--neon-cyan);
+    }
+
+    .tech-rank {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--neon-yellow);
+    }
+
+    .tech-desc {
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    .tech-buy-btn {
+      align-self: flex-end;
+      margin-top: 6px;
+      padding: 6px 14px;
+      font-family: var(--font-display);
+      font-size: 12px;
+      font-weight: 700;
+      background: rgba(255, 230, 0, 0.15);
+      border: 1px solid var(--neon-yellow);
+      color: var(--neon-yellow);
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .tech-buy-btn:hover:not(:disabled) {
+      background: var(--neon-yellow);
+      color: #000;
+      box-shadow: 0 0 12px var(--neon-yellow);
+    }
+
+    .tech-buy-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      border-color: #666;
+      color: #888;
+    }
+
+    /* ---- SECTOR SELECT MODAL ---- */
+    .sectors-container {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      width: 100%;
+      margin: 20px 0;
+    }
+
+    .sector-card {
+      background: rgba(14, 20, 40, 0.85);
+      border: 1px solid var(--panel-border);
+      border-radius: 10px;
+      padding: 16px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-align: left;
+    }
+
+    .sector-card:hover:not(.locked) {
+      border-color: var(--neon-cyan);
+      box-shadow: 0 0 16px var(--neon-cyan);
+      transform: translateX(6px);
+    }
+
+    .sector-card.locked {
+      opacity: 0.5;
+      cursor: not-allowed;
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    .sector-info h3 {
+      font-family: var(--font-display);
+      font-size: 16px;
+      color: #fff;
+    }
+
+    .sector-info p {
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.65);
+    }
+
+    .sector-diff {
+      font-family: var(--font-display);
+      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-weight: 700;
+    }
+
+    .diff-normal { background: rgba(0, 240, 255, 0.2); color: var(--neon-cyan); }
+    .diff-hard { background: rgba(255, 0, 119, 0.2); color: var(--neon-pink); }
+    .diff-insane { background: rgba(255, 230, 0, 0.2); color: var(--neon-yellow); }
+
+    /* ---- SETTINGS & LORE MODALS ---- */
+    .settings-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      font-size: 15px;
+    }
+
+    .settings-row input[type="range"] {
+      width: 160px;
+      accent-color: var(--neon-cyan);
+    }
+
+    .settings-row input[type="checkbox"] {
+      width: 20px;
+      height: 20px;
+      accent-color: var(--neon-cyan);
+    }
+
+    /* ---- RESULTS SUMMARY ---- */
+    .results-stats {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+      width: 100%;
+      margin: 24px 0;
+    }
+
+    .stat-box {
+      background: rgba(16, 22, 44, 0.7);
+      border: 1px solid var(--panel-border);
+      border-radius: 8px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.6);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .stat-val {
+      font-family: var(--font-display);
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--neon-cyan);
+      margin-top: 4px;
+    }
+
+    /* ---- TOUCH CONTROLS (Mobile / Tablet) ---- */
+    #touchOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 20;
+      display: none;
+    }
+
+    .touch-stick-base {
+      position: absolute;
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      border: 2px dashed rgba(0, 240, 255, 0.35);
+      background: rgba(0, 240, 255, 0.05);
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+
+    .touch-stick-thumb {
+      position: absolute;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: var(--neon-cyan);
+      box-shadow: 0 0 14px var(--neon-cyan);
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.3);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: var(--neon-cyan);
+      border-radius: 3px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Global High-Visibility HUD Notification Toast -->
+  <div id="globalToast" style="display: none; position: fixed; top: 28px; left: 50%; transform: translateX(-50%); z-index: 9999; padding: 10px 24px; border-radius: 30px; font-family: var(--font-display); font-size: 13px; font-weight: 800; letter-spacing: 1px; box-shadow: 0 0 25px rgba(0,0,0,0.85); transition: opacity 0.3s ease, transform 0.3s ease; pointer-events: none; text-align: center;"></div>
+
+  <!-- Game Canvas -->
+  <canvas id="gameCanvas"></canvas>
+
+  <!-- Top XP Bar -->
+  <div id="xpBarContainer">
+    <div id="xpBarFill"></div>
+  </div>
+
+  <!-- In-Game HUD -->
+  <div id="inGameHud" style="display: none;">
+    <!-- Left: Health, Shield, Level -->
+    <div class="hud-left">
+      <div class="hp-container">
+        <div class="hearts">❤️</div>
+        <div class="hp-bars">
+          <div class="bar-bg"><div id="hpFill"></div></div>
+          <div class="bar-bg"><div id="shieldFill"></div></div>
+        </div>
+        <span id="hpText" style="font-size: 12px; font-weight: 700; color: #ffffff; min-width: 45px;">100 HP</span>
+        <div class="level-badge" id="hudLevelBadge">P1: SPARK</div>
+      </div>
+      <div style="font-family: var(--font-display); font-size: 11px; color: rgba(0, 240, 255, 0.75); letter-spacing: 1px; padding-left: 6px;" id="fpsCounter">60 FPS</div>
+    </div>
+
+    <!-- Player 2 (Nova-02) HUD - Shown in Co-op -->
+    <div class="hud-left" id="p2HudContainer" style="display: none; border-left: 2px solid #ff00aa; padding-left: 10px; margin-left: 6px;">
+      <div class="hp-container">
+        <div class="hearts" style="filter: hue-rotate(280deg);">💜</div>
+        <div class="hp-bars">
+          <div class="bar-bg"><div id="p2HpFill" style="background: linear-gradient(90deg, #ff00aa, #ff66cc); width: 100%; height: 100%;"></div></div>
+          <div class="bar-bg"><div id="p2ShieldFill" style="background: linear-gradient(90deg, #aa00ff, #ff00aa); width: 0%; height: 100%;"></div></div>
+        </div>
+        <span id="p2HpText" style="font-size: 12px; font-weight: 700; color: #ff00aa; min-width: 45px;">100 HP</span>
+        <div class="level-badge" id="p2HudLevelBadge" style="background: rgba(255, 0, 170, 0.2); border-color: #ff00aa; color: #ff00aa;">P2: NOVA</div>
+      </div>
+    </div>
+
+    <!-- Center: Wave & Survival Timer & Boss Health -->
+    <div class="hud-center">
+      <div class="wave-badge" id="hudWaveBadge">WAVE 1 / 20</div>
+      <div class="timer-display" id="hudTimer">00:00</div>
+      <div id="hudPowerupBadge" style="display: none; font-family: var(--font-display); font-size: 13px; font-weight: 800; color: #ffe600; text-shadow: 0 0 10px #ffe600; background: rgba(10, 16, 35, 0.85); border: 1px solid #ffe600; padding: 4px 12px; border-radius: 12px;"></div>
+
+      <div id="bossHudBar">
+        <div class="boss-name" id="hudBossName">⚠️ THE VOID TITAN ⚠️</div>
+        <div class="boss-hp-bg"><div id="bossHpFill"></div></div>
+      </div>
+    </div>
+
+    <!-- Right: Spectrum Shards, Fullscreen & Pause -->
+    <div class="hud-right">
+      <div id="hudComboBadge" style="display: none; align-items: center; gap: 6px; background: rgba(255, 0, 119, 0.25); border: 1px solid var(--neon-pink); padding: 5px 12px; border-radius: 20px; font-family: var(--font-display); font-size: 13px; font-weight: 800; color: #ff00aa; text-shadow: 0 0 10px #ff00aa; box-shadow: 0 0 14px rgba(255, 0, 119, 0.35); transition: transform 0.1s ease;">
+        <span>🔥</span>
+        <span id="hudComboText">10 COMBO (1.2x)</span>
+      </div>
+      <div class="shards-pill">
+        <span>💎</span>
+        <span id="hudShards">0</span>
+      </div>
+      <button class="hud-btn" id="hudFullscreenBtn" title="Toggle Fullscreen [F]">⛶</button>
+      <button class="hud-btn" id="hudPauseBtn" title="Pause (P)">⏸</button>
+    </div>
+  </div>
+
+  <!-- Downed Teammate Co-Op Alert Banner -->
+  <div id="hudDownedAlert" style="display: none; position: absolute; top: 75px; left: 50%; transform: translateX(-50%); z-index: 20; background: rgba(255, 0, 68, 0.9); border: 1px solid #ffffff; border-radius: 20px; padding: 6px 20px; font-family: var(--font-display); font-size: 13px; font-weight: 800; color: #ffffff; letter-spacing: 1px; box-shadow: 0 0 20px rgba(255, 0, 68, 0.6); animation: pulseAlert 0.8s infinite alternate;">
+    ⚡ TEAMMATE DOWN! STAND NEAR CORE TO REVIVE! ⚡
+  </div>
+
+  <!-- Bottom Ability Slots Tray -->
+  <div id="abilityTray" style="display: none;">
+    <!-- Q: Lightning Dash -->
+    <div class="ability-slot ready" id="slotDash">
+      <div class="ability-icon">⏩</div>
+      <div class="ability-key">[Q] DASH</div>
+      <div class="cooldown-overlay" id="cdDash"></div>
+    </div>
+
+    <!-- E: Orbital Shield -->
+    <div class="ability-slot ready" id="slotShield">
+      <div class="ability-icon">🛡️</div>
+      <div class="ability-key">[E] AEGIS</div>
+      <div class="cooldown-overlay" id="cdShield"></div>
+    </div>
+
+    <!-- R: Shockwave -->
+    <div class="ability-slot ready" id="slotWave">
+      <div class="ability-icon">🌊</div>
+      <div class="ability-key">[R] WAVE</div>
+      <div class="cooldown-overlay" id="cdWave"></div>
+    </div>
+
+    <!-- Space: Overdrive -->
+    <div class="ability-slot overdrive-slot" id="slotOverdrive">
+      <div class="ability-icon">☄️</div>
+      <div class="ability-key">[SPACE] OD</div>
+      <div class="cooldown-overlay" id="cdOverdrive" style="height: 100%;"></div>
+    </div>
+  </div>
+
+  <!-- Touch Overlay -->
+  <div id="touchOverlay">
+    <div class="touch-stick-base" id="touchMoveBase" style="display: none;"></div>
+    <div class="touch-stick-thumb" id="touchMoveThumb" style="display: none;"></div>
+    <div class="touch-stick-base" id="touchAimBase" style="display: none;"></div>
+    <div class="touch-stick-thumb" id="touchAimThumb" style="display: none;"></div>
+  </div>
+
+  <!-- ==================== SCREENS & MODALS ==================== -->
+
+  <!-- 1. MAIN MENU SCREEN (MATCHING REFERENCE UI) -->
+  <div id="mainMenu">
+    <!-- Top Bar Quick Actions & Cyber Accents -->
+    <div class="menu-top-bar">
+      <div class="cyber-corner-tl"></div>
+      <div class="quick-actions-bar">
+        <button class="quick-icon-btn" id="btnQuickProfile" title="Pilot Dossier / Profile">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+          </svg>
+        </button>
+        <button class="quick-icon-btn" id="btnQuickAchievements" title="Achievements & Honors">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94A5.01 5.01 0 0 0 11 15.9V19H7v2h10v-2h-4v-3.1c1.88-.34 3.32-1.84 3.61-3.96C19.08 11.63 21 9.55 21 7V7c0-1.1-.9-2-2-2zM5 8V7h2v3.82C5.84 10.4 5 9.3 5 8zm14 0c0 1.3-.84 2.4-2 2.82V7h2v1z"/>
+          </svg>
+        </button>
+        <button class="quick-icon-btn" id="btnQuickQuit" title="Power / Reload Simulation">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path>
+            <line x1="12" y1="2" x2="12" y2="12"></line>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Center Menu Content -->
+    <div class="menu-content-wrap">
+      <div class="menu-header">
+        <h1 class="menu-title">
+          <span class="title-neon">NEON</span>
+          <span class="title-havoc">HAVOC</span>
+        </h1>
+        <div class="menu-sub-row">
+          <span class="cyber-wing left"></span>
+          <span class="sub-text">2D BULLET-HELL SURVIVAL ARENA</span>
+          <span class="cyber-wing right"></span>
+        </div>
+      </div>
+
+      <div class="menu-center-card">
+        <!-- Row 1: Split Modes (Solo vs Local Co-Op) -->
+        <div class="menu-mode-row">
+          <button class="mode-btn solo" id="btnMenuPlay">
+            <div class="mode-icon-circle solo">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+              </svg>
+            </div>
+            <div class="mode-text">
+              <span class="title">SOLO</span>
+              <span class="sub">SURVIVAL</span>
+            </div>
+          </button>
+
+          <button class="mode-btn coop" id="btnMenuCoop">
+            <div class="mode-icon-circle coop">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+              </svg>
+            </div>
+            <div class="mode-text">
+              <span class="title">LOCAL</span>
+              <span class="sub">CO-OP (2P)</span>
+            </div>
+          </button>
+        </div>
+
+        <!-- Row 2: Online Co-Op (LAN / WEB) -->
+        <button class="menu-nav-btn online" id="btnMenuOnline">
+          <div class="btn-left">
+            <svg class="online-svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#00ff88" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M5 12.55a11 11 0 0 1 14.08 0"></path>
+              <path d="M1.42 9a16 16 0 0 1 21.16 0"></path>
+              <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
+              <line x1="12" y1="20" x2="12.01" y2="20"></line>
+            </svg>
+            <div class="btn-label-wrap">
+              <span class="btn-main-label">ONLINE CO-OP</span>
+              <span class="btn-sub-label">(LAN / WEB)</span>
+            </div>
+          </div>
+          <span class="beta-pill">BETA</span>
+        </button>
+
+        <!-- Row 3: Tech Lab (Upgrades) -->
+        <button class="menu-nav-btn" id="btnMenuTechLab">
+          <div class="btn-left">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--neon-cyan)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
+            </svg>
+            <div class="btn-label-wrap">
+              <span class="btn-main-label">TECH LAB</span>
+              <span class="btn-sub-label">(UPGRADES)</span>
+            </div>
+          </div>
+          <span class="menu-notif-dot" id="menuTechLabDot"></span>
+        </button>
+
+        <!-- Row 4: Arsenal Archive -->
+        <button class="menu-nav-btn" id="btnMenuSynergies">
+          <div class="btn-left">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--neon-cyan)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+              <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+              <line x1="12" y1="22.08" x2="12" y2="12"></line>
+            </svg>
+            <div class="btn-label-wrap">
+              <span class="btn-main-label">ARSENAL ARCHIVE</span>
+            </div>
+          </div>
+        </button>
+
+        <!-- Row 5: Lore & Controls -->
+        <button class="menu-nav-btn" id="btnMenuLore">
+          <div class="btn-left">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--neon-cyan)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+            </svg>
+            <div class="btn-label-wrap">
+              <span class="btn-main-label">LORE & CONTROLS</span>
+            </div>
+          </div>
+        </button>
+
+        <!-- Row 6: Settings -->
+        <button class="menu-nav-btn" id="btnMenuSettings">
+          <div class="btn-left">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--neon-cyan)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+            <div class="btn-label-wrap">
+              <span class="btn-main-label">SETTINGS</span>
+            </div>
+          </div>
+        </button>
+
+        <!-- Row 7: Fullscreen (F11) -->
+        <button class="menu-nav-btn" id="btnMenuFullscreen">
+          <div class="btn-left">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--neon-cyan)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
+            </svg>
+            <div class="btn-label-wrap">
+              <span class="btn-main-label">FULLSCREEN (F11)</span>
+            </div>
+          </div>
+        </button>
+      </div>
+    </div>
+
+    <!-- Bottom Bar: Version & Protocol -->
+    <div class="menu-footer-bar">
+      <div class="menu-version-text">v1.0.0</div>
+      <div class="menu-protocol-pill">
+        <span>SPARK-01 PROTOCOL</span>
+        <span class="protocol-divider">|</span>
+        <span>THE SPECTRUM RESISTANCE</span>
+      </div>
+      <div class="corner-bracket-br"></div>
+    </div>
+  </div>
+
+  <!-- 1.1 PILOT DOSSIER / PROFILE MODAL -->
+  <div class="screen-overlay" id="profileModal">
+    <div class="modal-box" style="max-width: 520px;">
+      <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 20px;">
+        <div style="width: 58px; height: 58px; border-radius: 50%; background: radial-gradient(circle, #00f0ff 0%, #050e26 70%); border: 2px solid #00f0ff; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 20px rgba(0, 240, 255, 0.6); font-size: 26px;">
+          ⚡
+        </div>
+        <div style="text-align: left;">
+          <h2 style="font-family: var(--font-display); font-size: 22px; color: #00f0ff; margin: 0; letter-spacing: 1.5px;">PILOT SPARK-01</h2>
+          <div id="profRankTitle" style="font-size: 12px; color: #ffe600; font-weight: 700; letter-spacing: 1px; margin-top: 2px;">RANK: SPECTRUM VANGUARD</div>
+        </div>
+      </div>
+
+      <div class="results-stats" style="grid-template-columns: 1fr 1fr; margin-bottom: 22px;">
+        <div class="stat-box">
+          <div class="stat-label">TOTAL KILLS</div>
+          <div class="stat-val" id="profTotalKills" style="color: #ff0077;">0</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">HIGH SCORE</div>
+          <div class="stat-val" id="profHighScore" style="color: #ffe600;">0</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">MAX WAVE</div>
+          <div class="stat-val" id="profMaxWave" style="color: #00f0ff;">Wave 1</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">SPECTRUM SHARDS</div>
+          <div class="stat-val" id="profShards" style="color: #00ff88;">0 💎</div>
+        </div>
+      </div>
+
+      <button class="neon-btn secondary" id="btnProfileClose" style="width: 100%;">RETURN TO BASE</button>
+    </div>
+  </div>
+
+  <!-- 1.2 ACHIEVEMENTS & MEDALS MODAL -->
+  <div class="screen-overlay" id="achievementsModal">
+    <div class="modal-box" style="max-width: 580px; max-height: 85vh; overflow-y: auto;">
+      <h2 style="font-family: var(--font-display); font-size: 24px; color: #ffe600; margin-bottom: 6px; text-shadow: 0 0 15px rgba(255, 230, 0, 0.4);">
+        🏆 SPECTRUM MEDALS & ACHIEVEMENTS
+      </h2>
+      <p style="font-size: 13px; color: rgba(255,255,255,0.7); margin-bottom: 18px;">
+        Conquer high-threat Void encounters to unlock protocol honors:
+      </p>
+
+      <div id="achievementsList" style="display: flex; flex-direction: column; gap: 10px; width: 100%; margin-bottom: 20px;">
+        <!-- Populated dynamically -->
+      </div>
+
+      <button class="neon-btn secondary" id="btnAchievementsClose" style="width: 100%;">RETURN TO BASE</button>
+    </div>
+  </div>
+
+  <!-- 2. SECTOR SELECT MODAL -->
+  <div class="screen-overlay" id="sectorModal">
+    <div class="modal-box">
+      <h2 style="font-family: var(--font-display); font-size: 24px; color: var(--neon-cyan); margin-bottom: 8px;">
+        SELECT COMBAT SECTOR
+      </h2>
+      <p style="font-size: 14px; color: rgba(255,255,255,0.7); margin-bottom: 20px;">
+        Infiltrate the infected zones and eliminate Void energy cores.
+      </p>
+
+      <div class="sectors-container" id="sectorsList">
+        <!-- Rendered by JS -->
+      </div>
+
+      <button class="neon-btn secondary" id="btnSectorClose" style="margin-top: 10px;">BACK TO MENU</button>
+    </div>
+  </div>
+
+  <!-- 2.5 ONLINE CO-OP LOBBY MODAL -->
+  <div class="screen-overlay" id="onlineModal">
+    <div class="modal-box" style="max-width: 660px; max-height: 90vh; overflow-y: auto;">
+      <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 8px;">
+        <h2 style="font-family: var(--font-display); font-size: 24px; color: #00ff88; letter-spacing: 2px; margin: 0;">
+          ONLINE CO-OP SECTOR RELAY
+        </h2>
+        <div id="onlineRelayBadge" style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 700; background: rgba(0, 255, 136, 0.12); border: 1px solid #00ff88; color: #00ff88;">
+          ● RELAY ONLINE
+        </div>
+      </div>
+      <p style="font-size: 13px; color: rgba(255,255,255,0.75); margin-bottom: 16px; align-self: flex-start;">
+        Survive together with a friend over your Local Network (WiFi) or across browser tabs!
+      </p>
+
+      <!-- URL Share Bar -->
+      <div style="width: 100%; background: rgba(0, 240, 255, 0.08); border: 1px solid rgba(0, 240, 255, 0.3); border-radius: 8px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 18px;">
+        <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; color: rgba(255,255,255,0.85);">
+          <span style="color: var(--neon-cyan); font-weight: 700;">📡 GAME ADDRESS:</span> <span id="lanUrlDisplay" style="color: #ffe600; font-family: monospace;">http://localhost:5173/</span>
+        </div>
+        <button class="neon-btn secondary" id="btnCopyLanUrl" style="padding: 5px 12px; font-size: 11px; white-space: nowrap;">📋 COPY LINK</button>
+      </div>
+
+      <!-- 2 Cards: Host vs Join -->
+      <div class="online-cards-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; width: 100%; margin-bottom: 20px;">
+        <!-- HOST CARD -->
+        <div style="background: rgba(0, 240, 255, 0.06); border: 1px solid rgba(0, 240, 255, 0.4); border-radius: 10px; padding: 18px; text-align: center; display: flex; flex-direction: column; justify-content: space-between;">
+          <div>
+            <div style="font-size: 26px; margin-bottom: 4px;">👑</div>
+            <h3 style="font-family: var(--font-display); font-size: 16px; color: var(--neon-cyan); margin-bottom: 6px;">HOST SECTOR (P1)</h3>
+            <p style="font-size: 11px; color: rgba(255,255,255,0.65); line-height: 1.4; margin-bottom: 14px;">
+              You play as <strong>Spark-01 (Cyan)</strong>. Create a room and send the 4-letter code to your friend.
+            </p>
+          </div>
+
+          <div id="hostRoomDisplay" style="display: none; margin-bottom: 12px; background: rgba(0, 0, 0, 0.4); border: 1px dashed var(--neon-yellow); border-radius: 8px; padding: 12px;">
+            <div style="font-size: 11px; color: rgba(255,255,255,0.6); letter-spacing: 1px;">YOUR SECTOR CODE:</div>
+            <div id="hostRoomCode" style="font-family: var(--font-display); font-size: 32px; color: #ffe600; letter-spacing: 6px; font-weight: 800; margin: 4px 0; text-shadow: 0 0 15px rgba(255,230,0,0.5);">----</div>
+            <div style="display: flex; gap: 6px; justify-content: center; margin-top: 8px;">
+              <button class="neon-btn secondary" id="btnCopyRoomCode" style="font-size: 10px; padding: 4px 8px;">📋 COPY CODE</button>
+              <button class="neon-btn secondary" id="btnCopyInviteLink" style="font-size: 10px; padding: 4px 8px;">🔗 COPY INVITE</button>
+            </div>
+            <div id="hostRoomStatus" style="font-size: 11px; color: #00f0ff; animation: pulseText 1.5s infinite; margin-top: 8px;">Waiting for Player 2 to connect...</div>
+            <button class="neon-btn" id="btnHostStartNow" style="width: 100%; margin-top: 10px; font-size: 12px; padding: 8px 10px; border-color: #00ff88; color: #00ff88; background: rgba(0, 255, 136, 0.15); box-shadow: 0 0 12px rgba(0,255,136,0.3);">🚀 DEPLOY NOW (P2 CAN HOT-JOIN)</button>
+          </div>
+
+          <button class="neon-btn" id="btnCreateRoom" style="width: 100%; font-size: 13px; padding: 11px;">CREATE HOST ROOM</button>
+        </div>
+
+        <!-- JOIN CARD -->
+        <div style="background: rgba(255, 0, 170, 0.06); border: 1px solid rgba(255, 0, 170, 0.4); border-radius: 10px; padding: 18px; text-align: center; display: flex; flex-direction: column; justify-content: space-between;">
+          <div>
+            <div style="font-size: 26px; margin-bottom: 4px;">🚀</div>
+            <h3 style="font-family: var(--font-display); font-size: 16px; color: #ff00aa; margin-bottom: 6px;">JOIN SECTOR (P2)</h3>
+            <p style="font-size: 11px; color: rgba(255,255,255,0.65); line-height: 1.4; margin-bottom: 14px;">
+              You play as <strong>Nova-02 (Magenta)</strong>. Enter the 4-letter room code from your host.
+            </p>
+          </div>
+
+          <div>
+            <input type="text" id="inputRoomCode" maxlength="4" placeholder="CODE" style="width: 100%; text-transform: uppercase; text-align: center; font-family: var(--font-display); font-size: 22px; letter-spacing: 6px; font-weight: 800; padding: 8px; background: rgba(0,0,0,0.6); border: 2px solid #ff00aa; color: #fff; border-radius: 8px; margin-bottom: 8px; box-shadow: 0 0 15px rgba(255,0,170,0.25);">
+            <div id="joinRoomStatus" style="font-size: 11px; color: #ff00aa; margin-bottom: 8px; min-height: 16px; font-weight: 700;">Enter 4-letter Code</div>
+          </div>
+
+          <button class="neon-btn" id="btnJoinRoom" style="width: 100%; font-size: 13px; padding: 11px; border-color: #ff00aa; color: #ff00aa; box-shadow: 0 0 15px rgba(255,0,170,0.35);">CONNECT & DEPLOY</button>
+        </div>
+      </div>
+
+      <!-- Quick 3-Step Guide Banner -->
+      <div style="width: 100%; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 8px; padding: 12px 16px; margin-bottom: 18px; text-align: left;">
+        <div style="font-family: var(--font-display); font-size: 12px; color: var(--neon-yellow); margin-bottom: 6px; font-weight: 700;">
+          💡 HOW TO PLAY TOGETHER:
+        </div>
+        <div style="font-size: 11px; color: rgba(255,255,255,0.7); line-height: 1.6;">
+          • <strong>Step 1:</strong> Host clicks <strong>CREATE HOST ROOM</strong> to generate a room code.<br>
+          • <strong>Step 2:</strong> Friend opens the game link in another tab or device on WiFi.<br>
+          • <strong>Step 3:</strong> Friend enters the code and clicks <strong>CONNECT & DEPLOY</strong> — you both jump straight into the arena!
+        </div>
+      </div>
+
+      <button class="neon-btn secondary" id="btnOnlineClose" style="width: 100%;">BACK TO MAIN MENU</button>
+    </div>
+  </div>
+
+  <!-- 3. TECH LAB (META UPGRADES) MODAL -->
+  <div class="screen-overlay" id="techLabModal">
+    <div class="modal-box" style="max-width: 720px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+        <h2 style="font-family: var(--font-display); font-size: 24px; color: var(--neon-yellow);">
+          SPECTRUM TECH LAB
+        </h2>
+        <div style="display: flex; gap: 12px; align-items: center;">
+          <button class="neon-btn secondary" id="btnTechLabRefund" style="padding: 6px 14px; font-size: 11px; letter-spacing: 1px;" title="Reset and refund all Spectrum Shards">
+            REFUND ALL ↺
+          </button>
+          <div class="shards-pill">
+            <span>💎</span>
+            <span id="labShards">0</span>
+          </div>
+        </div>
+      </div>
+      <p style="font-size: 13px; color: rgba(255,255,255,0.65); margin-top: 4px; text-align: left; width: 100%;">
+        Spend harvested Spectrum Shards to permanently enhance Spark-01.
+      </p>
+
+      <div class="tech-lab-grid" id="techLabList">
+        <!-- Rendered by JS -->
+      </div>
+
+      <button class="neon-btn secondary" id="btnTechLabClose">RETURN</button>
+    </div>
+  </div>
+
+  <!-- 4. UPGRADE LEVEL UP MODAL -->
+  <div class="screen-overlay" id="upgradeModal">
+    <div class="modal-box" style="max-width: 740px;">
+      <h2 style="font-family: var(--font-display); font-size: 26px; color: var(--neon-yellow); text-shadow: 0 0 16px var(--neon-yellow);">
+        SPECTRUM EVOLUTION UNLOCKED
+      </h2>
+      <p style="font-size: 14px; color: rgba(255,255,255,0.7); margin-top: 4px;">
+        Select an augmentation to mutate Spark-01's combat capabilities:
+      </p>
+
+      <div class="upgrade-cards-container" id="upgradeCards">
+        <!-- Rendered by JS -->
+      </div>
+
+      <div style="display: flex; gap: 14px; margin-top: 24px;">
+        <button class="neon-btn secondary" id="btnUpgradeReroll">REROLL CHOICES 🎲 [R]</button>
+        <button class="neon-btn secondary" id="btnUpgradeSkip">SKIP (+50 💎) [S]</button>
+      </div>
+      <div style="font-size: 12px; color: rgba(255, 255, 255, 0.5); margin-top: 10px;">
+        Quick Select: Press [1], [2], or [3] to instantly pick an upgrade
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. PAUSE MODAL -->
+  <div class="screen-overlay" id="pauseModal">
+    <div class="modal-box" style="max-width: 420px;">
+      <h2 style="font-family: var(--font-display); font-size: 26px; color: var(--neon-cyan); margin-bottom: 24px;">
+        SIMULATION PAUSED
+      </h2>
+
+      <div class="menu-buttons" style="width: 100%;">
+        <button class="neon-btn" id="btnPauseResume">RESUME [ESC]</button>
+        <button class="neon-btn secondary" id="btnPauseSynergies">ARSENAL ARCHIVE 📖</button>
+        <button class="neon-btn secondary" id="btnPauseFullscreen">FULLSCREEN ⛶ [F]</button>
+        <button class="neon-btn secondary" id="btnPauseSettings">SETTINGS</button>
+        <button class="neon-btn danger" id="btnPauseQuit">ABANDON RUN</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. VICTORY / STAGE CLEAR MODAL -->
+  <div class="screen-overlay" id="victoryModal">
+    <div class="modal-box" style="max-width: 550px;">
+      <h2 style="font-family: var(--font-display); font-size: 28px; color: var(--neon-yellow); text-shadow: 0 0 20px var(--neon-yellow);">
+        SECTOR PURIFIED! 🌟🌟🌟
+      </h2>
+      <p style="font-size: 14px; color: rgba(255,255,255,0.7); margin-top: 4px;">
+        The Void Titan has been neutralized. Spectrum frequency restored.
+      </p>
+
+      <div class="results-stats">
+        <div class="stat-box">
+          <div class="stat-label">SURVIVAL TIME</div>
+          <div class="stat-val" id="vicTime">15:00</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">DOTS OBLITERATED</div>
+          <div class="stat-val" id="vicKills">0</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">CRYSTALS GATHERED</div>
+          <div class="stat-val" id="vicCrystals">0</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">SHARDS HARVESTED</div>
+          <div class="stat-val" id="vicShards">+0 💎</div>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 14px; width: 100%;">
+        <button class="neon-btn" id="btnVicContinue" style="flex: 1;">TECH LAB</button>
+        <button class="neon-btn secondary" id="btnVicMenu" style="flex: 1;">MAIN MENU</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 7. GAME OVER MODAL -->
+  <div class="screen-overlay" id="gameOverModal">
+    <div class="modal-box" style="max-width: 520px; border-color: rgba(255, 34, 85, 0.4); box-shadow: 0 0 35px rgba(255, 34, 85, 0.25);">
+      <h2 style="font-family: var(--font-display); font-size: 28px; color: var(--neon-red); text-shadow: 0 0 20px var(--neon-red);">
+        ENERGY COLLAPSE
+      </h2>
+      <p style="font-size: 14px; color: rgba(255,255,255,0.7); margin-top: 4px;">
+        Spark-01 was absorbed into the Void. Core integrity lost.
+      </p>
+
+      <div class="results-stats">
+        <div class="stat-box">
+          <div class="stat-label">TIME SURVIVED</div>
+          <div class="stat-val" id="goTime">00:00</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">WAVE REACHED</div>
+          <div class="stat-val" id="goWave">Wave 1</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">DOTS DESTROYED</div>
+          <div class="stat-val" id="goKills">0</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">SHARDS SALVAGED</div>
+          <div class="stat-val" id="goShards">+0 💎</div>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 14px; width: 100%;">
+        <button class="neon-btn" id="btnGoRetry" style="flex: 1;">DEPLOY AGAIN [R / SPACE]</button>
+        <button class="neon-btn secondary" id="btnGoMenu" style="flex: 1;">MAIN MENU</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 8. SETTINGS MODAL -->
+  <div class="screen-overlay" id="settingsModal">
+    <div class="modal-box" style="max-width: 480px;">
+      <h2 style="font-family: var(--font-display); font-size: 24px; color: var(--neon-cyan); margin-bottom: 20px;">
+        SYSTEM SETTINGS
+      </h2>
+
+      <div style="width: 100%; display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px;">
+        <div class="settings-row">
+          <span>Master Volume</span>
+          <input type="range" id="volMaster" min="0" max="1" step="0.05" value="0.7">
+        </div>
+        <div class="settings-row">
+          <span>Sound Effects</span>
+          <input type="range" id="volSfx" min="0" max="1" step="0.05" value="0.8">
+        </div>
+        <div class="settings-row">
+          <span>Synthwave Music</span>
+          <input type="range" id="volMusic" min="0" max="1" step="0.05" value="0.45">
+        </div>
+        <div class="settings-row">
+          <span>Screen Shake VFX</span>
+          <input type="checkbox" id="chkScreenShake" checked>
+        </div>
+        <div class="settings-row">
+          <span>Auto-Fire Weapons [C]</span>
+          <input type="checkbox" id="chkAutoFire">
+        </div>
+        <div class="settings-row" style="display: none;">
+          <span>Smart Auto-Aim Assistant [T]</span>
+          <input type="checkbox" id="chkAutoAim">
+        </div>
+        <div class="settings-row" style="display: none;">
+          <span>Holographic Laser Sight</span>
+          <input type="checkbox" id="chkLaserSight">
+        </div>
+        <div class="settings-row">
+          <span>Floating Damage Numbers</span>
+          <input type="checkbox" id="chkDamageNumbers" checked>
+        </div>
+      </div>
+
+      <button class="neon-btn secondary" id="btnSettingsClose">CLOSE</button>
+    </div>
+  </div>
+
+  <!-- 9. LORE & CONTROLS MODAL -->
+  <div class="screen-overlay" id="loreModal">
+    <div class="modal-box" style="max-width: 680px; max-height: 85vh; overflow-y: auto;">
+      <h2 style="font-family: var(--font-display); font-size: 24px; color: var(--neon-cyan); margin-bottom: 12px;">
+        THE LAST SPARK — COMBAT DOSSIER
+      </h2>
+
+      <div style="text-align: left; font-size: 14px; line-height: 1.6; color: rgba(255,255,255,0.85); display: flex; flex-direction: column; gap: 14px;">
+        <p>
+          In a digital universe called <strong>The Spectrum</strong>, millions of colorful energy particles once lived peacefully. But a corruption known as <strong>The Void</strong> has turned particles into aggressive, unstable swarm dots.
+        </p>
+        <p>
+          You control <strong>Spark-01</strong>, a tiny ball of living lightning. Survive the chaos, collect energy crystals, evolve your weapons, and destroy the Void Core Titans!
+        </p>
+
+        <h3 style="font-family: var(--font-display); font-size: 16px; color: var(--neon-yellow); margin-top: 10px;">
+          PLAYER 1 (SPARK-01 • CYAN) CONTROLS
+        </h3>
+        <ul style="padding-left: 20px;">
+          <li><strong>WASD</strong>: Move Spark-01 with lightning inertia</li>
+          <li><strong>Mouse Cursor / Left Click</strong>: Aim & Fire weapons (or press <strong>C</strong> for Auto-Fire)</li>
+          <li><strong>[Q] / Right Click</strong>: Lightning Dash</li>
+          <li><strong>[E]</strong>: Aegis Orbital Shield</li>
+          <li><strong>[R]</strong>: Electric Shockwave</li>
+          <li><strong>[SPACE]</strong>: Spectrum Overdrive</li>
+          <li><strong>Gamepad 1</strong>: Full twin-stick controls supported!</li>
+        </ul>
+
+        <h3 style="font-family: var(--font-display); font-size: 16px; color: #ff00aa; margin-top: 10px;">
+          PLAYER 2 (NOVA-02 • MAGENTA) CONTROLS (LOCAL CO-OP)
+        </h3>
+        <ul style="padding-left: 20px;">
+          <li><strong>Arrow Keys / [I, J, K, L]</strong>: Move Nova-02</li>
+          <li><strong>[O] / Right Ctrl / Numpad 0</strong>: Fire weapons (aims in move direction or nearest target)</li>
+          <li><strong>[U] / Right Shift / Numpad 1</strong>: Lightning Dash</li>
+          <li><strong>[ [ ] / Numpad 2</strong>: Aegis Shield</li>
+          <li><strong>[ ] ] / Numpad 3</strong>: Electric Shockwave</li>
+          <li><strong>[Enter] / Numpad Enter</strong>: Spectrum Overdrive</li>
+          <li><strong>Gamepad 2</strong>: Plug in a 2nd controller for instant twin-stick co-op!</li>
+        </ul>
+
+        <h3 style="font-family: var(--font-display); font-size: 16px; color: #00ff88; margin-top: 10px;">
+          CO-OP REVIVAL & SYNERGY
+        </h3>
+        <ul style="padding-left: 20px;">
+          <li><strong>⚡ Energy Tether Revive</strong>: If a player falls to 0 HP, stand within their distress radius for 2.2s to revive them with 45% HP!</li>
+          <li><strong>✨ Harmonic Convergence</strong>: When both players trigger Overdrive simultaneously, a screen-clearing plasma laser connects them, vaporizing enemies between them!</li>
+        </ul>
+
+        <h3 style="font-family: var(--font-display); font-size: 16px; color: var(--neon-pink); margin-top: 10px;">
+          HOSTILE ENTITY THREAT REGISTER
+        </h3>
+        <ul style="padding-left: 20px;">
+          <li><span style="color: #ff2255;">● Chasers (Red)</span>: Rush straight toward you in swarms.</li>
+          <li><span style="color: #ffe600;">● Speeders (Yellow)</span>: Extremely fast, erratic bursts.</li>
+          <li><span style="color: #aa00ff;">● Tanks (Purple)</span>: Massive armored orbs absorbing heavy fire.</li>
+          <li><span style="color: #00ff66;">● Splitters (Green)</span>: Divide into mini-dots upon death.</li>
+          <li><span style="color: #0099ff;">● Snipers (Blue)</span>: Telegraph laser lines and fire long-range bolts.</li>
+          <li><span style="color: #ff6600;">● Exploders (Orange)</span>: Rapidly flash when close and explode with AoE blast!</li>
+          <li><span style="color: #ff0044;">● The Void Titan (Boss)</span>: Corrupted core with rotating lasers and bullet rings.</li>
+        </ul>
+      </div>
+
+      <button class="neon-btn secondary" id="btnLoreClose" style="margin-top: 20px;">RETURN</button>
+    </div>
+  </div>
+
+  <!-- 10. SPECTRUM ARSENAL ARCHIVE (SYNERGIES & EVOLUTIONS) MODAL -->
+  <div class="screen-overlay" id="synergyModal">
+    <div class="modal-box" style="max-width: 760px; max-height: 85vh; overflow-y: auto;">
+      <h2 style="font-family: var(--font-display); font-size: 26px; color: var(--neon-yellow); text-shadow: 0 0 16px var(--neon-yellow);">
+        SPECTRUM ARSENAL ARCHIVE
+      </h2>
+      <p style="font-size: 13px; color: rgba(255,255,255,0.7); margin-top: 4px; margin-bottom: 20px;">
+        Combine base weapons with passive catalysts to synthesize Legendary Evolutions:
+      </p>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; width: 100%; text-align: left;">
+        <div style="background: rgba(14, 20, 42, 0.85); border: 1px solid var(--neon-yellow); border-radius: 10px; padding: 16px; box-shadow: 0 0 15px rgba(255, 230, 0, 0.15);">
+          <div style="font-family: var(--font-display); font-size: 16px; color: #ffe600; font-weight: 800; display: flex; align-items: center; gap: 8px;">
+            <span>⚡👑</span> THUNDERSTORM RAILGUN
+          </div>
+          <div style="font-size: 12px; color: #00f0ff; margin-top: 6px; font-weight: 700;">
+            FORMULA: Pulse Blaster + High Voltage (+20% Damage)
+          </div>
+          <div style="font-size: 13px; color: rgba(255,255,255,0.8); margin-top: 8px; line-height: 1.4;">
+            Fires piercing relativistic rail bolts (1600 speed) that discharge chain lightning arcs through adjacent swarms on every hit.
+          </div>
+        </div>
+
+        <div style="background: rgba(14, 20, 42, 0.85); border: 1px solid #ffaa00; border-radius: 10px; padding: 16px; box-shadow: 0 0 15px rgba(255, 170, 0, 0.15);">
+          <div style="font-family: var(--font-display); font-size: 16px; color: #ffaa00; font-weight: 800; display: flex; align-items: center; gap: 8px;">
+            <span>💥👑</span> SUPERNOVA FLAK CANNON
+          </div>
+          <div style="font-size: 12px; color: #00f0ff; margin-top: 6px; font-weight: 700;">
+            FORMULA: Plasma Spread + Twin Emitters (+1 Projectile)
+          </div>
+          <div style="font-size: 13px; color: rgba(255,255,255,0.8); margin-top: 8px; line-height: 1.4;">
+            Fires massive cluster shells that explode upon contact into high-velocity neon shrapnel rings tearing through packs.
+          </div>
+        </div>
+
+        <div style="background: rgba(14, 20, 42, 0.85); border: 1px solid var(--neon-cyan); border-radius: 10px; padding: 16px; box-shadow: 0 0 15px rgba(0, 240, 255, 0.15);">
+          <div style="font-family: var(--font-display); font-size: 16px; color: var(--neon-cyan); font-weight: 800; display: flex; align-items: center; gap: 8px;">
+            <span>🕸️👑</span> TEMPEST WEB MATRIX
+          </div>
+          <div style="font-size: 12px; color: #00f0ff; margin-top: 6px; font-weight: 700;">
+            FORMULA: Chain Arcs + Rapid Fire Coil (+25% Fire Rate)
+          </div>
+          <div style="font-size: 13px; color: rgba(255,255,255,0.8); margin-top: 8px; line-height: 1.4;">
+            Maintains a permanent electrocuting storm web frying up to 8 targets simultaneously with relentless ionizing arcs.
+          </div>
+        </div>
+
+        <div style="background: rgba(14, 20, 42, 0.85); border: 1px solid var(--neon-pink); border-radius: 10px; padding: 16px; box-shadow: 0 0 15px rgba(255, 0, 119, 0.15);">
+          <div style="font-family: var(--font-display); font-size: 16px; color: var(--neon-pink); font-weight: 800; display: flex; align-items: center; gap: 8px;">
+            <span>🌀👑</span> EVENT HORIZON VORTEX
+          </div>
+          <div style="font-size: 12px; color: #00f0ff; margin-top: 6px; font-weight: 700;">
+            FORMULA: Orbital Drones + Aegis Matrix (Shield Upgrade)
+          </div>
+          <div style="font-size: 13px; color: rgba(255,255,255,0.8); margin-top: 8px; line-height: 1.4;">
+            4 relativistic dark energy orbs rotating at hyper-speed that suck nearby enemies into a gravitational singularity.
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top: 20px; text-align: left; background: rgba(8, 12, 26, 0.75); border: 1px solid rgba(0, 240, 255, 0.25); border-radius: 8px; padding: 12px 16px;">
+        <span style="font-family: var(--font-display); font-size: 12px; color: var(--neon-cyan); letter-spacing: 1px; font-weight: 800;">TACTICAL GRAZE & BULLET-TIME:</span>
+        <span style="font-size: 12px; color: rgba(255,255,255,0.75); margin-left: 6px;">
+          Skim close to enemy bullets to earn <strong>GRAZE XP</strong> and supercharge Overdrive. Dashing through enemy swarms triggers <strong>DODGE MATRIX bullet-time</strong>!
+        </span>
+      </div>
+
+      <button class="neon-btn secondary" id="btnSynergyClose" style="margin-top: 20px;">RETURN</button>
+    </div>
+  </div>
+
+  <!-- Main Game Loop Module -->
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
