@@ -7,9 +7,11 @@ export class Player {
   constructor(startX = GAME_CONFIG.ARENA_WIDTH / 2, startY = GAME_CONFIG.ARENA_HEIGHT / 2, metaEffects = {}, id = 1) {
     this.id = id;
     this.name = id === 2 ? 'Nova-02' : 'Spark-01';
+    this.active = true;
     this.x = startX;
     this.y = startY;
-    this.radius = 11;
+    this.radius = 16;
+    this.collisionRadius = 14;
     this.coreColor = id === 2 ? (COLORS.PLAYER2_CORE || '#ffffff') : COLORS.PLAYER_CORE;
     this.glowColor = id === 2 ? (COLORS.PLAYER2_GLOW || '#ff00aa') : COLORS.PLAYER_GLOW;
     this.trailColor = id === 2 ? (COLORS.PLAYER2_TRAIL || 'rgba(255, 0, 170, 0.4)') : COLORS.PLAYER_TRAIL;
@@ -490,25 +492,130 @@ export class Player {
       ctx.fill();
     }
 
-    // 4. Player Core Sphere
-    const currentRadius = this.isOverdrive ? this.radius * 1.5 : this.radius;
-    const pulse = 1 + Math.sin(this.pulseAnim) * 0.08;
-
-    // Fast Glow Cache Aura
+    // 4. Player Core Sphere (Bold, High-Visibility Cyber Craft Matching Reference Art)
+    const currentRadius = this.isOverdrive ? 26 : 19;
+    const pulse = 1 + Math.sin(this.pulseAnim) * 0.06;
     const auraColor = this.isOverdrive ? (this.overdriveColor || COLORS.PLAYER_OVERDRIVE) : this.glowColor;
-    glowCache.drawGlow(ctx, this.x, this.y, currentRadius * 1.8, auraColor, 0.85);
+    const isPlayer2 = this.id === 2;
 
-    // Player body
+    // A. Multi-Layer Radiant Bloom Halo
+    glowCache.drawGlow(ctx, this.x, this.y, currentRadius * 2.8, auraColor, 0.9);
+    glowCache.drawGlow(ctx, this.x, this.y, currentRadius * 1.5, '#ffffff', 0.55);
+
+    // B. Twin Rear Plasma Thruster Flares
+    const aim = this.aimAngle || 0;
+    const rearAngle = aim + Math.PI;
+    const isMoving = Math.hypot(this.vx, this.vy) > 10;
+    const thrusterLen = currentRadius * (isMoving ? 1.4 : 0.85) * (1 + Math.sin(this.pulseAnim * 3) * 0.2);
+    const spread = 0.35; // radians between twin jets
+
+    for (const offset of [-spread, spread]) {
+      const ta = rearAngle + offset;
+      const tx = this.x + Math.cos(ta) * currentRadius * 0.8;
+      const ty = this.y + Math.sin(ta) * currentRadius * 0.8;
+      const tipX = this.x + Math.cos(ta) * (currentRadius + thrusterLen);
+      const tipY = this.y + Math.sin(ta) * (currentRadius + thrusterLen);
+
+      const jetGrad = ctx.createLinearGradient(tx, ty, tipX, tipY);
+      jetGrad.addColorStop(0, '#ffffff');
+      jetGrad.addColorStop(0.3, auraColor);
+      jetGrad.addColorStop(1, 'rgba(0, 240, 255, 0)');
+
+      ctx.strokeStyle = jetGrad;
+      ctx.lineWidth = 3.2;
+      ctx.beginPath();
+      ctx.moveTo(tx, ty);
+      ctx.lineTo(tipX, tipY);
+      ctx.stroke();
+    }
+
+    // C. Concentric Cyber Flange Arcs (Matching Reference Art from user screenshot)
+    // Sleek curved arc brackets hugging the orb flanks
+    const bracketR = currentRadius * 1.55;
+    ctx.strokeStyle = auraColor;
+    ctx.lineWidth = 2.6;
+    ctx.lineCap = 'round';
+
+    // Left flank arc
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, bracketR, aim + Math.PI * 0.62, aim + Math.PI * 1.38);
+    ctx.stroke();
+
+    // Right flank arc
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, bracketR, aim - Math.PI * 0.38, aim + Math.PI * 0.38);
+    ctx.stroke();
+    ctx.lineCap = 'butt';
+
+    // D. Outer Glowing Boundary Hull Ring & Micro Notches
+    ctx.strokeStyle = auraColor;
+    ctx.lineWidth = 2.2;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, currentRadius * 1.25, 0, Math.PI * 2);
+    ctx.stroke();
+
+    const notchAngles = [aim + Math.PI * 0.25, aim + Math.PI * 0.75, aim + Math.PI * 1.25, aim + Math.PI * 1.75];
+    ctx.lineWidth = 1.8;
+    ctx.beginPath();
+    for (const na of notchAngles) {
+      const nx1 = this.x + Math.cos(na) * (currentRadius * 1.15);
+      const ny1 = this.y + Math.sin(na) * (currentRadius * 1.15);
+      const nx2 = this.x + Math.cos(na) * (currentRadius * 1.35);
+      const ny2 = this.y + Math.sin(na) * (currentRadius * 1.35);
+      ctx.moveTo(nx1, ny1);
+      ctx.lineTo(nx2, ny2);
+    }
+    ctx.stroke();
+
+    // E. Vibrant Energy Hull Sphere
     ctx.fillStyle = auraColor;
     ctx.beginPath();
     ctx.arc(this.x, this.y, currentRadius * pulse, 0, Math.PI * 2);
     ctx.fill();
 
-    // White hot core
+    // F. White-Hot High-Contrast Nucleus
     ctx.fillStyle = this.coreColor || '#ffffff';
     ctx.beginPath();
-    ctx.arc(this.x, this.y, currentRadius * 0.5, 0, Math.PI * 2);
+    ctx.arc(this.x, this.y, currentRadius * 0.52, 0, Math.PI * 2);
     ctx.fill();
+
+    // G. Forward Aim Emitter Pip
+    const noseDist = currentRadius * 1.28;
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(this.x + Math.cos(aim) * noseDist, this.y + Math.sin(aim) * noseDist, 3.2, 0, Math.PI * 2);
+    ctx.fill();
+
+    // H. Invulnerability / Shield Shimmer (Always Visible During I-Frames)
+    if (this.invulnerableTimer > 0) {
+      const shimPulse = 0.5 + Math.sin(this.pulseAnim * 4) * 0.5;
+      ctx.strokeStyle = `rgba(255, 230, 0, ${0.5 + shimPulse * 0.45})`;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, currentRadius * 1.5, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    // I. Sleek Holographic Callsign Badge
+    const tagText = isPlayer2 ? 'P2: NOVA-02' : 'P1: SPARK-01';
+    const tagCol = isPlayer2 ? '#ff00aa' : '#00f0ff';
+    const badgeY = this.y - currentRadius - 16;
+
+    ctx.font = 'bold 10px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const tagW = ctx.measureText(tagText).width + 12;
+
+    ctx.fillStyle = 'rgba(5, 10, 24, 0.78)';
+    ctx.strokeStyle = tagCol;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.roundRect(this.x - tagW / 2, badgeY - 7, tagW, 14, 4);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = tagCol;
+    ctx.fillText(tagText, this.x, badgeY);
 
     // 5. Orbital Drones
     if (this.weapons.orbital && this.orbitalDrones > 0) {
@@ -538,19 +645,19 @@ export class Player {
   _drawDownedCore(ctx) {
     ctx.save();
     const pulse = 0.8 + Math.sin(this.pulseAnim * 3) * 0.2;
-    const coreR = this.radius * 1.25;
+    const coreR = 20;
 
     // Warning distress radius beacon
-    ctx.strokeStyle = 'rgba(255, 0, 85, 0.35)';
-    ctx.lineWidth = 1.5;
-    ctx.setLineDash([6, 6]);
+    ctx.strokeStyle = 'rgba(255, 0, 85, 0.45)';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([8, 8]);
     ctx.beginPath();
     ctx.arc(this.x, this.y, MULTIPLAYER_CONFIG.REVIVE_RADIUS, 0, Math.PI * 2);
     ctx.stroke();
     ctx.setLineDash([]);
 
     // Downed core glow
-    glowCache.drawGlow(ctx, this.x, this.y, coreR * 2, '#ff0055', 0.85);
+    glowCache.drawGlow(ctx, this.x, this.y, coreR * 2.5, '#ff0055', 0.95);
 
     // Core body (pulsing distressed red/orange)
     ctx.fillStyle = '#ff2255';
@@ -561,23 +668,34 @@ export class Player {
     // White core fragment
     ctx.fillStyle = '#ffffff';
     ctx.beginPath();
-    ctx.arc(this.x, this.y, coreR * 0.4, 0, Math.PI * 2);
+    ctx.arc(this.x, this.y, coreR * 0.45, 0, Math.PI * 2);
     ctx.fill();
 
     // Circular Revive Progress Gauge
     if (this.reviveProgress > 0) {
       ctx.strokeStyle = '#00ff88';
-      ctx.lineWidth = 4;
+      ctx.lineWidth = 5;
       ctx.beginPath();
       ctx.arc(this.x, this.y, coreR + 8, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * this.reviveProgress);
       ctx.stroke();
     }
 
-    // Name & Timer Text
-    ctx.fillStyle = '#ffffff';
-    ctx.font = '10px monospace';
+    // Name & Timer Text with high-contrast badge
+    const text = `${this.name} [DOWN: ${Math.ceil(this.downedTimer)}s]`;
+    ctx.font = 'bold 11px monospace';
     ctx.textAlign = 'center';
-    ctx.fillText(`${this.name} [DOWN: ${Math.ceil(this.downedTimer)}s]`, this.x, this.y - 22);
+    ctx.textBaseline = 'middle';
+    const tw = ctx.measureText(text).width + 14;
+    ctx.fillStyle = 'rgba(20, 2, 8, 0.85)';
+    ctx.strokeStyle = '#ff0055';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.roundRect(this.x - tw / 2, this.y - 28, tw, 16, 4);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(text, this.x, this.y - 20);
 
     ctx.restore();
   }

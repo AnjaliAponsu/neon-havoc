@@ -682,11 +682,11 @@ export class Renderer {
     }
 
     // 2.5 Draw Teammate on Radar
-    if (teammate && teammate.active) {
+    if (teammate && (teammate.active !== false)) {
       const tdx = teammate.x - player.x;
       const tdy = teammate.y - player.y;
       const tdist = Math.hypot(tdx, tdy);
-      const tColor = teammate.playerIndex === 2 ? '#ff00aa' : '#00f0ff';
+      const tColor = (teammate.id === 2 || teammate.playerIndex === 2) ? '#ff00aa' : '#00f0ff';
       if (tdist < radarRange) {
         const rx = cx + (tdx / radarRange) * radius;
         const ry = cy + (tdy / radarRange) * radius;
@@ -701,7 +701,7 @@ export class Renderer {
     }
 
     // 3. Draw Player in Center
-    ctx.fillStyle = player.playerIndex === 2 ? '#ff00aa' : '#00ffff';
+    ctx.fillStyle = (player.id === 2 || player.playerIndex === 2) ? '#ff00aa' : '#00ffff';
     ctx.beginPath();
     ctx.arc(cx, cy, 3.8, 0, Math.PI * 2);
     ctx.fill();
@@ -743,14 +743,14 @@ export class Renderer {
     }
 
     // 5. Off-Screen Teammate Direction Indicator on HUD (Multi-Device Freedom)
-    if (teammate && teammate.active) {
+    if (teammate && (teammate.active !== false)) {
       const tScreen = this.getScreenPos(teammate.x, teammate.y);
       const margin = 50;
       const isOffScreen = tScreen.x < margin || tScreen.x > this.width - margin || tScreen.y < margin || tScreen.y > this.height - margin;
 
       if (isOffScreen) {
-        const tColor = teammate.playerIndex === 2 ? '#ff00aa' : '#00f0ff';
-        const tName = teammate.playerIndex === 2 ? 'NOVA-02' : 'SPARK-01';
+        const tColor = (teammate.id === 2 || teammate.playerIndex === 2) ? '#ff00aa' : '#00f0ff';
+        const tName = (teammate.id === 2 || teammate.playerIndex === 2) ? 'NOVA-02' : 'SPARK-01';
         const angle = Math.atan2(teammate.y - player.y, teammate.x - player.x);
         const dist = Math.round(Math.hypot(teammate.x - player.x, teammate.y - player.y));
 
