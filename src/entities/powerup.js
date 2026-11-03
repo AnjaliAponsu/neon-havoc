@@ -41,7 +41,7 @@ export class Powerup {
   }
 
   draw(ctx) {
-    if (!this.active) return;
+    if (!this.active || !this.type) return;
     const pulse = 1 + Math.sin(this.animTimer) * 0.08;
     const bob = Math.sin(this.animTimer * 1.5) * 5;
     const s = (this.radius || 17) * pulse;

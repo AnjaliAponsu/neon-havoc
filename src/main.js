@@ -1,6 +1,6 @@
 // NEON HAVOC — 30X Master Game Loop, Spatial Hash Grid, Fast Glow & UI/UX
 
-import { GAME_CONFIG, SECTORS, META_UPGRADES, ENEMY_TYPES, COLORS, MULTIPLAYER_CONFIG } from './constants.js';
+import { GAME_CONFIG, SECTORS, META_UPGRADES, ENEMY_TYPES, COLORS, MULTIPLAYER_CONFIG, POWERUP_TYPES } from './constants.js';
 import { soundEngine } from './audio.js';
 import { saveManager } from './saveManager.js';
 import { InputManager } from './input.js';
@@ -2203,6 +2203,10 @@ class NeonHavocGame {
 }
 
 // Initialize on window load
-window.addEventListener('DOMContentLoaded', () => {
+if (document.readyState === 'loading') {
+  window.addEventListener('DOMContentLoaded', () => {
+    window.game = new NeonHavocGame();
+  });
+} else {
   window.game = new NeonHavocGame();
-});
+}
