@@ -1991,7 +1991,15 @@ class NeonHavocGame {
         if (this.dom.bossHudBar) this.dom.bossHudBar.style.display = 'flex';
         if (this.dom.hudBossName) this.dom.hudBossName.textContent = `⚠️ ${boss.name.toUpperCase()} ⚠️`;
       },
-      () => this.onVictory()
+      () => this.onVictory(),
+      (wave, wx, wy) => {
+        if (this.renderer && this.renderer.triggerWaveClear) {
+          this.renderer.triggerWaveClear(wave, wx, wy);
+        }
+        if (soundEngine && soundEngine.playShockwave) {
+          soundEngine.playShockwave();
+        }
+      }
     );
 
     // 7. Update Enemies & Contact Collisions

@@ -325,6 +325,7 @@ export class Renderer {
     ];
     this.steamParticles = [];
     this.sweeperAngle = 0;
+    this.waveClearShockwaves = [];
 
     this.resize();
     window.addEventListener('resize', () => this.resize());
@@ -393,6 +394,29 @@ export class Renderer {
     this.scorchMarks.push({
       x, y, radius, color, life: 9.0, maxLife: 9.0
     });
+  }
+
+  triggerWaveClear(wave, x = GAME_CONFIG.ARENA_WIDTH / 2, y = GAME_CONFIG.ARENA_HEIGHT / 2) {
+    if (!isFinite(x) || !isFinite(y)) {
+      x = GAME_CONFIG.ARENA_WIDTH / 2;
+      y = GAME_CONFIG.ARENA_HEIGHT / 2;
+    }
+    const color = wave % 5 === 0 ? '#ffe600' : (wave % 2 === 0 ? '#00f0ff' : '#d000ff');
+    this.waveClearShockwaves.push({
+      x,
+      y,
+      radius: 40,
+      maxRadius: 2400,
+      speed: 1400,
+      wave,
+      color,
+      life: 1.8,
+      maxLife: 1.8,
+      gridForce: 85
+    });
+    this.addTrauma(0.35);
+    this.grid.applyExplosion(x, y, 95, 480);
+    this.conduitPulse = (this.conduitPulse || 0) + 5.0;
   }
 
   updateCamera(dt, targetX, targetY, isBossActive = false, isOverdrive = false, player2Distance = 0) {
@@ -567,6 +591,7 @@ export class Renderer {
       this._drawBorders(ctx);
       this._drawBattlegroundArchitecture(ctx, halfViewW, halfViewH);
       this._drawAtmosphericVents(ctx, halfViewW, halfViewH);
+      this._drawWaveClearShockwaves(ctx, halfViewW, halfViewH, 0.016);
     } catch (e) { /* grid/border guard */ }
 
     // 5. Ambient Glowing 3D Faceted Crystal Clusters (Central & Bastion Formations)
@@ -1055,6 +1080,70 @@ export class Renderer {
     }
   }
 
+  _drawWaveClearShockwaves(ctx, halfViewW, halfViewH, dt = 0.016) {
+    if (!this.waveClearShockwaves || this.waveClearShockwaves.length === 0) return;
+    for (let i = this.waveClearShockwaves.length - 1; i >= 0; i--) {
+      const sw = this.waveClearShockwaves[i];
+      sw.life -= dt;
+      sw.radius += sw.speed * dt;
+      if (sw.life <= 0 || sw.radius >= sw.maxRadius) {
+        this.waveClearShockwaves.splice(i, 1);
+        continue;
+      }
+      const progress = 1 - (sw.life / sw.maxLife);
+      const alpha = Math.max(0, sw.life / sw.maxLife);
+
+      // Displace grid nodes along the shock wavefront
+      if (this.grid) {
+        this.grid.applyExplosion(sw.x, sw.y, sw.gridForce * dt * 4, sw.radius);
+      }
+
+      ctx.save();
+      // Outer expanding EMP resonance ring
+      ctx.strokeStyle = sw.color;
+      ctx.lineWidth = Math.max(2, 8 * (1 - progress));
+      ctx.globalAlpha = alpha * 0.75;
+      ctx.beginPath();
+      ctx.arc(sw.x, sw.y, sw.radius, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Inner high-voltage harmonic ring with dashed hex modulation
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = Math.max(1, 4 * (1 - progress));
+      ctx.globalAlpha = alpha * 0.95;
+      ctx.setLineDash([24, 16, 8, 16]);
+      ctx.lineDashOffset = -sw.radius * 0.5;
+      ctx.beginPath();
+      ctx.arc(sw.x, sw.y, Math.max(0, sw.radius - 18), 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Secondary trailing ionization glow
+      ctx.strokeStyle = sw.color;
+      ctx.lineWidth = 14;
+      ctx.globalAlpha = alpha * 0.25;
+      ctx.beginPath();
+      ctx.arc(sw.x, sw.y, Math.max(0, sw.radius - 10), 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Energy spokes / electric ionization ticks
+      const spokes = 16;
+      ctx.globalAlpha = alpha * 0.6;
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2;
+      for (let s = 0; s < spokes; s++) {
+        const ang = (s * Math.PI * 2) / spokes + progress * 1.5;
+        const innerR = Math.max(0, sw.radius - 28);
+        const outerR = sw.radius + 14;
+        ctx.beginPath();
+        ctx.moveTo(sw.x + Math.cos(ang) * innerR, sw.y + Math.sin(ang) * innerR);
+        ctx.lineTo(sw.x + Math.cos(ang) * outerR, sw.y + Math.sin(ang) * outerR);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+  }
+
   _drawBorders(ctx) {
     ctx.save();
     const col = this.sectorAccent || '#00f0ff';
@@ -1509,6 +1598,33 @@ export class Renderer {
         redGrad.addColorStop(1, `rgba(255, 0, 50, ${pulse})`);
         ctx.fillStyle = redGrad;
         ctx.fillRect(0, 0, this.width, this.height);
+
+        // Industrial Hazard Caution Stripes along Top & Bottom screen borders when critical (<30%)
+        if (player.health / player.maxHealth < 0.3) {
+          const stripeH = 14;
+          const flash = (Math.sin(this.gridPulse * 6) > 0);
+          ctx.fillStyle = flash ? 'rgba(255, 23, 79, 0.75)' : 'rgba(20, 6, 12, 0.85)';
+          ctx.fillRect(0, 0, this.width, stripeH);
+          ctx.fillRect(0, this.height - stripeH, this.width, stripeH);
+
+          // Diagonal caution hazard hashes
+          ctx.strokeStyle = flash ? '#ffe600' : '#ff174f';
+          ctx.lineWidth = 3;
+          const offset = (performance.now() * 0.05) % 24;
+          ctx.beginPath();
+          for (let x = -24; x < this.width + 24; x += 24) {
+            ctx.moveTo(x + offset, 0); ctx.lineTo(x + offset + 12, stripeH);
+            ctx.moveTo(x - offset, this.height - stripeH); ctx.lineTo(x - offset + 12, this.height);
+          }
+          ctx.stroke();
+
+          // Emergency telemetry warning badge
+          ctx.font = '900 12px Rajdhani, monospace';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillStyle = flash ? '#ffffff' : '#ffe600';
+          ctx.fillText('⚠️ CRITICAL HULL INTEGRITY // EMERGENCY PROTOCOL ACTIVE ⚠️', this.width / 2, stripeH + 12);
+        }
       }
     } finally {
       ctx.restore();

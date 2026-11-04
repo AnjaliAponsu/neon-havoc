@@ -23,6 +23,19 @@ export class BattlegroundArt {
   constructor() {
     this.floor=document.createElement('canvas');this.floor.width=ARENA.width;this.floor.height=ARENA.height;
     this.scorchMarks=[];
+    this.floorRipples=[];
+    this.dashStreaks=[];
+    this.nexusPulses=[];
+    this.nexusPulseTimer=0;
+    this.steamParticles=[];
+    this.steamVents=[
+      { x: 450, y: 110, angle: Math.PI / 2, timer: 0 },
+      { x: 1950, y: 1240, angle: -Math.PI / 2, timer: 0.8 },
+      { x: 270, y: 710, angle: 0, timer: 0.4 },
+      { x: 2130, y: 640, angle: Math.PI, timer: 1.2 }
+    ];
+    this.lastFighterPos=new Map();
+    this.lastTime=performance.now()/1000;
     this.motes=Array.from({length:35},()=>({
       x:Math.random()*ARENA.width,y:Math.random()*ARENA.height,
       vx:(Math.random()-.5)*18,vy:(Math.random()-.5)*18,
@@ -33,6 +46,23 @@ export class BattlegroundArt {
   addScorch(x,y,radius=26,color='#ffaa00'){
     if(this.scorchMarks.length>30)this.scorchMarks.shift();
     this.scorchMarks.push({x,y,radius,color,life:8.0,maxLife:8.0});
+  }
+  addFloorRipple(x,y,color='#00dfff'){
+    if(this.floorRipples.length>50)this.floorRipples.shift();
+    this.floorRipples.push({x,y,radius:10,maxRadius:52,color,life:0.65,maxLife:0.65});
+  }
+  addDashStreak(x1,y1,x2,y2,color='#00dfff'){
+    if(this.dashStreaks.length>25)this.dashStreaks.shift();
+    const dist=Math.hypot(x2-x1,y2-y1);
+    const steps=Math.max(3,Math.floor(dist/22));
+    const pts=[[x1,y1]];
+    const nx=-(y2-y1)/(dist||1), ny=(x2-x1)/(dist||1);
+    for(let i=1;i<steps;i++){
+      const t=i/steps, j=(Math.random()-.5)*16;
+      pts.push([x1+(x2-x1)*t+nx*j, y1+(y2-y1)*t+ny*j]);
+    }
+    pts.push([x2,y2]);
+    this.dashStreaks.push({pts,color,life:0.38,maxLife:0.38});
   }
   buildFloor(c) {
     c.fillStyle='#030716';c.fillRect(0,0,2400,1350);
@@ -208,16 +238,223 @@ export class BattlegroundArt {
       }
     }c.restore();
   }
-  draw(c,game) {
-    const time=performance.now()/1000,camera=game._camera(),s=game.snapshot;
-    c.setTransform(1,0,0,1,0,0);c.fillStyle='#020510';c.fillRect(0,0,game.canvas.width,game.canvas.height);
-    c.save();c.translate(game.canvas.width/2,game.canvas.height/2);c.scale(camera.zoom,camera.zoom);c.translate(-camera.x,-camera.y);
-    c.drawImage(this.floor,0,0);
 
-    // Persistent Ground Scorch Marks
+  _drawVolumetricSweeper(c, time) {
+    const cx = 1280, cy = 605, len = 860;
+    const beamAngles = [(time * 0.38) % TAU, (time * 0.38 + Math.PI) % TAU];
+    for (const angle of beamAngles) {
+      c.save();
+      c.translate(cx, cy);
+      c.rotate(angle);
+      const grad = c.createRadialGradient(0, 0, 30, 0, 0, len);
+      grad.addColorStop(0, 'rgba(215, 60, 255, 0.16)');
+      grad.addColorStop(0.28, 'rgba(0, 223, 255, 0.08)');
+      grad.addColorStop(0.7, 'rgba(0, 223, 255, 0.025)');
+      grad.addColorStop(1, 'rgba(0, 223, 255, 0)');
+      c.fillStyle = grad;
+      c.beginPath();
+      c.moveTo(0, 0);
+      c.arc(0, 0, len, -0.16, 0.16);
+      c.closePath();
+      c.fill();
+      c.restore();
+    }
+  }
+
+  _drawNexusPulses(c, dt) {
+    this.nexusPulseTimer = (this.nexusPulseTimer || 0) + dt;
+    if (this.nexusPulseTimer >= 3.2) {
+      this.nexusPulseTimer = 0;
+      if (this.nexusPulses.length > 8) this.nexusPulses.shift();
+      this.nexusPulses.push({ r: 180, maxR: 640, life: 2.2, maxLife: 2.2, color: '#00dfff' });
+    }
+    for (let i = this.nexusPulses.length - 1; i >= 0; i--) {
+      const p = this.nexusPulses[i];
+      p.life -= dt;
+      p.r += 210 * dt;
+      if (p.life <= 0 || p.r >= p.maxR) {
+        this.nexusPulses.splice(i, 1);
+        continue;
+      }
+      const alpha = (p.life / p.maxLife) * 0.45;
+      c.save();
+      c.strokeStyle = p.color;
+      c.globalAlpha = alpha;
+      c.lineWidth = 2.4;
+      c.setLineDash([14, 8]);
+      const hex = Array.from({ length: 6 }, (_, idx) => [
+        1280 + Math.cos(idx * TAU / 6) * p.r,
+        605 + Math.sin(idx * TAU / 6) * p.r
+      ]);
+      poly(c, hex);
+      c.stroke();
+      c.restore();
+    }
+  }
+
+  _drawSteamVents(c, dt, time) {
+    for (const v of this.steamVents) {
+      v.timer += dt;
+      if (v.timer >= 0.18) {
+        v.timer = 0;
+        const spread = (Math.random() - 0.5) * 0.4;
+        const spd = 25 + Math.random() * 35;
+        this.steamParticles.push({
+          x: v.x,
+          y: v.y,
+          vx: Math.cos(v.angle + spread) * spd,
+          vy: Math.sin(v.angle + spread) * spd,
+          size: 8 + Math.random() * 8,
+          growRate: 16,
+          life: 1.1 + Math.random() * 0.4,
+          maxLife: 1.4
+        });
+      }
+    }
+    for (let i = this.steamParticles.length - 1; i >= 0; i--) {
+      const p = this.steamParticles[i];
+      p.life -= dt;
+      if (p.life <= 0) {
+        this.steamParticles.splice(i, 1);
+        continue;
+      }
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.size += p.growRate * dt;
+      const a = (p.life / p.maxLife) * 0.28;
+      c.save();
+      c.fillStyle = `rgba(160, 215, 255, ${a})`;
+      c.beginPath();
+      c.arc(p.x, p.y, p.size, 0, TAU);
+      c.fill();
+      c.restore();
+    }
+  }
+
+  _drawTacticalDeploymentZones(c, time) {
+    const zones = [
+      { x: 440, y: 1180, color: '#00dfff', label: 'BLUE SQUADRON' },
+      { x: 1960, y: 180, color: '#ff174f', label: 'RED SQUADRON' }
+    ];
+    for (const z of zones) {
+      c.save();
+      c.translate(z.x, z.y);
+      c.strokeStyle = z.color;
+      c.globalAlpha = 0.35 + Math.sin(time * 2.5) * 0.12;
+      c.lineWidth = 1.8;
+      c.beginPath();
+      c.arc(0, 0, 155, 0, TAU);
+      c.stroke();
+      c.lineWidth = 1.2;
+      c.setLineDash([12, 10]);
+      c.beginPath();
+      c.arc(0, 0, 135, 0, TAU);
+      c.stroke();
+      c.setLineDash([]);
+
+      // Rotating tactical chevron reticle
+      c.rotate(time * 0.6);
+      c.strokeStyle = z.color;
+      c.lineWidth = 2.2;
+      c.globalAlpha = 0.55;
+      for (let i = 0; i < 4; i++) {
+        c.rotate(Math.PI / 2);
+        c.beginPath();
+        c.moveTo(110, -8); c.lineTo(122, 0); c.lineTo(110, 8);
+        c.stroke();
+      }
+      c.restore();
+    }
+  }
+
+  _drawEmergencyStrobes(c, s, time) {
+    if (!s) return;
+    const isUrgent = (s.remainingMs > 0 && s.remainingMs <= 60000) || s.state === 'OVERTIME';
+    if (!isUrgent) return;
+    const flash = Math.sin(time * 8) > 0;
+    const strobes = [[120, 100], [2280, 100], [120, 1250], [2280, 1250]];
+    for (const [sx, sy] of strobes) {
+      c.save();
+      glow(c, sx, sy, flash ? 90 : 35, '#ff4400', flash ? 0.65 : 0.2);
+      c.fillStyle = flash ? '#ffea00' : '#ff174f';
+      c.beginPath();
+      c.arc(sx, sy, 7, 0, TAU);
+      c.fill();
+      c.strokeStyle = '#ffffff';
+      c.lineWidth = 1.4;
+      c.stroke();
+      c.restore();
+    }
+  }
+
+  _drawDashStreaks(c, dt) {
+    for (let i = this.dashStreaks.length - 1; i >= 0; i--) {
+      const d = this.dashStreaks[i];
+      d.life -= dt;
+      if (d.life <= 0) {
+        this.dashStreaks.splice(i, 1);
+        continue;
+      }
+      const a = d.life / d.maxLife;
+      c.save();
+      c.strokeStyle = d.color;
+      c.globalAlpha = a * 0.85;
+      c.lineWidth = 3.5;
+      c.shadowColor = d.color;
+      c.shadowBlur = 14;
+      poly(c, d.pts);
+      c.stroke();
+      c.strokeStyle = '#ffffff';
+      c.lineWidth = 1.4;
+      c.globalAlpha = a;
+      c.stroke();
+      c.restore();
+    }
+  }
+
+  _drawFloorRipples(c, dt) {
+    for (let i = this.floorRipples.length - 1; i >= 0; i--) {
+      const r = this.floorRipples[i];
+      r.life -= dt;
+      r.radius += (r.maxRadius - r.radius) * dt * 4;
+      if (r.life <= 0) {
+        this.floorRipples.splice(i, 1);
+        continue;
+      }
+      const a = r.life / r.maxLife;
+      c.save();
+      c.strokeStyle = r.color;
+      c.globalAlpha = a * 0.42;
+      c.lineWidth = 1.8;
+      c.beginPath();
+      c.arc(r.x, r.y, r.radius, 0, TAU);
+      c.stroke();
+      c.restore();
+    }
+  }
+
+  draw(c, game) {
+    const time = performance.now() / 1000;
+    const dt = Math.min(0.05, Math.max(0.001, time - (this.lastTime || time)));
+    this.lastTime = time;
+    const camera = game._camera(), s = game.snapshot;
+
+    c.setTransform(1, 0, 0, 1, 0, 0);
+    c.fillStyle = '#020510';
+    c.fillRect(0, 0, game.canvas.width, game.canvas.height);
+
+    c.save();
+    c.translate(game.canvas.width / 2, game.canvas.height / 2);
+    c.scale(camera.zoom, camera.zoom);
+    c.translate(-camera.x, -camera.y);
+
+    // 1. Static Floor Plates, Walls & Landmarks
+    c.drawImage(this.floor, 0, 0);
+
+    // 2. Persistent Ground Scorch Marks
     for (let i = this.scorchMarks.length - 1; i >= 0; i--) {
       const sm = this.scorchMarks[i];
-      sm.life -= 0.016;
+      sm.life -= dt;
       if (sm.life <= 0) { this.scorchMarks.splice(i, 1); continue; }
       const a = sm.life / sm.maxLife;
       c.save();
@@ -232,11 +469,32 @@ export class BattlegroundArt {
       c.restore();
     }
 
-    // Atmospheric Floating Cyber Motes
+    // 3. Reactive Floor Footstep Ripples
+    this._drawFloorRipples(c, dt);
+
+    // 4. Tactical Deployment Range Rings
+    this._drawTacticalDeploymentZones(c, time);
+
+    // 5. Dual Volumetric Sweeping Atmospheric Searchlights
+    this._drawVolumetricSweeper(c, time);
+
+    // 6. Radiating Plasma Hex Resonance Waves from Central Nexus
+    this._drawNexusPulses(c, dt);
+
+    // 7. Industrial Steam Exhaust Vents
+    this._drawSteamVents(c, dt, time);
+
+    // 8. Ionized Electric Dash Streaks
+    this._drawDashStreaks(c, dt);
+
+    // 9. Emergency Climax Strobes (<=60s or Overtime)
+    this._drawEmergencyStrobes(c, s, time);
+
+    // 10. Atmospheric Floating Cyber Motes
     for (let i = 0; i < this.motes.length; i++) {
       const m = this.motes[i];
-      m.x = (m.x + m.vx * 0.016 + ARENA.width) % ARENA.width;
-      m.y = (m.y + m.vy * 0.016 + ARENA.height) % ARENA.height;
+      m.x = (m.x + m.vx * dt + ARENA.width) % ARENA.width;
+      m.y = (m.y + m.vy * dt + ARENA.height) % ARENA.height;
       c.fillStyle = m.color;
       c.globalAlpha = 0.35 + Math.sin(time * 2 + i) * 0.15;
       c.beginPath();
@@ -245,17 +503,49 @@ export class BattlegroundArt {
     }
     c.globalAlpha = 1.0;
 
-    this.nexus(c,time);
-    for(const p of s?.pickups||[])this.pickup(c,p,time);
-    for(const b of s?.projectiles||[])this.projectile(c,b,Math.min(.066,(performance.now()-(game.snapshotAt||0))/1000));
-    const players=s?.players||[],leader=[...players].sort((a,b)=>b.kills-a.kills).find(p=>p.kills>0)?.id;
-    for(const p of players){const v=game.visualPlayers.get(p.id);if(v)this.fighter(c,p,v,players,p.id===game.playerId,time,p.id===leader);}
-    for(const e of game.effects) {
+    // 11. Central Crystal Nexus
+    this.nexus(c, time);
+
+    // 12. Pickups
+    for (const p of s?.pickups || []) this.pickup(c, p, time);
+
+    // 13. Projectiles
+    for (const b of s?.projectiles || []) this.projectile(c, b, Math.min(0.066, (performance.now() - (game.snapshotAt || 0)) / 1000));
+
+    // 14. Fighters & Kinetic Footstep / Dash Trackers
+    const players = s?.players || [];
+    const leader = [...players].sort((a, b) => b.kills - a.kills).find(p => p.kills > 0)?.id;
+    for (const p of players) {
+      const v = game.visualPlayers.get(p.id);
+      if (!v) continue;
+
+      // Track movement for floor ripples and dashes
+      const last = this.lastFighterPos.get(p.id);
+      if (last && p.alive) {
+        const moveDist = Math.hypot(v.x - last.x, v.y - last.y);
+        if (p.dashing && !last.dashing) {
+          this.addDashStreak(last.x, last.y, v.x, v.y, fighterColor(p, players));
+        }
+        if (moveDist > 22) {
+          this.addFloorRipple(v.x, v.y, fighterColor(p, players));
+          this.lastFighterPos.set(p.id, { x: v.x, y: v.y, dashing: p.dashing });
+        }
+      } else {
+        this.lastFighterPos.set(p.id, { x: v.x, y: v.y, dashing: p.dashing });
+      }
+
+      this.fighter(c, p, v, players, p.id === game.playerId, time, p.id === leader);
+    }
+
+    // 15. Effects & Scorch Generation
+    for (const e of game.effects) {
       if (e.type === 'explosion' && e.life > 0.48) {
         this.addScorch(e.x, e.y, 36, '#ffaa00');
+        this.addFloorRipple(e.x, e.y, '#ffaa00');
       }
-      this.effect(c,e);
+      this.effect(c, e);
     }
+
     c.restore();
   }
 }

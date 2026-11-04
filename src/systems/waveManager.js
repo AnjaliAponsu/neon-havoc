@@ -62,7 +62,7 @@ export class WaveManager {
     return player || null;
   }
 
-  update(dt, player, enemies, soundEngine, particlePool, floatingTexts, onBossSpawn, onVictory) {
+  update(dt, player, enemies, soundEngine, particlePool, floatingTexts, onBossSpawn, onVictory, onWaveChange = null) {
     this.timer += dt;
 
     const targetPlayer = this._getTargetPlayer(player);
@@ -76,6 +76,9 @@ export class WaveManager {
       this.currentWave = calculatedWave;
       this.spawnInterval = Math.max(0.32, 1.6 - (this.currentWave - 1) * 0.065);
       floatingTexts.spawn(targetX, targetY - 45, `WAVE ${this.currentWave}!`, '#00f0ff', '#00f0ff', true, 20);
+      if (onWaveChange) {
+        onWaveChange(this.currentWave, targetX, targetY);
+      }
     }
 
     // Boss 1: Wave 10 (or 50% time)
