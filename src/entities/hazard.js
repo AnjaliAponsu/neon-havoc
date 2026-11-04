@@ -793,23 +793,27 @@ export class HazardManager {
       }
     }
 
-    // 7. Tactical Central Nexus Conductor Surge
-    const primaryP = player || player2;
-    if (primaryP && !primaryP.isDowned) {
-      const nexusDist = Math.hypot(primaryP.x - 1600, primaryP.y - 1200);
+    // 7. Tactical Central Nexus Conductor Surge (Temporary +20% boost while inside nexus, non-compounding)
+    const activeCombatants = [player, player2].filter(p => p && !p.isDowned);
+    for (let pi = 0; pi < activeCombatants.length; pi++) {
+      const p = activeCombatants[pi];
+      const nexusDist = Math.hypot(p.x - 1600, p.y - 1200);
       if (nexusDist < 95) {
-        if (!primaryP._nexusBuffTimer || primaryP._nexusBuffTimer <= 0) {
-          primaryP._nexusBuffTimer = 2.5;
+        p.nexusSyncActive = true;
+        if (!p._nexusAnnounceTimer || p._nexusAnnounceTimer <= 0) {
+          p._nexusAnnounceTimer = 6.0;
           if (floatingTexts) {
-            floatingTexts.spawn(primaryP.x, primaryP.y - 28, '⚡ NEXUS SYNC // +20% FIRERATE', '#00f0ff', '#ffffff', false, 13);
+            floatingTexts.spawn(p.x, p.y - 28, '⚡ NEXUS SYNC // +20% FIRERATE', '#00f0ff', '#ffffff', false, 13);
           }
           if (particlePool) {
-            particlePool.burst(primaryP.x, primaryP.y, '#00f0ff', 8, 140, 1.5);
+            particlePool.burst(p.x, p.y, '#00f0ff', 8, 140, 1.5);
           }
         }
-        primaryP.stats.fireRateMult = (primaryP.stats.fireRateMult || 1) * 1.2;
-      } else if (primaryP._nexusBuffTimer > 0) {
-        primaryP._nexusBuffTimer -= dt;
+      } else {
+        p.nexusSyncActive = false;
+      }
+      if (p._nexusAnnounceTimer > 0) {
+        p._nexusAnnounceTimer -= dt;
       }
     }
   }

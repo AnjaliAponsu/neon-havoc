@@ -94,6 +94,8 @@ export class Player {
       overdriveChargeRate: 1.0,
     };
 
+    this.nexusSyncActive = false;
+
     // Abilities Cooldowns & States
     this.isDashing = false;
     this.dashDuration = 0.22;

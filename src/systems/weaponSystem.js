@@ -50,10 +50,13 @@ export class WeaponSystem {
   }
 
   _updatePlayerWeapons(dt, player, input, bulletPool, soundEngine, particlePool, enemies, floatingTexts) {
+    const nexusMult = player.nexusSyncActive ? 1.2 : 1.0;
+    const effectiveFireRateMult = Math.min(4.0, Math.max(0.2, (player.stats.fireRateMult || 1.0) * nexusMult));
+
     // 2. Primary Weapon: Pulse Blaster OR Evolved Thunderstorm Railgun
     player.fireTimer += dt;
     const isEvoRailgun = player.weapons.evoRailgun;
-    const baseFireRate = (isEvoRailgun ? WEAPONS.EVO_RAILGUN.fireRate : WEAPONS.PISTOL.fireRate) / player.stats.fireRateMult;
+    const baseFireRate = Math.max(0.04, (isEvoRailgun ? WEAPONS.EVO_RAILGUN.fireRate : WEAPONS.PISTOL.fireRate) / effectiveFireRateMult);
     const shouldFire = input.isShooting || input.autoFire;
 
     if (shouldFire && player.fireTimer >= baseFireRate) {
@@ -69,7 +72,7 @@ export class WeaponSystem {
     if (player.weapons.shotgun || player.weapons.evoSupernova) {
       player.shotgunTimer += dt;
       const isEvoSupernova = player.weapons.evoSupernova;
-      const shotgunRate = (isEvoSupernova ? WEAPONS.EVO_SUPERNOVA.fireRate : WEAPONS.SHOTGUN.fireRate) / player.stats.fireRateMult;
+      const shotgunRate = Math.max(0.1, (isEvoSupernova ? WEAPONS.EVO_SUPERNOVA.fireRate : WEAPONS.SHOTGUN.fireRate) / effectiveFireRateMult);
       if (player.shotgunTimer >= shotgunRate) {
         player.shotgunTimer = 0;
         if (isEvoSupernova) {
@@ -84,7 +87,7 @@ export class WeaponSystem {
     if (player.weapons.lightning || player.weapons.evoStormWeb) {
       player.lightningTimer += dt;
       const isEvoStorm = player.weapons.evoStormWeb;
-      const lightningRate = (isEvoStorm ? WEAPONS.EVO_STORM_WEB.fireRate : WEAPONS.LIGHTNING.fireRate) / player.stats.fireRateMult;
+      const lightningRate = Math.max(0.12, (isEvoStorm ? WEAPONS.EVO_STORM_WEB.fireRate : WEAPONS.LIGHTNING.fireRate) / effectiveFireRateMult);
       if (player.lightningTimer >= lightningRate) {
         player.lightningTimer = 0;
         this._triggerLightning(player, enemies, soundEngine, particlePool, floatingTexts, isEvoStorm);
