@@ -239,6 +239,90 @@ export class PlasmaBarrel {
   }
 }
 
+export class ElementalField {
+  constructor(x, y, type = 'cryo') {
+    this.x = x;
+    this.y = y;
+    this.type = type; // 'cryo' | 'plasma'
+    this.radius = 95;
+    this.life = 4.8;
+    this.maxLife = 4.8;
+    this.tickTimer = 0.22;
+    this.animTimer = Math.random() * Math.PI * 2;
+  }
+
+  update(dt, enemies, player, soundEngine, particlePool, floatingTexts) {
+    this.life -= dt;
+    this.animTimer += dt * 3;
+    this.tickTimer -= dt;
+
+    if (this.tickTimer <= 0) {
+      this.tickTimer = 0.22;
+      const isCryo = this.type === 'cryo';
+      if (enemies) {
+        for (let i = 0; i < enemies.length; i++) {
+          const e = enemies[i];
+          if (!e.active || e.isDead) continue;
+          const d = Math.hypot(e.x - this.x, e.y - this.y);
+          if (d < this.radius) {
+            if (isCryo) {
+              e.takeDamage(8, null, null, null, false);
+              e.speed = Math.max(25, e.speed * 0.45); // Heavy sub-zero slow
+            } else {
+              e.takeDamage(16, null, null, null, false); // Thermal burn
+            }
+          }
+        }
+      }
+    }
+  }
+
+  draw(ctx) {
+    if (this.life <= 0) return;
+    const alpha = Math.min(1, (this.life / this.maxLife) * 1.5) * 0.42;
+    const isCryo = this.type === 'cryo';
+    const color = isCryo ? '#00f0ff' : '#ff4400';
+    const glowColor = isCryo ? 'rgba(0, 240, 255, ' : 'rgba(255, 68, 0, ';
+
+    ctx.save();
+    ctx.translate(this.x, this.y);
+
+    // Radial elemental pool aura on the floor
+    const grad = ctx.createRadialGradient(0, 0, 10, 0, 0, this.radius);
+    grad.addColorStop(0, glowColor + (alpha * 0.85) + ')');
+    grad.addColorStop(0.65, glowColor + (alpha * 0.4) + ')');
+    grad.addColorStop(1, glowColor + '0)');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Rotating tactical concentric rings
+    ctx.rotate(this.animTimer * (isCryo ? 0.35 : -0.45));
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.4;
+    ctx.globalAlpha = alpha;
+    ctx.beginPath();
+    ctx.arc(0, 0, this.radius * 0.82, 0, Math.PI * 1.35);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(0, 0, this.radius * 0.82, Math.PI * 1.55, Math.PI * 1.95);
+    ctx.stroke();
+
+    // Radial runic spikes
+    const spokes = isCryo ? 6 : 8;
+    for (let s = 0; s < spokes; s++) {
+      const a = (s / spokes) * Math.PI * 2;
+      ctx.beginPath();
+      ctx.moveTo(Math.cos(a) * (this.radius * 0.4), Math.sin(a) * (this.radius * 0.4));
+      ctx.lineTo(Math.cos(a) * (this.radius * 0.75), Math.sin(a) * (this.radius * 0.75));
+      ctx.stroke();
+    }
+
+    ctx.restore();
+  }
+}
+
 export class OrbitalDropPod {
   constructor(x, y, cacheType = null) {
     this.x = x;
@@ -491,13 +575,15 @@ export class HazardManager {
     this.accelPads = [];
     this.barrels = [];
     this.dropPods = [];
+    this.elementalFields = [];
+    this.bastionArcs = [];
     this.orbitalTimer = 35.0; // First drop at 35s
     this.bastionArcCooldown = 1.0;
     this.bastionNodes = [
-      { x: 1040, y: 720 },
-      { x: 2160, y: 1680 },
-      { x: 2160, y: 720 },
-      { x: 1040, y: 1680 }
+      { x: 1150, y: 940 },
+      { x: 2050, y: 1460 },
+      { x: 2050, y: 940 },
+      { x: 1150, y: 1460 }
     ];
   }
 
@@ -506,6 +592,8 @@ export class HazardManager {
     this.accelPads = [];
     this.barrels = [];
     this.dropPods = [];
+    this.elementalFields = [];
+    this.bastionArcs = [];
     this.orbitalTimer = 35.0;
 
     const count = sector.pylonCount || 6;
@@ -521,19 +609,35 @@ export class HazardManager {
     // 4 Strategic Central Accel Boost Pads (Pointing in cardinal combat lanes)
     this.accelPads.push(new AccelPad(1340, 1200, 0));             // Pointing East
     this.accelPads.push(new AccelPad(1860, 1200, Math.PI));       // Pointing West
-    this.accelPads.push(new AccelPad(1600, 940, Math.PI / 2));    // Pointing South
-    this.accelPads.push(new AccelPad(1600, 1460, -Math.PI / 2));  // Pointing North
+    this.accelPads.push(new AccelPad(1600, 960, Math.PI / 2));    // Pointing South
+    this.accelPads.push(new AccelPad(1600, 1440, -Math.PI / 2));  // Pointing North
 
-    // Strategic Volatile Cryo / Plasma Barrels near Bastion Flanks
-    this.barrels.push(new PlasmaBarrel(920, 680, 'cryo'));
-    this.barrels.push(new PlasmaBarrel(2280, 1720, 'cryo'));
-    this.barrels.push(new PlasmaBarrel(2280, 680, 'plasma'));
-    this.barrels.push(new PlasmaBarrel(920, 1720, 'plasma'));
-    this.barrels.push(new PlasmaBarrel(1450, 1320, 'cryo'));
-    this.barrels.push(new PlasmaBarrel(1750, 1080, 'plasma'));
+    // Strategic Volatile Cryo / Plasma Barrels near In-View Bastion Flanks
+    this.barrels.push(new PlasmaBarrel(1240, 990, 'cryo'));
+    this.barrels.push(new PlasmaBarrel(1960, 1410, 'cryo'));
+    this.barrels.push(new PlasmaBarrel(1960, 990, 'plasma'));
+    this.barrels.push(new PlasmaBarrel(1240, 1410, 'plasma'));
+    this.barrels.push(new PlasmaBarrel(1450, 1280, 'cryo'));
+    this.barrels.push(new PlasmaBarrel(1750, 1120, 'plasma'));
   }
 
   update(dt, bulletPool, enemies, soundEngine, particlePool, floatingTexts, player = null, player2 = null, renderer = null) {
+    // 0. Decay Active Elemental Pools & Tesla Lightning Arcs
+    for (let i = this.elementalFields.length - 1; i >= 0; i--) {
+      const ef = this.elementalFields[i];
+      ef.update(dt, enemies, player, soundEngine, particlePool, floatingTexts);
+      if (ef.life <= 0) {
+        this.elementalFields.splice(i, 1);
+      }
+    }
+
+    for (let i = this.bastionArcs.length - 1; i >= 0; i--) {
+      this.bastionArcs[i].life -= dt;
+      if (this.bastionArcs[i].life <= 0) {
+        this.bastionArcs.splice(i, 1);
+      }
+    }
+
     // 1. Orbital Supply Drop Timers & Scheduling
     this.orbitalTimer -= dt;
     if (this.orbitalTimer <= 0 && player) {
@@ -612,7 +716,7 @@ export class HazardManager {
           }
 
           if (result === 999) {
-            this._detonatePylon(p, enemies, soundEngine, particlePool, floatingTexts);
+            this._detonatePylon(p, enemies, soundEngine, particlePool, floatingTexts, renderer);
           }
           break;
         }
@@ -642,7 +746,7 @@ export class HazardManager {
           bullet.active = false;
           const result = br.takeDamage(bullet.damage);
           if (result === 999) {
-            this._detonateBarrel(br, enemies, soundEngine, particlePool, floatingTexts);
+            this._detonateBarrel(br, enemies, soundEngine, particlePool, floatingTexts, renderer);
           }
           break;
         }
@@ -667,6 +771,16 @@ export class HazardManager {
             if (particlePool) {
               particlePool.burst(e.x, e.y, '#00ffff', 4, 120, 1.2);
             }
+            // Visual Tesla Lightning Arc
+            this.bastionArcs.push({
+              x1: bn.x,
+              y1: bn.y,
+              x2: e.x,
+              y2: e.y,
+              life: 0.2,
+              maxLife: 0.2,
+              color: b % 2 === 0 ? '#00f0ff' : '#d000ff'
+            });
             if (targets >= 2) break;
           }
         }
@@ -678,15 +792,43 @@ export class HazardManager {
         }
       }
     }
+
+    // 7. Tactical Central Nexus Conductor Surge
+    const primaryP = player || player2;
+    if (primaryP && !primaryP.isDowned) {
+      const nexusDist = Math.hypot(primaryP.x - 1600, primaryP.y - 1200);
+      if (nexusDist < 95) {
+        if (!primaryP._nexusBuffTimer || primaryP._nexusBuffTimer <= 0) {
+          primaryP._nexusBuffTimer = 2.5;
+          if (floatingTexts) {
+            floatingTexts.spawn(primaryP.x, primaryP.y - 28, '⚡ NEXUS SYNC // +20% FIRERATE', '#00f0ff', '#ffffff', false, 13);
+          }
+          if (particlePool) {
+            particlePool.burst(primaryP.x, primaryP.y, '#00f0ff', 8, 140, 1.5);
+          }
+        }
+        primaryP.stats.fireRateMult = (primaryP.stats.fireRateMult || 1) * 1.2;
+      } else if (primaryP._nexusBuffTimer > 0) {
+        primaryP._nexusBuffTimer -= dt;
+      }
+    }
   }
 
-  _detonateBarrel(barrel, enemies, soundEngine, particlePool, floatingTexts) {
+  _detonateBarrel(barrel, enemies, soundEngine, particlePool, floatingTexts, renderer = null) {
     const isCryo = barrel.type === 'cryo';
     const color = isCryo ? '#00f0ff' : '#ff4400';
     soundEngine.playShockwave();
     particlePool.spawnShockwave(barrel.x, barrel.y, color, 260);
     particlePool.spawnStarburst(barrel.x, barrel.y, '#ffffff', 28);
     particlePool.burst(barrel.x, barrel.y, color, 45, 380, 4);
+
+    // Deploy persistent elemental hazard zone on the floor
+    this.elementalFields.push(new ElementalField(barrel.x, barrel.y, barrel.type));
+
+    // Burn permanent scorch mark decal onto floor
+    if (renderer && renderer.addScorchMark) {
+      renderer.addScorchMark(barrel.x, barrel.y, isCryo ? 42 : 50, color);
+    }
 
     floatingTexts.spawn(
       barrel.x, barrel.y - 28,
@@ -709,12 +851,31 @@ export class HazardManager {
         }
       }
     }
+
+    // Trigger cascade chain reactions with adjacent barrels
+    for (let b = 0; b < this.barrels.length; b++) {
+      const other = this.barrels[b];
+      if (other === barrel || !other.active) continue;
+      const bd = Math.hypot(other.x - barrel.x, other.y - barrel.y);
+      if (bd < blastRadius) {
+        const res = other.takeDamage(50);
+        if (res === 999) {
+          setTimeout(() => {
+            this._detonateBarrel(other, enemies, soundEngine, particlePool, floatingTexts, renderer);
+          }, 120);
+        }
+      }
+    }
   }
 
-  _detonatePylon(pylon, enemies, soundEngine, particlePool, floatingTexts) {
+  _detonatePylon(pylon, enemies, soundEngine, particlePool, floatingTexts, renderer = null) {
     soundEngine.playShockwave();
     particlePool.spawnShockwave(pylon.x, pylon.y, '#00ffff', 360);
     particlePool.burst(pylon.x, pylon.y, '#00f0ff', 60, 450, 5);
+
+    if (renderer && renderer.addScorchMark) {
+      renderer.addScorchMark(pylon.x, pylon.y, 56, '#00ffff');
+    }
 
     floatingTexts.spawn(pylon.x, pylon.y - 30, 'OVERCHARGED NOVA!', '#00f0ff', '#00f0ff', true, 20);
 
@@ -731,21 +892,52 @@ export class HazardManager {
   }
 
   draw(ctx) {
+    // 0. Persistent Elemental Floor Hazard Fields (Cryo Frost & Plasma Pools)
+    for (let i = 0; i < this.elementalFields.length; i++) {
+      this.elementalFields[i].draw(ctx);
+    }
+
     // 1. Accel Booster Pads (Floor Layer)
     for (let i = 0; i < this.accelPads.length; i++) {
       this.accelPads[i].draw(ctx);
     }
+
     // 2. Barrels
     for (let i = 0; i < this.barrels.length; i++) {
       this.barrels[i].draw(ctx);
     }
+
     // 3. Orbital Drop Pods (Beacons & Deployed Pods)
     for (let i = 0; i < this.dropPods.length; i++) {
       this.dropPods[i].draw(ctx);
     }
+
     // 4. Pylons
     for (let i = 0; i < this.pylons.length; i++) {
       this.pylons[i].draw(ctx);
+    }
+
+    // 5. Active Bastion Tesla Lightning Arcs
+    for (let a = 0; a < this.bastionArcs.length; a++) {
+      const arc = this.bastionArcs[a];
+      const alpha = Math.min(1, arc.life / arc.maxLife);
+      ctx.save();
+      ctx.strokeStyle = arc.color;
+      ctx.shadowColor = arc.color;
+      ctx.shadowBlur = 12;
+      ctx.lineWidth = 2.4 * alpha;
+      ctx.beginPath();
+      ctx.moveTo(arc.x1, arc.y1);
+      const steps = 4;
+      const dx = (arc.x2 - arc.x1) / steps;
+      const dy = (arc.y2 - arc.y1) / steps;
+      for (let s = 1; s < steps; s++) {
+        const jitter = (Math.random() - 0.5) * 14;
+        ctx.lineTo(arc.x1 + dx * s + jitter, arc.y1 + dy * s + jitter);
+      }
+      ctx.lineTo(arc.x2, arc.y2);
+      ctx.stroke();
+      ctx.restore();
     }
   }
 }

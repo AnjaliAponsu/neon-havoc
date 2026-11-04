@@ -210,7 +210,14 @@ export class Renderer {
     this.recoilKick = 0;
 
     // Ambient Floating Hexagonal Debris (Matching Reference Image Background)
-    this.bgHexagons = [];
+    this.bgHexagons = [
+      // Key Viewport Hexagonal Slabs (Framing central combat arena matching storyboard!)
+      { x: 1720, y: 940, size: 36, rotation: 0.1, pulseSpeed: 0.5, offset: 0 },
+      { x: 1260, y: 1040, size: 34, rotation: -0.2, pulseSpeed: 0.6, offset: 1.2 },
+      { x: 1840, y: 1440, size: 38, rotation: 0.3, pulseSpeed: 0.55, offset: 2.1 },
+      { x: 1340, y: 1400, size: 35, rotation: -0.15, pulseSpeed: 0.45, offset: 3.4 },
+      { x: 1980, y: 1000, size: 32, rotation: 0.25, pulseSpeed: 0.7, offset: 4.5 },
+    ];
     const hexCount = 36;
     for (let i = 0; i < hexCount; i++) {
       this.bgHexagons.push({
@@ -247,11 +254,11 @@ export class Renderer {
     // Glowing Cyber Power Conduits (Embedded Circuit Bus Floor Tracks)
     this.conduitPulse = 0;
     this.cyberConduits = [
-      // Connecting Center Nexus to the 4 Sector Bastions
-      { from: { x: 1600, y: 1200 }, to: { x: 1040, y: 720 }, color: '#d000ff', pips: 4 },
-      { from: { x: 1600, y: 1200 }, to: { x: 2160, y: 1680 }, color: '#00f0ff', pips: 4 },
-      { from: { x: 1600, y: 1200 }, to: { x: 2160, y: 720 }, color: '#00f0ff', pips: 4 },
-      { from: { x: 1600, y: 1200 }, to: { x: 1040, y: 1680 }, color: '#ff00aa', pips: 4 },
+      // Connecting Center Nexus to the 4 In-View Framing Bastions
+      { from: { x: 1600, y: 1200 }, to: { x: 1150, y: 940 }, color: '#d000ff', pips: 4 },
+      { from: { x: 1600, y: 1200 }, to: { x: 2050, y: 1460 }, color: '#00f0ff', pips: 4 },
+      { from: { x: 1600, y: 1200 }, to: { x: 2050, y: 940 }, color: '#00f0ff', pips: 4 },
+      { from: { x: 1600, y: 1200 }, to: { x: 1150, y: 1460 }, color: '#ff00aa', pips: 4 },
       // Connecting to Perimeter Fortification Gates
       { from: { x: 1600, y: 1200 }, to: { x: 1600, y: 80 }, color: '#00f0ff', pips: 4 },
       { from: { x: 1600, y: 1200 }, to: { x: 1600, y: 2320 }, color: '#ff00aa', pips: 4 },
@@ -261,16 +268,23 @@ export class Renderer {
 
     // Tactical Sector Trench Bastions (Industrial Armor, Hazard Stripes & Slanted LED Vents)
     this.sectorBastions = [
-      // Quad 1: North-West Central Sector Bastion (Directly frames top-left of combat, exact match to storyboard!)
-      { x: 1040, y: 720, length: 360, angle: -Math.PI / 4, color: '#d000ff', hasCaution: true, hasVents: true },
-      // Quad 2: South-East Central Sector Bastion (Directly frames bottom-right of combat, exact match to storyboard!)
-      { x: 2160, y: 1680, length: 360, angle: 3 * Math.PI / 4, color: '#00f0ff', hasCaution: true, hasVents: true },
-      // Quad 3: North-East Central Sector Bastion
-      { x: 2160, y: 720, length: 360, angle: Math.PI / 4, color: '#00f0ff', hasCaution: true, hasVents: true },
-      // Quad 4: South-West Central Sector Bastion
-      { x: 1040, y: 1680, length: 360, angle: -3 * Math.PI / 4, color: '#ff00aa', hasCaution: true, hasVents: true },
+      // 1. IN-VIEW CENTRAL VIEWPORT BASTIONS (Permanently visible in normal 1280x720 camera view, exact match to storyboard!)
+      // Top-Left Bastion (slanted down-right, exact match to top-left of reference image!)
+      { x: 1150, y: 940, length: 340, angle: -Math.PI / 4, color: '#d000ff', hasCaution: true, hasVents: true },
+      // Bottom-Right Bastion (slanted up-left, exact match to bottom-right of reference image!)
+      { x: 2050, y: 1460, length: 340, angle: 3 * Math.PI / 4, color: '#00f0ff', hasCaution: true, hasVents: true },
+      // Top-Right Bastion
+      { x: 2050, y: 940, length: 340, angle: Math.PI / 4, color: '#00f0ff', hasCaution: true, hasVents: true },
+      // Bottom-Left Bastion
+      { x: 1150, y: 1460, length: 340, angle: -3 * Math.PI / 4, color: '#ff00aa', hasCaution: true, hasVents: true },
 
-      // Perimeter Gates / Outer Flanking Bunkers
+      // 2. Mid-Field Secondary Trench Bastions
+      { x: 740, y: 560, length: 320, angle: -Math.PI / 4, color: '#d000ff', hasCaution: true, hasVents: true },
+      { x: 2460, y: 1840, length: 320, angle: 3 * Math.PI / 4, color: '#00f0ff', hasCaution: true, hasVents: true },
+      { x: 2460, y: 560, length: 320, angle: Math.PI / 4, color: '#00f0ff', hasCaution: true, hasVents: true },
+      { x: 740, y: 1840, length: 320, angle: -3 * Math.PI / 4, color: '#ff00aa', hasCaution: true, hasVents: true },
+
+      // 3. Perimeter Gates / Outer Flanking Bunkers
       { x: 1600, y: 80, length: 480, angle: 0, color: '#00f0ff', hasCaution: true, hasVents: true },
       { x: 1600, y: 2320, length: 480, angle: Math.PI, color: '#ff00aa', hasCaution: true, hasVents: true },
       { x: 80, y: 1200, length: 480, angle: Math.PI / 2, color: '#d000ff', hasCaution: true, hasVents: true },
@@ -279,28 +293,23 @@ export class Renderer {
 
     // Ambient Glowing Crystal Formations (Nested in Bastion Alcoves & Strategic Landmarks)
     this.crystalFormations = [
-      // Nested Inside North-West Bastion Alcove (Exact match to top-left of storyboard!)
-      { x: 1160, y: 840, color: '#d000ff', count: 7, scale: 1.35 },
-      // Nested Inside South-East Bastion Alcove (Exact match to bottom-right of storyboard!)
-      { x: 2040, y: 1560, color: '#00f0ff', count: 8, scale: 1.4 },
-      // Nested Inside North-East Bastion Alcove
-      { x: 2040, y: 840, color: '#ffe600', count: 6, scale: 1.25 },
-      // Nested Inside South-West Bastion Alcove
-      { x: 1160, y: 1560, color: '#ff00aa', count: 6, scale: 1.25 },
+      // 1. IN-VIEW CENTRAL VIEWPORT FORMATIONS (Directly visible framing the combat camera)
+      // Nested Inside Top-Left Bastion Alcove (Vibrant purple 3D crystals with ground rubble — exact match to storyboard!)
+      { x: 1040, y: 980, color: '#d000ff', count: 8, scale: 1.45 },
+      // Nested Inside Bottom-Right Bastion Alcove (Vibrant cyan 3D crystals with ground rubble — exact match to storyboard!)
+      { x: 2160, y: 1420, color: '#00f0ff', count: 8, scale: 1.45 },
+      // Nested Inside Top-Right Bastion Alcove
+      { x: 2160, y: 980, color: '#ffe600', count: 7, scale: 1.35 },
+      // Nested Inside Bottom-Left Bastion Alcove
+      { x: 1040, y: 1420, color: '#ff00aa', count: 7, scale: 1.35 },
 
-      // Central Landmark Clusters
-      { x: 1380, y: 1060, color: '#00f0ff', count: 6, scale: 1.15 },
-      { x: 1820, y: 1340, color: '#d000ff', count: 5, scale: 1.1 },
-      { x: 1460, y: 1420, color: '#ffe600', count: 4, scale: 0.95 },
-      { x: 1740, y: 980, color: '#00f0ff', count: 5, scale: 1.05 },
+      // 2. Mid-Field Strategic Formations
+      { x: 740, y: 620, color: '#d000ff', count: 6, scale: 1.25 },
+      { x: 2460, y: 1780, color: '#00f0ff', count: 6, scale: 1.25 },
+      { x: 2460, y: 620, color: '#ffe600', count: 5, scale: 1.2 },
+      { x: 740, y: 1780, color: '#ff00aa', count: 5, scale: 1.2 },
 
-      // Mid-Field Strategic Formations
-      { x: 860, y: 840, color: '#ff00aa', count: 5, scale: 1.1 },
-      { x: 2340, y: 860, color: '#00f0ff', count: 6, scale: 1.2 },
-      { x: 860, y: 1620, color: '#ffe600', count: 5, scale: 1.0 },
-      { x: 2340, y: 1620, color: '#d000ff', count: 6, scale: 1.25 },
-
-      // Perimeter Bastion Clusters
+      // 3. Perimeter Bastion Clusters
       { x: 160, y: 150, color: '#9933ff', count: 7, scale: 1.45 },
       { x: GAME_CONFIG.ARENA_WIDTH - 160, y: 150, color: '#00f0ff', count: 7, scale: 1.45 },
       { x: 150, y: GAME_CONFIG.ARENA_HEIGHT - 160, color: '#d000ff', count: 7, scale: 1.45 },
@@ -309,10 +318,10 @@ export class Renderer {
 
     // Atmospheric Exhaust Vents & Cyber Grates (Vent steam motes)
     this.exhaustVents = [
-      { x: 1040, y: 790, angle: 0, timer: 0 },
-      { x: 2160, y: 1610, angle: Math.PI, timer: 1.2 },
-      { x: 2160, y: 790, angle: Math.PI / 2, timer: 0.6 },
-      { x: 1040, y: 1610, angle: -Math.PI / 2, timer: 1.8 }
+      { x: 1160, y: 980, angle: -Math.PI / 4, timer: 0 },
+      { x: 2040, y: 1420, angle: 3 * Math.PI / 4, timer: 1.2 },
+      { x: 2040, y: 980, angle: Math.PI / 4, timer: 0.6 },
+      { x: 1160, y: 1420, angle: -3 * Math.PI / 4, timer: 1.8 }
     ];
     this.steamParticles = [];
     this.sweeperAngle = 0;
