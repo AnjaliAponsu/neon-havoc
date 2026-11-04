@@ -46,6 +46,7 @@ export class Player {
     this.hasShieldUpgrade = false;
     this.shieldRegenTimer = 0;
     this.invulnerableTimer = 0;
+    this.boostTimer = 0;
 
     // Level & XP
     this.level = 1;
@@ -127,6 +128,7 @@ export class Player {
     // Powerup Timers (always count down)
     if (this.chronoFreezeTimer > 0) this.chronoFreezeTimer -= dt;
     if (this.invulnPowerupTimer > 0) this.invulnPowerupTimer -= dt;
+    if (this.boostTimer > 0) this.boostTimer -= dt;
 
     // Downed Core Simulation
     if (this.isDowned) {
@@ -155,6 +157,7 @@ export class Player {
     if (this.invulnerableTimer > 0) this.invulnerableTimer -= dt;
     if (this.chronoFreezeTimer > 0) this.chronoFreezeTimer -= dt;
     if (this.invulnPowerupTimer > 0) this.invulnPowerupTimer -= dt;
+    if (this.boostTimer > 0) this.boostTimer -= dt;
 
     // Shield active timer
     if (this.isShieldActive) {
@@ -258,7 +261,7 @@ export class Player {
       this.vy = isFinite(this.targetNetVy) ? this.targetNetVy : 0;
     } else {
       // Normal local movement
-      const speed = this.baseSpeed * (this.stats.moveSpeedMult || 1.0) * (this.isOverdrive ? 1.45 : 1.0) * (this.invulnPowerupTimer > 0 ? 1.75 : 1.0);
+      const speed = this.baseSpeed * (this.stats.moveSpeedMult || 1.0) * (this.isOverdrive ? 1.45 : 1.0) * (this.invulnPowerupTimer > 0 ? 1.75 : 1.0) * (this.boostTimer > 0 ? 1.65 : 1.0);
       const targetVx = (input.moveX || 0) * speed;
       const targetVy = (input.moveY || 0) * speed;
 
@@ -266,6 +269,10 @@ export class Player {
       this.vy += (targetVy - this.vy) * 0.22;
       if (!isFinite(this.vx) || isNaN(this.vx)) this.vx = 0;
       if (!isFinite(this.vy) || isNaN(this.vy)) this.vy = 0;
+
+      if (this.boostTimer > 0 && Math.random() < 0.4) {
+        particlePool.spawn(this.x, this.y, -this.vx * 0.1, -this.vy * 0.1, 4, '#00f0ff', 0.2, 0.9, 'spark');
+      }
     }
 
     // Apply movement (Local players only; remote position is directly interpolated above)

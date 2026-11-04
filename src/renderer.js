@@ -70,6 +70,28 @@ class SpringGrid {
     this.applyExplosion(x, y, -force, radius);
   }
 
+  applyWake(x, y, vx, vy, radius = 95) {
+    if (!isFinite(x) || !isFinite(y)) return;
+    const speed = Math.hypot(vx, vy);
+    if (speed < 15) return;
+    const minC = Math.max(0, Math.floor((x - radius) / this.spacing));
+    const maxC = Math.min(this.cols - 1, Math.ceil((x + radius) / this.spacing));
+    const minR = Math.max(0, Math.floor((y - radius) / this.spacing));
+    const maxR = Math.min(this.rows - 1, Math.ceil((y + radius) / this.spacing));
+
+    for (let r = minR; r <= maxR; r++) {
+      for (let c = minC; c <= maxC; c++) {
+        const node = this.nodes[r][c];
+        const dist = Math.hypot(node.x - x, node.y - y);
+        if (dist < radius && dist > 1) {
+          const factor = (1 - dist / radius) * 0.12;
+          node.vx += vx * factor;
+          node.vy += vy * factor;
+        }
+      }
+    }
+  }
+
   update(dt, camX, camY, camW, camH) {
     if (isNaN(camX) || isNaN(camY) || isNaN(camW) || isNaN(camH)) return;
     const pad = 120;

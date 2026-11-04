@@ -1759,6 +1759,11 @@ class NeonHavocGame {
       this.player2.update(dt, p2Input, soundEngine, this.particlePool, this.floatingTexts);
     }
 
+    // Dynamic grid kinetic wake & ripples under movement
+    if (Math.hypot(player.vx, player.vy) > 20) {
+      this.renderer.grid.applyWake(player.x, player.y, player.vx, player.vy);
+    }
+
     // Grid ripple & 30X Dodge Matrix on Dash
     const anyDashing = player.isDashing || (this.player2 && this.player2.isDashing);
     if (anyDashing) {
@@ -1859,8 +1864,8 @@ class NeonHavocGame {
       }
     }
 
-    // 4. Update Hazards & Powerups
-    this.hazardManager.update(dt, this.bulletPool, this.enemies, soundEngine, this.particlePool, this.floatingTexts);
+    // 4. Update Hazards & Powerups (Pylons, Accel Boost Pads & Volatile Barrels)
+    this.hazardManager.update(dt, this.bulletPool, this.enemies, soundEngine, this.particlePool, this.floatingTexts, player, this.player2);
     this.powerupManager.update(dt, player.x, player.y, (type, px, py) => this._onPowerupCollected(type, px, py));
     if (this.player2 && !this.player2.isDowned) {
       this.powerupManager.update(dt, this.player2.x, this.player2.y, (type, px, py) => this._onPowerupCollected(type, px, py));
