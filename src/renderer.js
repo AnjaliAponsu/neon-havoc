@@ -307,6 +307,16 @@ export class Renderer {
       { x: GAME_CONFIG.ARENA_WIDTH - 160, y: GAME_CONFIG.ARENA_HEIGHT - 150, color: '#00f0ff', count: 8, scale: 1.5 },
     ];
 
+    // Atmospheric Exhaust Vents & Cyber Grates (Vent steam motes)
+    this.exhaustVents = [
+      { x: 1040, y: 790, angle: 0, timer: 0 },
+      { x: 2160, y: 1610, angle: Math.PI, timer: 1.2 },
+      { x: 2160, y: 790, angle: Math.PI / 2, timer: 0.6 },
+      { x: 1040, y: 1610, angle: -Math.PI / 2, timer: 1.8 }
+    ];
+    this.steamParticles = [];
+    this.sweeperAngle = 0;
+
     this.resize();
     window.addEventListener('resize', () => this.resize());
     window.addEventListener('fullscreenchange', () => this.resize());
@@ -515,9 +525,11 @@ export class Renderer {
       const pulseAlpha = 0.14 + Math.sin(this.gridPulse) * 0.04;
       this.grid.draw(ctx, this.camera.x - halfViewW, this.camera.y - halfViewH, halfViewW * 2, halfViewH * 2, pulseAlpha, this.sectorAccent);
       this._drawTacticalFloorNexus(ctx, halfViewW, halfViewH);
+      this._drawAtmosphericSweeper(ctx, halfViewW, halfViewH);
       this._drawCyberConduits(ctx, halfViewW, halfViewH);
       this._drawBorders(ctx);
       this._drawBattlegroundArchitecture(ctx, halfViewW, halfViewH);
+      this._drawAtmosphericVents(ctx, halfViewW, halfViewH);
     } catch (e) { /* grid/border guard */ }
 
     // 5. Ambient Glowing 3D Faceted Crystal Clusters (Central & Bastion Formations)
@@ -722,6 +734,129 @@ export class Renderer {
         ctx.beginPath();
         ctx.arc(0, 0, 36, ra, ra + 0.6);
         ctx.stroke();
+      }
+    } finally {
+      ctx.restore();
+    }
+  }
+
+  _drawAtmosphericSweeper(ctx, halfViewW, halfViewH) {
+    this.sweeperAngle = (this.sweeperAngle || 0) + 0.016 * 0.28;
+    const cx = GAME_CONFIG.ARENA_WIDTH / 2;
+    const cy = GAME_CONFIG.ARENA_HEIGHT / 2;
+    const distToCenter = Math.hypot(this.camera.x - cx, this.camera.y - cy);
+    if (distToCenter > Math.max(halfViewW, halfViewH) + 900) return;
+
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(this.sweeperAngle);
+
+    // Soft volumetric atmospheric searchlight cone sweeping across the floor
+    const beamLength = 850;
+    const beamSpread = 0.45; // ~26 degrees
+    const grad = ctx.createRadialGradient(0, 0, 40, 0, 0, beamLength);
+    grad.addColorStop(0, 'rgba(0, 240, 255, 0.08)');
+    grad.addColorStop(0.4, 'rgba(0, 180, 255, 0.035)');
+    grad.addColorStop(0.85, 'rgba(140, 0, 255, 0.015)');
+    grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.arc(0, 0, beamLength, -beamSpread / 2, beamSpread / 2);
+    ctx.closePath();
+    ctx.fill();
+
+    // Subtle edge laser lines
+    ctx.strokeStyle = 'rgba(0, 240, 255, 0.07)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(Math.cos(-beamSpread / 2) * beamLength, Math.sin(-beamSpread / 2) * beamLength);
+    ctx.moveTo(0, 0);
+    ctx.lineTo(Math.cos(beamSpread / 2) * beamLength, Math.sin(beamSpread / 2) * beamLength);
+    ctx.stroke();
+
+    ctx.restore();
+  }
+
+  _drawAtmosphericVents(ctx, halfViewW, halfViewH) {
+    if (!this.exhaustVents) return;
+    const dt = 0.016;
+
+    ctx.save();
+    try {
+      for (let i = 0; i < this.exhaustVents.length; i++) {
+        const v = this.exhaustVents[i];
+        v.timer = (v.timer || 0) + dt;
+
+        // Viewport culling
+        if (v.x < this.camera.x - halfViewW - 120 || v.x > this.camera.x + halfViewW + 120 ||
+            v.y < this.camera.y - halfViewH - 120 || v.y > this.camera.y + halfViewH + 120) continue;
+
+        ctx.save();
+        ctx.translate(v.x, v.y);
+        ctx.rotate(v.angle);
+
+        // 1. Recessed Grate Housing
+        ctx.fillStyle = '#060a18';
+        ctx.strokeStyle = 'rgba(0, 200, 255, 0.35)';
+        ctx.lineWidth = 1.4;
+        ctx.fillRect(-22, -14, 44, 28);
+        ctx.strokeRect(-22, -14, 44, 28);
+
+        // 2. Glowing Amber/Cyan Furnace Underglow
+        const glowPulse = 0.5 + Math.sin(v.timer * 4) * 0.25;
+        ctx.fillStyle = `rgba(0, 240, 255, ${glowPulse * 0.45})`;
+        ctx.fillRect(-18, -10, 36, 20);
+
+        // 3. Metallic Slotted Grate Slats
+        ctx.fillStyle = '#10172e';
+        for (let s = -14; s <= 14; s += 7) {
+          ctx.fillRect(s, -12, 3, 24);
+        }
+
+        ctx.restore();
+
+        // Spawn drifting steam puff
+        if (v.timer >= 2.2) {
+          v.timer = 0;
+          for (let p = 0; p < 4; p++) {
+            this.steamParticles.push({
+              x: v.x + (Math.random() - 0.5) * 16,
+              y: v.y + (Math.random() - 0.5) * 16,
+              vx: Math.cos(v.angle + Math.PI / 2) * (15 + Math.random() * 25) + (Math.random() - 0.5) * 10,
+              vy: Math.sin(v.angle + Math.PI / 2) * (15 + Math.random() * 25) + (Math.random() - 0.5) * 10,
+              size: 14 + Math.random() * 12,
+              maxSize: 38 + Math.random() * 24,
+              life: 1.8,
+              maxLife: 1.8,
+              color: i % 2 === 0 ? 'rgba(0, 240, 255,' : 'rgba(210, 0, 255,'
+            });
+          }
+        }
+      }
+
+      // Update & render steam particles
+      if (this.steamParticles) {
+        for (let p = this.steamParticles.length - 1; p >= 0; p--) {
+          const sp = this.steamParticles[p];
+          sp.life -= dt;
+          if (sp.life <= 0) {
+            this.steamParticles.splice(p, 1);
+            continue;
+          }
+          sp.x += sp.vx * dt;
+          sp.y += sp.vy * dt;
+          const progress = 1 - (sp.life / sp.maxLife);
+          const currentSize = sp.size + (sp.maxSize - sp.size) * progress;
+          const currentAlpha = Math.sin(progress * Math.PI) * 0.12;
+
+          ctx.fillStyle = `${sp.color} ${currentAlpha})`;
+          ctx.beginPath();
+          ctx.arc(sp.x, sp.y, currentSize, 0, Math.PI * 2);
+          ctx.fill();
+        }
       }
     } finally {
       ctx.restore();

@@ -120,6 +120,9 @@ export class Player {
     // Visual trails
     this.trailPositions = [];
     this.pulseAnim = 0;
+    this.dashIonTrail = [];
+    this.lastDashX = this.x;
+    this.lastDashY = this.y;
   }
 
   update(dt, input, soundEngine, particlePool, floatingTexts) {
@@ -208,11 +211,22 @@ export class Player {
       }
     }
 
+    // Decay ionized dash trail
+    for (let i = this.dashIonTrail.length - 1; i >= 0; i--) {
+      const seg = this.dashIonTrail[i];
+      seg.life -= dt;
+      if (seg.life <= 0) {
+        this.dashIonTrail.splice(i, 1);
+      }
+    }
+
     // 2. Dash Execution
     if (input.consumeDash() && this.dashCharges > 0 && !this.isDashing) {
       this.dashCharges--;
       this.isDashing = true;
       this.dashTimer = this.dashDuration;
+      this.lastDashX = this.x;
+      this.lastDashY = this.y;
       soundEngine.playDash();
 
       // Dash burst in movement direction or facing angle (strictly guarded against NaN)
@@ -230,6 +244,23 @@ export class Player {
 
     if (this.isDashing) {
       this.dashTimer -= dt;
+
+      // Drop active floor ionized lightning ribbon
+      const dDist = Math.hypot(this.x - this.lastDashX, this.y - this.lastDashY);
+      if (dDist >= 16) {
+        this.dashIonTrail.push({
+          x1: this.lastDashX,
+          y1: this.lastDashY,
+          x2: this.x,
+          y2: this.y,
+          life: 1.4,
+          maxLife: 1.4,
+          color: this.isOverdrive ? '#ffe600' : '#00f0ff'
+        });
+        this.lastDashX = this.x;
+        this.lastDashY = this.y;
+      }
+
       // Electric trail
       particlePool.spawn(
         this.x,
@@ -420,13 +451,93 @@ export class Player {
     return leveledUp;
   }
 
+  checkIonTrailDamage(enemies, soundEngine, particlePool, floatingTexts) {
+    if (!this.dashIonTrail || this.dashIonTrail.length === 0 || !enemies) return;
+    for (let s = 0; s < this.dashIonTrail.length; s++) {
+      const seg = this.dashIonTrail[s];
+      const dx = seg.x2 - seg.x1;
+      const dy = seg.y2 - seg.y1;
+      const l2 = dx * dx + dy * dy || 1;
+
+      for (let i = 0; i < enemies.length; i++) {
+        const e = enemies[i];
+        if (!e.active || e.isDead) continue;
+        const t = Math.max(0, Math.min(1, ((e.x - seg.x1) * dx + (e.y - seg.y1) * dy) / l2));
+        const px = seg.x1 + t * dx;
+        const py = seg.y1 + t * dy;
+        const d = Math.hypot(e.x - px, e.y - py);
+        if (d < e.radius + 14) {
+          e.takeDamage(48, soundEngine, particlePool, floatingTexts, true);
+          if (soundEngine && soundEngine.playElectricArc && Math.random() < 0.3) {
+            soundEngine.playElectricArc();
+          }
+          if (particlePool) {
+            particlePool.burst(px, py, seg.color, 3, 110, 1.2);
+          }
+        }
+      }
+    }
+  }
+
+  _drawIonizedTrail(ctx) {
+    if (!this.dashIonTrail || this.dashIonTrail.length === 0) return;
+    ctx.save();
+    for (let i = 0; i < this.dashIonTrail.length; i++) {
+      const seg = this.dashIonTrail[i];
+      const alpha = Math.max(0, seg.life / seg.maxLife);
+
+      // Floor outer glow ribbon
+      ctx.strokeStyle = seg.color;
+      ctx.globalAlpha = alpha * 0.45;
+      ctx.lineWidth = 12;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(seg.x1, seg.y1);
+      ctx.lineTo(seg.x2, seg.y2);
+      ctx.stroke();
+
+      // Sharp high-voltage neon core
+      ctx.strokeStyle = '#ffffff';
+      ctx.globalAlpha = alpha * 0.85;
+      ctx.lineWidth = 2.4;
+      ctx.beginPath();
+      ctx.moveTo(seg.x1, seg.y1);
+      ctx.lineTo(seg.x2, seg.y2);
+      ctx.stroke();
+
+      // Procedural lightning spark jitter
+      if (Math.random() < 0.4) {
+        const mx = (seg.x1 + seg.x2) / 2 + (Math.random() - 0.5) * 12;
+        const my = (seg.y1 + seg.y2) / 2 + (Math.random() - 0.5) * 12;
+        ctx.strokeStyle = seg.color;
+        ctx.globalAlpha = alpha * 0.9;
+        ctx.lineWidth = 1.6;
+        ctx.beginPath();
+        ctx.moveTo(seg.x1, seg.y1);
+        ctx.lineTo(mx, my);
+        ctx.lineTo(seg.x2, seg.y2);
+        ctx.stroke();
+      }
+    }
+    ctx.restore();
+  }
+
   draw(ctx) {
     if (this.isDowned) {
       this._drawDownedCore(ctx);
       return;
     }
 
+    // 0. Active Ground Ionized Dash Trail
+    this._drawIonizedTrail(ctx);
+
     ctx.save();
+
+    // Floor Directional Drop Shadow (Grounds the player orb onto hexagonal pavers)
+    ctx.fillStyle = 'rgba(2, 6, 18, 0.48)';
+    ctx.beginPath();
+    ctx.ellipse(this.x + 3, this.y + 7, this.radius * 0.9, this.radius * 0.5, 0, 0, Math.PI * 2);
+    ctx.fill();
 
     // 1. Motion Trail & Chromatic Dash Afterimages
     for (let i = 0; i < this.trailPositions.length; i++) {

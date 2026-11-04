@@ -457,6 +457,93 @@ class SoundEngine {
     });
   }
 
+  playTurboPad() {
+    if (!this.ctx || this.isMuted) return;
+    this.resume();
+    const t = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(380, t);
+    osc.frequency.exponentialRampToValueAtTime(1450, t + 0.22);
+
+    gain.gain.setValueAtTime(0.3, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
+
+    osc.connect(gain);
+    gain.connect(this.sfxGain);
+    osc.start(t);
+    osc.stop(t + 0.22);
+  }
+
+  playOrbitalBeacon() {
+    if (!this.ctx || this.isMuted) return;
+    this.resume();
+    const t = this.ctx.currentTime;
+    // Dual high-tech sonar ping
+    [0, 0.12].forEach((offset, idx) => {
+      const pingTime = t + offset;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(idx === 0 ? 980 : 1318, pingTime);
+      osc.frequency.exponentialRampToValueAtTime(idx === 0 ? 820 : 1100, pingTime + 0.18);
+
+      gain.gain.setValueAtTime(0.24, pingTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, pingTime + 0.18);
+
+      osc.connect(gain);
+      gain.connect(this.sfxGain);
+      osc.start(pingTime);
+      osc.stop(pingTime + 0.18);
+    });
+  }
+
+  playOrbitalImpact() {
+    if (!this.ctx || this.isMuted) return;
+    this.resume();
+    const t = this.ctx.currentTime;
+    // 1. Heavy sub-bass thump
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(160, t);
+    osc.frequency.exponentialRampToValueAtTime(28, t + 0.48);
+
+    gain.gain.setValueAtTime(0.55, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.48);
+
+    osc.connect(gain);
+    gain.connect(this.sfxGain);
+    osc.start(t);
+    osc.stop(t + 0.48);
+
+    // 2. Heavy impact noise
+    this._playNoise(0.42, 0.48, 650);
+  }
+
+  playElectricArc() {
+    if (!this.ctx || this.isMuted) return;
+    this.resume();
+    const t = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(750 + Math.random() * 300, t);
+    osc.frequency.linearRampToValueAtTime(180, t + 0.08);
+
+    gain.gain.setValueAtTime(0.18, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
+
+    osc.connect(gain);
+    gain.connect(this.sfxGain);
+    osc.start(t);
+    osc.stop(t + 0.08);
+  }
+
   _playNoise(duration, volume, filterFreq = 1000) {
     if (!this.ctx) return;
     const t = this.ctx.currentTime;

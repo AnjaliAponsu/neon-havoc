@@ -108,7 +108,11 @@ export class AccelPad {
     if (dist < 34) {
       this.cooldown = 3.2;
       player.boostTimer = 2.4;
-      if (soundEngine) soundEngine.playDash();
+      if (soundEngine && soundEngine.playTurboPad) {
+        soundEngine.playTurboPad();
+      } else if (soundEngine) {
+        soundEngine.playDash();
+      }
       if (particlePool) {
         particlePool.spawnShockwave(this.x, this.y, '#00f0ff', 130);
         particlePool.burst(this.x, this.y, '#00ffff', 25, 280, 2);
@@ -235,17 +239,267 @@ export class PlasmaBarrel {
   }
 }
 
+export class OrbitalDropPod {
+  constructor(x, y, cacheType = null) {
+    this.x = x;
+    this.y = y;
+    this.radius = 26;
+    this.countdown = 2.8; // 2.8s inbound warning
+    this.state = 'INCOMING'; // 'INCOMING' | 'DEPLOYED' | 'COLLECTED'
+    this.types = ['OVERDRIVE', 'NANO_SHIELD', 'QUAD_DAMAGE', 'EMP_NUKE'];
+    this.cacheType = cacheType || this.types[Math.floor(Math.random() * this.types.length)];
+    this.animTimer = 0;
+    this.beaconPingTimer = 0.5;
+    this.claimTimer = 0;
+    this.active = true;
+  }
+
+  update(dt, player, player2, soundEngine, particlePool, floatingTexts, renderer, enemies) {
+    this.animTimer += dt * 3.5;
+
+    if (this.state === 'INCOMING') {
+      this.countdown -= dt;
+      this.beaconPingTimer += dt;
+      if (this.beaconPingTimer >= 0.85) {
+        this.beaconPingTimer = 0;
+        if (soundEngine && soundEngine.playOrbitalBeacon) {
+          soundEngine.playOrbitalBeacon();
+        }
+      }
+
+      if (this.countdown <= 0) {
+        // Hypersonic Impact!
+        this.state = 'DEPLOYED';
+        if (soundEngine && soundEngine.playOrbitalImpact) {
+          soundEngine.playOrbitalImpact();
+        } else if (soundEngine) {
+          soundEngine.playShockwave();
+        }
+
+        if (renderer) {
+          if (renderer.addTrauma) renderer.addTrauma(0.65);
+          if (renderer.grid && renderer.grid.applyExplosion) {
+            renderer.grid.applyExplosion(this.x, this.y, 90, 320);
+          }
+          if (renderer.addScorchMark) {
+            renderer.addScorchMark(this.x, this.y, 65, '#ffe600');
+          }
+        }
+
+        if (particlePool) {
+          particlePool.spawnShockwave(this.x, this.y, '#ffe600', 320);
+          particlePool.spawnShockwave(this.x, this.y, '#00f0ff', 240);
+          particlePool.spawnStarburst(this.x, this.y, '#ffffff', 32);
+          particlePool.burst(this.x, this.y, '#ffe600', 50, 420, 5);
+          particlePool.burst(this.x, this.y, '#00ffff', 40, 350, 4);
+        }
+
+        if (floatingTexts) {
+          floatingTexts.spawn(this.x, this.y - 35, '📦 ORBITAL CACHE LANDED!', '#ffe600', '#ffffff', true, 19);
+        }
+
+        // Kinetic shockwave knocks back & damages surrounding swarms
+        if (enemies) {
+          const blastRadius = 320;
+          for (let i = 0; i < enemies.length; i++) {
+            const e = enemies[i];
+            if (!e.active || e.isDead) continue;
+            const d = Math.hypot(e.x - this.x, e.y - this.y);
+            if (d < blastRadius) {
+              e.takeDamage(280, soundEngine, particlePool, floatingTexts, true);
+              e.applyKnockback(Math.atan2(e.y - this.y, e.x - this.x), 130);
+            }
+          }
+        }
+      }
+      return;
+    }
+
+    if (this.state === 'DEPLOYED') {
+      // Check collision with player or player2
+      const checkPlayer = (p) => {
+        if (!p || p.isDowned) return false;
+        return Math.hypot(p.x - this.x, p.y - this.y) < this.radius + p.radius + 12;
+      };
+
+      const claimant = checkPlayer(player) ? player : (checkPlayer(player2) ? player2 : null);
+      if (claimant) {
+        this.state = 'COLLECTED';
+        this.claimTimer = 0.6;
+
+        let label = 'SUPERCHARGE';
+        if (this.cacheType === 'OVERDRIVE') {
+          claimant.isOverdrive = true;
+          claimant.overdriveTimer = (claimant.stats.overdriveDuration || 6.0) * 1.5;
+          label = '⚡ HYPER OVERDRIVE';
+          if (soundEngine) soundEngine.playOverdrive();
+        } else if (this.cacheType === 'NANO_SHIELD') {
+          claimant.isShieldActive = true;
+          claimant.shieldTimer = 10.0;
+          claimant.invulnerableTimer = 3.0;
+          label = '🛡️ NANO AURA SHIELD';
+          if (soundEngine) soundEngine.playShield();
+        } else if (this.cacheType === 'QUAD_DAMAGE') {
+          claimant.damagePowerupTimer = 14.0;
+          label = '⚔️ QUAD DAMAGE MATRIX';
+          if (soundEngine) soundEngine.playOverdrive();
+        } else if (this.cacheType === 'EMP_NUKE') {
+          label = '☢️ TACTICAL EMP NUKE';
+          if (soundEngine) soundEngine.playSupernova();
+          if (renderer && renderer.addTrauma) renderer.addTrauma(0.8);
+          if (particlePool) {
+            particlePool.spawnShockwave(this.x, this.y, '#00ffff', 600);
+            particlePool.spawnStarburst(this.x, this.y, '#ffffff', 40);
+          }
+          if (enemies) {
+            for (let i = 0; i < enemies.length; i++) {
+              const e = enemies[i];
+              if (e.active && !e.isDead) {
+                e.takeDamage(360, soundEngine, particlePool, floatingTexts, true);
+                e.applyKnockback(Math.atan2(e.y - this.y, e.x - this.x), 150);
+              }
+            }
+          }
+        }
+
+        if (particlePool) {
+          particlePool.spawnShockwave(this.x, this.y, '#ffe600', 160);
+          particlePool.burst(this.x, this.y, '#ffe600', 35, 320, 4);
+        }
+        if (floatingTexts) {
+          floatingTexts.spawn(this.x, this.y - 30, `🎁 ${label}!`, '#ffe600', '#ffffff', true, 20);
+        }
+      }
+      return;
+    }
+
+    if (this.state === 'COLLECTED') {
+      this.claimTimer -= dt;
+      if (this.claimTimer <= 0) {
+        this.active = false;
+      }
+    }
+  }
+
+  draw(ctx) {
+    if (!this.active) return;
+    ctx.save();
+
+    if (this.state === 'INCOMING') {
+      // 1. Orbital Targeting Reticle on Floor
+      const progress = Math.max(0, this.countdown / 2.8);
+      const targetR = 36 + progress * 70;
+
+      // Outer targeting brackets
+      ctx.strokeStyle = '#ffe600';
+      ctx.lineWidth = 2.2;
+      ctx.shadowColor = '#ffe600';
+      ctx.shadowBlur = 10;
+
+      const brLen = 14;
+      const bRad = targetR + 12;
+      for (let i = 0; i < 4; i++) {
+        const a = (i * Math.PI) / 2 + this.animTimer * 0.4;
+        const bx = this.x + Math.cos(a) * bRad;
+        const by = this.y + Math.sin(a) * bRad;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, bRad, a - 0.22, a + 0.22);
+        ctx.stroke();
+      }
+
+      // Inner shrinking laser ring
+      ctx.strokeStyle = 'rgba(255, 60, 0, 0.85)';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([8, 6]);
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, targetR, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Vertical holographic targeting laser column to sky
+      const colGrad = ctx.createLinearGradient(this.x, this.y, this.x, this.y - 700);
+      colGrad.addColorStop(0, 'rgba(255, 220, 0, 0.45)');
+      colGrad.addColorStop(0.3, 'rgba(255, 100, 0, 0.25)');
+      colGrad.addColorStop(1, 'rgba(255, 0, 80, 0)');
+      ctx.fillStyle = colGrad;
+      ctx.fillRect(this.x - 4, this.y - 700, 8, 700);
+
+      // Warning text
+      ctx.font = 'bold 13px monospace';
+      ctx.fillStyle = '#ffe600';
+      ctx.textAlign = 'center';
+      ctx.fillText(`⚠️ ORBITAL DROP [${this.countdown.toFixed(1)}s]`, this.x, this.y - targetR - 16);
+
+      ctx.restore();
+      return;
+    }
+
+    // 2. Deployed Armored Pod Hull & Holographic Floating Cache
+    const alpha = this.state === 'COLLECTED' ? Math.max(0, this.claimTimer / 0.6) : 1.0;
+    ctx.globalAlpha = alpha;
+    ctx.translate(this.x, this.y);
+
+    // Floor shadow
+    ctx.fillStyle = 'rgba(2, 6, 18, 0.65)';
+    ctx.beginPath();
+    ctx.ellipse(0, 16, 26, 12, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Hexagonal armored pod hull
+    ctx.fillStyle = '#0a1020';
+    ctx.strokeStyle = '#ffe600';
+    ctx.lineWidth = 2.4;
+    ctx.beginPath();
+    for (let i = 0; i < 6; i++) {
+      const a = (i * Math.PI) / 3;
+      const hx = Math.cos(a) * this.radius;
+      const hy = Math.sin(a) * (this.radius * 0.78);
+      if (i === 0) ctx.moveTo(hx, hy);
+      else ctx.lineTo(hx, hy);
+    }
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // Hazard caution rim
+    ctx.fillStyle = '#ffaa00';
+    ctx.beginPath();
+    ctx.arc(0, 0, 10, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Floating rotating holographic supply icon
+    const bob = Math.sin(this.animTimer * 2) * 5;
+    ctx.translate(0, -22 + bob);
+
+    glowCache.drawGlow(ctx, 0, 0, 28, '#ffe600', 0.85);
+
+    ctx.font = 'bold 18px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const icon = this.cacheType === 'OVERDRIVE' ? '⚡' :
+                 this.cacheType === 'NANO_SHIELD' ? '🛡️' :
+                 this.cacheType === 'QUAD_DAMAGE' ? '⚔️' : '☢️';
+    ctx.fillText(icon, 0, 0);
+
+    ctx.restore();
+  }
+}
+
 export class HazardManager {
   constructor() {
     this.pylons = [];
     this.accelPads = [];
     this.barrels = [];
+    this.dropPods = [];
+    this.orbitalTimer = 35.0; // First drop at 35s
   }
 
   setup(sector) {
     this.pylons = [];
     this.accelPads = [];
     this.barrels = [];
+    this.dropPods = [];
+    this.orbitalTimer = 35.0;
 
     const count = sector.pylonCount || 6;
     const padding = 350;
@@ -272,8 +526,33 @@ export class HazardManager {
     this.barrels.push(new PlasmaBarrel(1750, 1080, 'plasma'));
   }
 
-  update(dt, bulletPool, enemies, soundEngine, particlePool, floatingTexts, player = null, player2 = null) {
-    // 1. Update Pylons
+  update(dt, bulletPool, enemies, soundEngine, particlePool, floatingTexts, player = null, player2 = null, renderer = null) {
+    // 1. Orbital Supply Drop Timers & Scheduling
+    this.orbitalTimer -= dt;
+    if (this.orbitalTimer <= 0 && player) {
+      const dropOffsetX = (Math.random() - 0.5) * 650;
+      const dropOffsetY = (Math.random() - 0.5) * 500;
+      const dropX = Math.max(300, Math.min(GAME_CONFIG.ARENA_WIDTH - 300, player.x + dropOffsetX));
+      const dropY = Math.max(300, Math.min(GAME_CONFIG.ARENA_HEIGHT - 300, player.y + dropOffsetY));
+
+      this.dropPods.push(new OrbitalDropPod(dropX, dropY));
+      this.orbitalTimer = 46.0 + Math.random() * 16.0;
+
+      if (floatingTexts) {
+        floatingTexts.spawn(dropX, dropY - 50, '⚡ INCOMING ORBITAL DROP!', '#ffe600', '#ff0055', true, 20);
+      }
+    }
+
+    // 2. Update Orbital Drop Pods
+    for (let i = this.dropPods.length - 1; i >= 0; i--) {
+      const pod = this.dropPods[i];
+      pod.update(dt, player, player2, soundEngine, particlePool, floatingTexts, renderer, enemies);
+      if (!pod.active) {
+        this.dropPods.splice(i, 1);
+      }
+    }
+
+    // 3. Update Pylons
     for (let i = 0; i < this.pylons.length; i++) {
       const p = this.pylons[i];
       p.update(dt);
@@ -295,7 +574,7 @@ export class HazardManager {
       }
     }
 
-    // 2. Update Accel Boost Pads
+    // 4. Update Accel Boost Pads
     for (let i = 0; i < this.accelPads.length; i++) {
       this.accelPads[i].update(dt, player, soundEngine, particlePool, floatingTexts);
       if (player2 && !player2.isDowned) {
@@ -303,7 +582,7 @@ export class HazardManager {
       }
     }
 
-    // 3. Update Volatile Barrels
+    // 5. Update Volatile Barrels
     for (let i = 0; i < this.barrels.length; i++) {
       const br = this.barrels[i];
       br.update(dt);
@@ -385,7 +664,11 @@ export class HazardManager {
     for (let i = 0; i < this.barrels.length; i++) {
       this.barrels[i].draw(ctx);
     }
-    // 3. Pylons
+    // 3. Orbital Drop Pods (Beacons & Deployed Pods)
+    for (let i = 0; i < this.dropPods.length; i++) {
+      this.dropPods[i].draw(ctx);
+    }
+    // 4. Pylons
     for (let i = 0; i < this.pylons.length; i++) {
       this.pylons[i].draw(ctx);
     }

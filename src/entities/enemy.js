@@ -553,7 +553,12 @@ export class Enemy {
       ctx.stroke();
     }
 
-    // 3. Body Rendering with Fast GlowCache
+    // 3. Grounded Directional Floor Shadow & Body Glow
+    ctx.fillStyle = 'rgba(2, 6, 18, 0.42)';
+    ctx.beginPath();
+    ctx.ellipse(this.x + 3, this.y + 6, this.radius * 0.95, this.radius * 0.52, 0, 0, Math.PI * 2);
+    ctx.fill();
+
     glowCache.drawGlow(ctx, this.x, this.y, this.radius * (this.isBoss ? 1.6 : 1.3), this.color, 0.75);
 
     const drawColor = this.flashTimer > 0 ? '#ffffff' : this.color;

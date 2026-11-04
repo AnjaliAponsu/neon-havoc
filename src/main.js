@@ -1755,8 +1755,10 @@ class NeonHavocGame {
     }
 
     player.update(dt, p1Input, soundEngine, this.particlePool, this.floatingTexts);
+    player.checkIonTrailDamage(this.enemies, soundEngine, this.particlePool, this.floatingTexts);
     if (this.player2) {
       this.player2.update(dt, p2Input, soundEngine, this.particlePool, this.floatingTexts);
+      this.player2.checkIonTrailDamage(this.enemies, soundEngine, this.particlePool, this.floatingTexts);
     }
 
     // Dynamic grid kinetic wake & ripples under movement
@@ -1864,8 +1866,8 @@ class NeonHavocGame {
       }
     }
 
-    // 4. Update Hazards & Powerups (Pylons, Accel Boost Pads & Volatile Barrels)
-    this.hazardManager.update(dt, this.bulletPool, this.enemies, soundEngine, this.particlePool, this.floatingTexts, player, this.player2);
+    // 4. Update Hazards & Powerups (Pylons, Accel Boost Pads, Volatile Barrels & Orbital Drops)
+    this.hazardManager.update(dt, this.bulletPool, this.enemies, soundEngine, this.particlePool, this.floatingTexts, player, this.player2, this.renderer);
     this.powerupManager.update(dt, player.x, player.y, (type, px, py) => this._onPowerupCollected(type, px, py));
     if (this.player2 && !this.player2.isDowned) {
       this.powerupManager.update(dt, this.player2.x, this.player2.y, (type, px, py) => this._onPowerupCollected(type, px, py));

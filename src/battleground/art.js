@@ -22,7 +22,17 @@ export function fighterColor(p,players) {
 export class BattlegroundArt {
   constructor() {
     this.floor=document.createElement('canvas');this.floor.width=ARENA.width;this.floor.height=ARENA.height;
+    this.scorchMarks=[];
+    this.motes=Array.from({length:35},()=>({
+      x:Math.random()*ARENA.width,y:Math.random()*ARENA.height,
+      vx:(Math.random()-.5)*18,vy:(Math.random()-.5)*18,
+      size:1.5+Math.random()*2.2,color:Math.random()>.5?'#00dfff':'#ff1da0'
+    }));
     this.buildFloor(this.floor.getContext('2d'));
+  }
+  addScorch(x,y,radius=26,color='#ffaa00'){
+    if(this.scorchMarks.length>30)this.scorchMarks.shift();
+    this.scorchMarks.push({x,y,radius,color,life:8.0,maxLife:8.0});
   }
   buildFloor(c) {
     c.fillStyle='#030716';c.fillRect(0,0,2400,1350);
@@ -46,6 +56,7 @@ export class BattlegroundArt {
     }
     WALLS.forEach(w=>this.wall(c,w));
     for(const [x,y] of [[555,1050],[610,1125],[900,1100],[1730,165],[1790,195],[235,770],[880,130]])this.crate(c,x,y);
+    for(const [x,y,col] of [[290,380,'#00dfff'],[750,1210,'#00ff88'],[2110,970,'#ff315b'],[1650,140,'#ffb719'],[1100,560,'#d333ff'],[1300,790,'#00dfff']])this.crystal(c,x,y,col);
     c.font='bold 13px monospace';c.textAlign='center';
     c.fillStyle='#00dfff55';c.fillText('BLUE / DEPLOYMENT',440,1180);
     c.fillStyle='#ff315b55';c.fillText('RED / DEPLOYMENT',1960,180);
@@ -93,6 +104,19 @@ export class BattlegroundArt {
     c.fillStyle='#29436f';c.beginPath();c.ellipse(x,y,16,13,0,0,TAU);c.fill();
     line(c,[[x+20,y+10],[x+20,y+32]],'#008bde',2,8);
   }
+  crystal(c,x,y,color) {
+    glow(c,x,y,55,color,.55);
+    c.fillStyle='rgba(2,6,18,0.55)';c.beginPath();c.ellipse(x+4,y+6,22,10,0,0,TAU);c.fill();
+    const h=38,w=14;
+    // Left facet (specular primary)
+    c.fillStyle=color;c.beginPath();c.moveTo(x,y-h);c.lineTo(x-w,y-h*.2);c.lineTo(x-w*.6,y+6);c.lineTo(x,y+8);c.closePath();c.fill();
+    // Right facet (ambient shade)
+    c.fillStyle='#07182c';c.beginPath();c.moveTo(x,y-h);c.lineTo(x,y+8);c.lineTo(x+w*.6,y+6);c.lineTo(x+w,y-h*.2);c.closePath();c.fill();
+    // Spine
+    line(c,[[x,y-h],[x,y+8]],'#ffffff',1.4);
+    // Tip glint
+    c.fillStyle='#fff';c.beginPath();c.arc(x,y-h,2,0,TAU);c.fill();
+  }
   nexus(c,time) {
     c.save();c.translate(1280,605);
     glow(c,0,0,260,'#a000d0',.24);
@@ -135,7 +159,9 @@ export class BattlegroundArt {
       const t=v.trail[i];c.globalAlpha=Math.max(0,t.life)*1.1;
       glow(c,t.x,t.y,30,color,.35);c.fillStyle=color;c.beginPath();c.arc(t.x,t.y,Math.max(1,19*t.life/.28),0,TAU);c.fill();
     }
-    c.globalAlpha=1;c.translate(v.x,v.y);glow(c,0,0,p.dashing?95:70,color,.46);
+    c.globalAlpha=1;c.translate(v.x,v.y);
+    c.fillStyle='rgba(2,6,18,0.52)';c.beginPath();c.ellipse(0,18,30,14,0,0,TAU);c.fill();
+    glow(c,0,0,p.dashing?95:70,color,.46);
     const radius=32,body=c.createRadialGradient(-10,-12,0,0,0,radius);
     body.addColorStop(0,color);body.addColorStop(.22,color+'88');body.addColorStop(.55,'#051223');body.addColorStop(.86,'#03101d');body.addColorStop(1,color);
     c.fillStyle=body;c.beginPath();c.arc(0,0,radius,0,TAU);c.fill();c.strokeStyle=color;c.shadowBlur=18;c.shadowColor=color;c.lineWidth=3;c.stroke();
@@ -186,12 +212,50 @@ export class BattlegroundArt {
     const time=performance.now()/1000,camera=game._camera(),s=game.snapshot;
     c.setTransform(1,0,0,1,0,0);c.fillStyle='#020510';c.fillRect(0,0,game.canvas.width,game.canvas.height);
     c.save();c.translate(game.canvas.width/2,game.canvas.height/2);c.scale(camera.zoom,camera.zoom);c.translate(-camera.x,-camera.y);
-    c.drawImage(this.floor,0,0);this.nexus(c,time);
+    c.drawImage(this.floor,0,0);
+
+    // Persistent Ground Scorch Marks
+    for (let i = this.scorchMarks.length - 1; i >= 0; i--) {
+      const sm = this.scorchMarks[i];
+      sm.life -= 0.016;
+      if (sm.life <= 0) { this.scorchMarks.splice(i, 1); continue; }
+      const a = sm.life / sm.maxLife;
+      c.save();
+      c.fillStyle = `rgba(3, 6, 16, ${a * 0.75})`;
+      c.beginPath();
+      c.arc(sm.x, sm.y, sm.radius, 0, TAU);
+      c.fill();
+      c.strokeStyle = sm.color;
+      c.globalAlpha = a * 0.45;
+      c.lineWidth = 1.6;
+      c.stroke();
+      c.restore();
+    }
+
+    // Atmospheric Floating Cyber Motes
+    for (let i = 0; i < this.motes.length; i++) {
+      const m = this.motes[i];
+      m.x = (m.x + m.vx * 0.016 + ARENA.width) % ARENA.width;
+      m.y = (m.y + m.vy * 0.016 + ARENA.height) % ARENA.height;
+      c.fillStyle = m.color;
+      c.globalAlpha = 0.35 + Math.sin(time * 2 + i) * 0.15;
+      c.beginPath();
+      c.arc(m.x, m.y, m.size, 0, TAU);
+      c.fill();
+    }
+    c.globalAlpha = 1.0;
+
+    this.nexus(c,time);
     for(const p of s?.pickups||[])this.pickup(c,p,time);
     for(const b of s?.projectiles||[])this.projectile(c,b,Math.min(.066,(performance.now()-(game.snapshotAt||0))/1000));
     const players=s?.players||[],leader=[...players].sort((a,b)=>b.kills-a.kills).find(p=>p.kills>0)?.id;
     for(const p of players){const v=game.visualPlayers.get(p.id);if(v)this.fighter(c,p,v,players,p.id===game.playerId,time,p.id===leader);}
-    for(const e of game.effects)this.effect(c,e);
+    for(const e of game.effects) {
+      if (e.type === 'explosion' && e.life > 0.48) {
+        this.addScorch(e.x, e.y, 36, '#ffaa00');
+      }
+      this.effect(c,e);
+    }
     c.restore();
   }
 }
