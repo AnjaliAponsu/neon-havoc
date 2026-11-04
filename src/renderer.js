@@ -481,9 +481,10 @@ export class Renderer {
     return { x: wx, y: wy };
   }
 
-  beginFrame() {
+  beginFrame(player = null, comboStreak = 0) {
     if (this.width <= 0 || this.height <= 0) return;
     const ctx = this.ctx;
+    const isSurging = !!((player && player.isOverdrive) || (comboStreak >= 15));
 
     // Guaranteed transform reset: prevents any matrix scaling or translation leakage between frames
     ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -527,7 +528,7 @@ export class Renderer {
         GAME_CONFIG.ARENA_WIDTH / 2, GAME_CONFIG.ARENA_HEIGHT / 2, 80,
         GAME_CONFIG.ARENA_WIDTH / 2, GAME_CONFIG.ARENA_HEIGHT / 2, GAME_CONFIG.ARENA_WIDTH * 0.58
       );
-      spaceGrad.addColorStop(0, 'rgba(20, 36, 96, 0.52)');
+      spaceGrad.addColorStop(0, isSurging ? 'rgba(50, 20, 96, 0.65)' : 'rgba(20, 36, 96, 0.52)');
       spaceGrad.addColorStop(0.35, 'rgba(12, 22, 64, 0.35)');
       spaceGrad.addColorStop(0.7, 'rgba(6, 12, 34, 0.22)');
       spaceGrad.addColorStop(1, 'rgba(2, 5, 14, 0)');
@@ -547,11 +548,13 @@ export class Renderer {
 
     // 4. Elastic Grid, Holographic Nexus & Cyber Architecture
     try {
-      const pulseAlpha = 0.14 + Math.sin(this.gridPulse) * 0.04;
-      this.grid.draw(ctx, this.camera.x - halfViewW, this.camera.y - halfViewH, halfViewW * 2, halfViewH * 2, pulseAlpha, this.sectorAccent);
-      this._drawTacticalFloorNexus(ctx, halfViewW, halfViewH);
+      const pulseMult = isSurging ? 2.4 : 1.0;
+      const pulseAlpha = isSurging ? (0.24 + Math.sin(this.gridPulse * pulseMult) * 0.08) : (0.14 + Math.sin(this.gridPulse) * 0.04);
+      const gridColor = isSurging ? '#ffe600' : this.sectorAccent;
+      this.grid.draw(ctx, this.camera.x - halfViewW, this.camera.y - halfViewH, halfViewW * 2, halfViewH * 2, pulseAlpha, gridColor);
+      this._drawTacticalFloorNexus(ctx, halfViewW, halfViewH, isSurging);
       this._drawAtmosphericSweeper(ctx, halfViewW, halfViewH);
-      this._drawCyberConduits(ctx, halfViewW, halfViewH);
+      this._drawCyberConduits(ctx, halfViewW, halfViewH, isSurging);
       this._drawBorders(ctx);
       this._drawBattlegroundArchitecture(ctx, halfViewW, halfViewH);
       this._drawAtmosphericVents(ctx, halfViewW, halfViewH);
@@ -682,7 +685,7 @@ export class Renderer {
     }
   }
 
-  _drawTacticalFloorNexus(ctx, halfViewW, halfViewH) {
+  _drawTacticalFloorNexus(ctx, halfViewW, halfViewH, isSurging = false) {
     const cx = GAME_CONFIG.ARENA_WIDTH / 2;
     const cy = GAME_CONFIG.ARENA_HEIGHT / 2;
     const d = Math.hypot(this.camera.x - cx, this.camera.y - cy);
@@ -693,7 +696,7 @@ export class Renderer {
       ctx.translate(cx, cy);
 
       // 1. Concentric Holographic Range Perimeter
-      ctx.strokeStyle = 'rgba(0, 200, 255, 0.22)';
+      ctx.strokeStyle = isSurging ? 'rgba(255, 230, 0, 0.45)' : 'rgba(0, 200, 255, 0.22)';
       ctx.lineWidth = 1.4;
       ctx.setLineDash([14, 8]);
       ctx.beginPath();
@@ -702,14 +705,14 @@ export class Renderer {
       ctx.setLineDash([]);
 
       // 2. Secondary Telemetry Arc Ring with Cardinal Nodes
-      ctx.strokeStyle = 'rgba(0, 200, 255, 0.12)';
+      ctx.strokeStyle = isSurging ? 'rgba(255, 230, 0, 0.35)' : 'rgba(0, 200, 255, 0.12)';
       ctx.lineWidth = 1.0;
       ctx.beginPath();
       ctx.arc(0, 0, 230, 0, Math.PI * 2);
       ctx.stroke();
 
       // Cardinal tick marks
-      ctx.strokeStyle = 'rgba(0, 240, 255, 0.45)';
+      ctx.strokeStyle = isSurging ? '#ffe600' : 'rgba(0, 240, 255, 0.45)';
       ctx.lineWidth = 1.8;
       for (let a = 0; a < 4; a++) {
         const ang = (a * Math.PI) / 2;
@@ -718,7 +721,7 @@ export class Renderer {
         ctx.lineTo(Math.cos(ang) * 195, Math.sin(ang) * 195);
         ctx.stroke();
 
-        ctx.fillStyle = '#00f0ff';
+        ctx.fillStyle = isSurging ? '#ffe600' : '#00f0ff';
         ctx.beginPath();
         ctx.arc(Math.cos(ang) * 180, Math.sin(ang) * 180, 2.5, 0, Math.PI * 2);
         ctx.fill();
@@ -727,7 +730,7 @@ export class Renderer {
       // 3. Tactical Corner Framing Brackets [ ]
       const bDist = 260;
       const bLen = 22;
-      ctx.strokeStyle = 'rgba(0, 220, 255, 0.35)';
+      ctx.strokeStyle = isSurging ? 'rgba(255, 230, 0, 0.65)' : 'rgba(0, 220, 255, 0.35)';
       ctx.lineWidth = 2;
       // Top-Left
       ctx.beginPath();
@@ -741,24 +744,40 @@ export class Renderer {
       ctx.stroke();
 
       // 4. Central Reactor Core Emblem
-      ctx.strokeStyle = 'rgba(0, 240, 255, 0.5)';
+      ctx.strokeStyle = isSurging ? '#ffe600' : 'rgba(0, 240, 255, 0.5)';
       ctx.lineWidth = 1.8;
       ctx.beginPath();
       ctx.arc(0, 0, 48, 0, Math.PI * 2);
       ctx.stroke();
 
-      ctx.fillStyle = 'rgba(0, 240, 255, 0.08)';
+      ctx.fillStyle = isSurging ? 'rgba(255, 230, 0, 0.16)' : 'rgba(0, 240, 255, 0.08)';
       ctx.fill();
 
-      // Subtle rotating core reticle
-      ctx.rotate(this.gridPulse * 0.3);
-      ctx.strokeStyle = 'rgba(0, 240, 255, 0.6)';
+      // Rotating core reticle (faster during Arena Surge)
+      ctx.rotate(this.gridPulse * (isSurging ? 0.9 : 0.3));
+      ctx.strokeStyle = isSurging ? '#ffe600' : 'rgba(0, 240, 255, 0.6)';
       ctx.lineWidth = 2;
       for (let i = 0; i < 3; i++) {
         const ra = (i * Math.PI * 2) / 3;
         ctx.beginPath();
         ctx.arc(0, 0, 36, ra, ra + 0.6);
         ctx.stroke();
+      }
+
+      if (isSurging) {
+        ctx.strokeStyle = '#ffe600';
+        ctx.lineWidth = 1.8;
+        for (let s = 0; s < 6; s++) {
+          const sa = (s * Math.PI) / 3;
+          ctx.beginPath();
+          ctx.moveTo(Math.cos(sa) * 50, Math.sin(sa) * 50);
+          ctx.lineTo(Math.cos(sa) * 110, Math.sin(sa) * 110);
+          ctx.stroke();
+        }
+        ctx.font = 'bold 12px monospace';
+        ctx.fillStyle = '#ffe600';
+        ctx.textAlign = 'center';
+        ctx.fillText('⚡ ARENA OVERCHARGE // 240Hz', 0, 75);
       }
     } finally {
       ctx.restore();
@@ -1058,8 +1077,8 @@ export class Renderer {
     ctx.restore();
   }
 
-  _drawCyberConduits(ctx, halfViewW, halfViewH) {
-    this.conduitPulse = (this.conduitPulse || 0) + 0.016 * 1.5;
+  _drawCyberConduits(ctx, halfViewW, halfViewH, isSurging = false) {
+    this.conduitPulse = (this.conduitPulse || 0) + 0.016 * (isSurging ? 3.5 : 1.5);
     ctx.save();
     try {
       for (let i = 0; i < this.cyberConduits.length; i++) {
@@ -1082,9 +1101,9 @@ export class Renderer {
         ctx.stroke();
 
         // Glowing neon energy core rail
-        ctx.strokeStyle = c.color;
-        ctx.globalAlpha = 0.35;
-        ctx.lineWidth = 2.4;
+        ctx.strokeStyle = isSurging ? '#ffe600' : c.color;
+        ctx.globalAlpha = isSurging ? 0.65 : 0.35;
+        ctx.lineWidth = isSurging ? 3.2 : 2.4;
         ctx.beginPath();
         ctx.moveTo(c.from.x, c.from.y);
         ctx.lineTo(c.to.x, c.to.y);
@@ -1093,7 +1112,7 @@ export class Renderer {
         // Traveling electric energy packets
         const dx = c.to.x - c.from.x;
         const dy = c.to.y - c.from.y;
-        const pips = c.pips || 3;
+        const pips = (c.pips || 3) * (isSurging ? 2 : 1);
         ctx.fillStyle = '#ffffff';
         ctx.globalAlpha = 0.85;
 
@@ -1257,6 +1276,22 @@ export class Renderer {
     ctx.moveTo(-halfL, -depth / 2); ctx.lineTo(-halfL - 16, depth / 2);
     ctx.moveTo(halfL, -depth / 2); ctx.lineTo(halfL + 16, depth / 2);
     ctx.stroke();
+
+    // 7. Defensive Tesla Core Caps on Bastion Chokepoints
+    ctx.fillStyle = '#0a1020';
+    ctx.strokeStyle = '#00f0ff';
+    ctx.lineWidth = 1.8;
+    for (const offset of [-halfL + 18, halfL - 18]) {
+      ctx.beginPath();
+      ctx.arc(offset, -depth / 2 + 14, 6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = '#00ffff';
+      ctx.beginPath();
+      ctx.arc(offset, -depth / 2 + 14, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
 
     ctx.restore();
   }

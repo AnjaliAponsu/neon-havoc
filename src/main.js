@@ -2265,7 +2265,7 @@ class NeonHavocGame {
     const teammate = (this.gameMode === 'ONLINE_CLIENT') ? this.player : this.player2;
 
     try {
-      this.renderer.beginFrame();
+      this.renderer.beginFrame(localPlayer, this.comboStreak || 0);
       const ctx = this.renderer.ctx;
 
       if (this.state === 'PLAYING' || this.state === 'UPGRADE_MODAL' || this.state === 'PAUSED') {

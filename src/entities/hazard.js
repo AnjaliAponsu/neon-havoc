@@ -492,6 +492,13 @@ export class HazardManager {
     this.barrels = [];
     this.dropPods = [];
     this.orbitalTimer = 35.0; // First drop at 35s
+    this.bastionArcCooldown = 1.0;
+    this.bastionNodes = [
+      { x: 1040, y: 720 },
+      { x: 2160, y: 1680 },
+      { x: 2160, y: 720 },
+      { x: 1040, y: 1680 }
+    ];
   }
 
   setup(sector) {
@@ -638,6 +645,36 @@ export class HazardManager {
             this._detonateBarrel(br, enemies, soundEngine, particlePool, floatingTexts);
           }
           break;
+        }
+      }
+    }
+
+    // 6. Sector Bastion Defensive Tesla Arc Zaps (Chokepoint Electrocution)
+    this.bastionArcCooldown -= dt;
+    if (this.bastionArcCooldown <= 0 && enemies) {
+      let zappedAny = false;
+      for (let b = 0; b < this.bastionNodes.length; b++) {
+        const bn = this.bastionNodes[b];
+        let targets = 0;
+        for (let i = 0; i < enemies.length; i++) {
+          const e = enemies[i];
+          if (!e.active || e.isDead) continue;
+          const ed = Math.hypot(e.x - bn.x, e.y - bn.y);
+          if (ed < 165) {
+            e.takeDamage(55, soundEngine, particlePool, floatingTexts, true);
+            targets++;
+            zappedAny = true;
+            if (particlePool) {
+              particlePool.burst(e.x, e.y, '#00ffff', 4, 120, 1.2);
+            }
+            if (targets >= 2) break;
+          }
+        }
+      }
+      if (zappedAny) {
+        this.bastionArcCooldown = 1.85;
+        if (soundEngine && soundEngine.playElectricArc) {
+          soundEngine.playElectricArc();
         }
       }
     }
