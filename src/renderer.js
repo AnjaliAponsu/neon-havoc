@@ -219,46 +219,70 @@ export class Renderer {
       });
     }
 
+    // Dynamic Combat Scorch Marks
+    this.scorchMarks = [];
+
     // Glowing Cyber Power Conduits (Embedded Circuit Bus Floor Tracks)
     this.conduitPulse = 0;
     this.cyberConduits = [
-      { from: { x: 1600, y: 1200 }, to: { x: 1600, y: 140 }, color: '#00f0ff', pips: 4 },
-      { from: { x: 1600, y: 1200 }, to: { x: 1600, y: 2260 }, color: '#ff00aa', pips: 4 },
-      { from: { x: 1600, y: 1200 }, to: { x: 140, y: 1200 }, color: '#00f0ff', pips: 4 },
-      { from: { x: 1600, y: 1200 }, to: { x: 3060, y: 1200 }, color: '#00ff88', pips: 4 },
-      { from: { x: 1600, y: 1200 }, to: { x: 420, y: 380 }, color: '#d000ff', pips: 3 },
-      { from: { x: 1600, y: 1200 }, to: { x: 2780, y: 2020 }, color: '#00f0ff', pips: 3 },
+      // Connecting Center Nexus to the 4 Sector Bastions
+      { from: { x: 1600, y: 1200 }, to: { x: 1040, y: 720 }, color: '#d000ff', pips: 4 },
+      { from: { x: 1600, y: 1200 }, to: { x: 2160, y: 1680 }, color: '#00f0ff', pips: 4 },
+      { from: { x: 1600, y: 1200 }, to: { x: 2160, y: 720 }, color: '#00f0ff', pips: 4 },
+      { from: { x: 1600, y: 1200 }, to: { x: 1040, y: 1680 }, color: '#ff00aa', pips: 4 },
+      // Connecting to Perimeter Fortification Gates
+      { from: { x: 1600, y: 1200 }, to: { x: 1600, y: 80 }, color: '#00f0ff', pips: 4 },
+      { from: { x: 1600, y: 1200 }, to: { x: 1600, y: 2320 }, color: '#ff00aa', pips: 4 },
+      { from: { x: 1600, y: 1200 }, to: { x: 80, y: 1200 }, color: '#d000ff', pips: 4 },
+      { from: { x: 1600, y: 1200 }, to: { x: 3120, y: 1200 }, color: '#00f0ff', pips: 4 },
     ];
 
-    // Ambient Glowing Crystal Formations (20 Vibrant Formations Across Battleground)
+    // Tactical Sector Trench Bastions (Industrial Armor, Hazard Stripes & Slanted LED Vents)
+    this.sectorBastions = [
+      // Quad 1: North-West Central Sector Bastion (Directly frames top-left of combat, exact match to storyboard!)
+      { x: 1040, y: 720, length: 360, angle: -Math.PI / 4, color: '#d000ff', hasCaution: true, hasVents: true },
+      // Quad 2: South-East Central Sector Bastion (Directly frames bottom-right of combat, exact match to storyboard!)
+      { x: 2160, y: 1680, length: 360, angle: 3 * Math.PI / 4, color: '#00f0ff', hasCaution: true, hasVents: true },
+      // Quad 3: North-East Central Sector Bastion
+      { x: 2160, y: 720, length: 360, angle: Math.PI / 4, color: '#00f0ff', hasCaution: true, hasVents: true },
+      // Quad 4: South-West Central Sector Bastion
+      { x: 1040, y: 1680, length: 360, angle: -3 * Math.PI / 4, color: '#ff00aa', hasCaution: true, hasVents: true },
+
+      // Perimeter Gates / Outer Flanking Bunkers
+      { x: 1600, y: 80, length: 480, angle: 0, color: '#00f0ff', hasCaution: true, hasVents: true },
+      { x: 1600, y: 2320, length: 480, angle: Math.PI, color: '#ff00aa', hasCaution: true, hasVents: true },
+      { x: 80, y: 1200, length: 480, angle: Math.PI / 2, color: '#d000ff', hasCaution: true, hasVents: true },
+      { x: 3120, y: 1200, length: 480, angle: -Math.PI / 2, color: '#00f0ff', hasCaution: true, hasVents: true },
+    ];
+
+    // Ambient Glowing Crystal Formations (Nested in Bastion Alcoves & Strategic Landmarks)
     this.crystalFormations = [
-      // Central Landmark Clusters (Immediately visible near spawn)
-      { x: 1360, y: 1040, color: '#00f0ff', count: 6, scale: 1.15 },
-      { x: 1840, y: 1380, color: '#d000ff', count: 5, scale: 1.1 },
-      { x: 1480, y: 1440, color: '#ffe600', count: 4, scale: 0.95 },
-      { x: 1760, y: 980, color: '#00f0ff', count: 5, scale: 1.05 },
+      // Nested Inside North-West Bastion Alcove (Exact match to top-left of storyboard!)
+      { x: 1160, y: 840, color: '#d000ff', count: 7, scale: 1.35 },
+      // Nested Inside South-East Bastion Alcove (Exact match to bottom-right of storyboard!)
+      { x: 2040, y: 1560, color: '#00f0ff', count: 8, scale: 1.4 },
+      // Nested Inside North-East Bastion Alcove
+      { x: 2040, y: 840, color: '#ffe600', count: 6, scale: 1.25 },
+      // Nested Inside South-West Bastion Alcove
+      { x: 1160, y: 1560, color: '#ff00aa', count: 6, scale: 1.25 },
+
+      // Central Landmark Clusters
+      { x: 1380, y: 1060, color: '#00f0ff', count: 6, scale: 1.15 },
+      { x: 1820, y: 1340, color: '#d000ff', count: 5, scale: 1.1 },
+      { x: 1460, y: 1420, color: '#ffe600', count: 4, scale: 0.95 },
+      { x: 1740, y: 980, color: '#00f0ff', count: 5, scale: 1.05 },
 
       // Mid-Field Strategic Formations
-      { x: 920, y: 840, color: '#ff00aa', count: 5, scale: 1.1 },
-      { x: 2280, y: 860, color: '#00f0ff', count: 6, scale: 1.2 },
-      { x: 940, y: 1620, color: '#ffe600', count: 5, scale: 1.0 },
-      { x: 2320, y: 1650, color: '#d000ff', count: 6, scale: 1.25 },
+      { x: 860, y: 840, color: '#ff00aa', count: 5, scale: 1.1 },
+      { x: 2340, y: 860, color: '#00f0ff', count: 6, scale: 1.2 },
+      { x: 860, y: 1620, color: '#ffe600', count: 5, scale: 1.0 },
+      { x: 2340, y: 1620, color: '#d000ff', count: 6, scale: 1.25 },
 
-      // Northern & Southern Energy Outcroppings
-      { x: 1600, y: 520, color: '#00f0ff', count: 7, scale: 1.3 },
-      { x: 1600, y: 1920, color: '#ff00aa', count: 7, scale: 1.3 },
-      { x: 800, y: 1200, color: '#00ff88', count: 5, scale: 1.1 },
-      { x: 2400, y: 1200, color: '#00f0ff', count: 5, scale: 1.1 },
-
-      // Perimeter & Corner Bastion Clusters (Matching Storyboard Corners)
+      // Perimeter Bastion Clusters
       { x: 160, y: 150, color: '#9933ff', count: 7, scale: 1.45 },
-      { x: 290, y: 220, color: '#d000ff', count: 5, scale: 1.0 },
       { x: GAME_CONFIG.ARENA_WIDTH - 160, y: 150, color: '#00f0ff', count: 7, scale: 1.45 },
-      { x: GAME_CONFIG.ARENA_WIDTH - 290, y: 220, color: '#00ffff', count: 5, scale: 1.0 },
       { x: 150, y: GAME_CONFIG.ARENA_HEIGHT - 160, color: '#d000ff', count: 7, scale: 1.45 },
-      { x: 280, y: GAME_CONFIG.ARENA_HEIGHT - 240, color: '#ff00aa', count: 5, scale: 1.0 },
       { x: GAME_CONFIG.ARENA_WIDTH - 160, y: GAME_CONFIG.ARENA_HEIGHT - 150, color: '#00f0ff', count: 8, scale: 1.5 },
-      { x: GAME_CONFIG.ARENA_WIDTH - 290, y: GAME_CONFIG.ARENA_HEIGHT - 230, color: '#00f0ff', count: 5, scale: 1.1 },
     ];
 
     this.resize();
@@ -295,6 +319,14 @@ export class Renderer {
 
   triggerRecoil(amount = 7) {
     this.recoilKick = Math.min(15, this.recoilKick + amount);
+  }
+
+  addScorchMark(x, y, radius = 24, color = '#ffaa00') {
+    if (!this.scorchMarks) this.scorchMarks = [];
+    if (this.scorchMarks.length > 36) this.scorchMarks.shift();
+    this.scorchMarks.push({
+      x, y, radius, color, life: 9.0, maxLife: 9.0
+    });
   }
 
   updateCamera(dt, targetX, targetY, isBossActive = false, isOverdrive = false, player2Distance = 0) {
@@ -446,29 +478,70 @@ export class Renderer {
       ctx.fillRect(0, 0, GAME_CONFIG.ARENA_WIDTH, GAME_CONFIG.ARENA_HEIGHT);
     } catch (e) { /* gradient guard */ }
 
-    // 2. Ambient Floating Hexagonal Debris (Matching Reference Background)
+    // 2. Persistent Ground Combat Scorch Marks (fading impact burns)
+    try {
+      this._drawScorchMarks(ctx, halfViewW, halfViewH);
+    } catch (e) { /* scorch guard */ }
+
+    // 3. Ambient 3D Hexagonal Floor Pavers & Debris (Matching Reference Background)
     try {
       this._drawFloatingHexagons(ctx, halfViewW, halfViewH);
     } catch (e) { /* hex guard */ }
 
-    // 3. Draw Elastic Grid & High-Tech Floor Architecture
+    // 4. Elastic Grid, Holographic Nexus & Cyber Architecture
     try {
       const pulseAlpha = 0.14 + Math.sin(this.gridPulse) * 0.04;
       this.grid.draw(ctx, this.camera.x - halfViewW, this.camera.y - halfViewH, halfViewW * 2, halfViewH * 2, pulseAlpha, this.sectorAccent);
+      this._drawTacticalFloorNexus(ctx, halfViewW, halfViewH);
       this._drawCyberConduits(ctx, halfViewW, halfViewH);
       this._drawBorders(ctx);
-      this._drawPerimeterBulkheads(ctx, halfViewW, halfViewH);
+      this._drawBattlegroundArchitecture(ctx, halfViewW, halfViewH);
     } catch (e) { /* grid/border guard */ }
 
-    // 4. Ambient Glowing Crystal Clusters (Central & Perimeter Formations)
+    // 5. Ambient Glowing 3D Faceted Crystal Clusters (Central & Bastion Formations)
     try {
       this._drawCrystalClusters(ctx, halfViewW, halfViewH);
     } catch (e) { /* crystal cluster guard */ }
 
-    // 5. Atmospheric Floating Cyber Motes (Volumetric Parallax Embers)
+    // 6. Atmospheric Floating Cyber Motes (Volumetric Parallax Embers)
     try {
       this._drawAmbientMotes(ctx, halfViewW, halfViewH);
     } catch (e) { /* motes guard */ }
+  }
+
+  _drawScorchMarks(ctx, halfViewW, halfViewH) {
+    if (!this.scorchMarks || this.scorchMarks.length === 0) return;
+    const minX = this.camera.x - halfViewW - 100;
+    const maxX = this.camera.x + halfViewW + 100;
+    const minY = this.camera.y - halfViewH - 100;
+    const maxY = this.camera.y + halfViewH + 100;
+
+    for (let i = this.scorchMarks.length - 1; i >= 0; i--) {
+      const sm = this.scorchMarks[i];
+      sm.life -= 0.016;
+      if (sm.life <= 0) {
+        this.scorchMarks.splice(i, 1);
+        continue;
+      }
+      if (sm.x < minX || sm.x > maxX || sm.y < minY || sm.y > maxY) continue;
+
+      const alpha = sm.life / sm.maxLife;
+      ctx.save();
+      // Dark carbon burn center
+      ctx.fillStyle = `rgba(3, 6, 16, ${alpha * 0.68})`;
+      ctx.beginPath();
+      ctx.arc(sm.x, sm.y, sm.radius, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Glowing cooling edge rim
+      ctx.strokeStyle = sm.color;
+      ctx.globalAlpha = alpha * 0.38;
+      ctx.lineWidth = 2.2;
+      ctx.beginPath();
+      ctx.arc(sm.x, sm.y, sm.radius * 0.95, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
   }
 
   _drawFloatingHexagons(ctx, halfViewW, halfViewH) {
@@ -484,34 +557,149 @@ export class Renderer {
         const hex = this.bgHexagons[i];
         if (hex.x < minX || hex.x > maxX || hex.y < minY || hex.y > maxY) continue;
 
-        const bob = Math.sin(this.gridPulse * hex.pulseSpeed + hex.offset) * 6;
+        const bob = Math.sin(this.gridPulse * hex.pulseSpeed + hex.offset) * 4;
+        const hx = hex.x;
+        const hy = hex.y + bob;
+        const size = hex.size;
+
         ctx.save();
-        ctx.translate(hex.x, hex.y + bob);
+        ctx.translate(hx, hy);
         ctx.rotate(hex.rotation);
 
-        // Dark translucent hexagon platform
-        ctx.fillStyle = 'rgba(12, 20, 42, 0.55)';
-        ctx.strokeStyle = 'rgba(0, 240, 255, 0.12)';
-        ctx.lineWidth = 1.2;
+        // 1. Soft Floor Shadow Beneath
+        ctx.fillStyle = 'rgba(2, 5, 14, 0.65)';
         ctx.beginPath();
         for (let s = 0; s < 6; s++) {
           const a = (s * Math.PI) / 3;
-          const px = Math.cos(a) * hex.size;
-          const py = Math.sin(a) * hex.size * 0.85; // isometric tilt
+          const px = Math.cos(a) * (size * 1.05);
+          const py = Math.sin(a) * (size * 0.88) + 8;
           if (s === 0) ctx.moveTo(px, py);
           else ctx.lineTo(px, py);
         }
         ctx.closePath();
         ctx.fill();
+
+        // 2. Beveled Dark Stone Side Rim (3D Thickness)
+        ctx.fillStyle = '#0a1020';
+        ctx.beginPath();
+        for (let s = 0; s < 6; s++) {
+          const a = (s * Math.PI) / 3;
+          const px = Math.cos(a) * size;
+          const py = Math.sin(a) * (size * 0.85) + 5;
+          if (s === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
+        }
+        ctx.closePath();
+        ctx.fill();
+
+        // 3. Top Hexagonal Platform Plate
+        ctx.fillStyle = 'rgba(18, 28, 54, 0.85)';
+        ctx.beginPath();
+        for (let s = 0; s < 6; s++) {
+          const a = (s * Math.PI) / 3;
+          const px = Math.cos(a) * size;
+          const py = Math.sin(a) * (size * 0.85);
+          if (s === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
+        }
+        ctx.closePath();
+        ctx.fill();
+
+        // Top edge bevel highlight
+        ctx.strokeStyle = 'rgba(0, 240, 255, 0.22)';
+        ctx.lineWidth = 1.4;
         ctx.stroke();
 
-        // Subtle center notch
-        ctx.fillStyle = 'rgba(0, 240, 255, 0.2)';
+        // Inset decorative cyber micro-channel
+        ctx.fillStyle = 'rgba(0, 240, 255, 0.35)';
         ctx.beginPath();
         ctx.arc(0, 0, 2.5, 0, Math.PI * 2);
         ctx.fill();
 
         ctx.restore();
+      }
+    } finally {
+      ctx.restore();
+    }
+  }
+
+  _drawTacticalFloorNexus(ctx, halfViewW, halfViewH) {
+    const cx = GAME_CONFIG.ARENA_WIDTH / 2;
+    const cy = GAME_CONFIG.ARENA_HEIGHT / 2;
+    const d = Math.hypot(this.camera.x - cx, this.camera.y - cy);
+    if (d > Math.max(halfViewW, halfViewH) + 380) return;
+
+    ctx.save();
+    try {
+      ctx.translate(cx, cy);
+
+      // 1. Concentric Holographic Range Perimeter
+      ctx.strokeStyle = 'rgba(0, 200, 255, 0.22)';
+      ctx.lineWidth = 1.4;
+      ctx.setLineDash([14, 8]);
+      ctx.beginPath();
+      ctx.arc(0, 0, 180, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // 2. Secondary Telemetry Arc Ring with Cardinal Nodes
+      ctx.strokeStyle = 'rgba(0, 200, 255, 0.12)';
+      ctx.lineWidth = 1.0;
+      ctx.beginPath();
+      ctx.arc(0, 0, 230, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Cardinal tick marks
+      ctx.strokeStyle = 'rgba(0, 240, 255, 0.45)';
+      ctx.lineWidth = 1.8;
+      for (let a = 0; a < 4; a++) {
+        const ang = (a * Math.PI) / 2;
+        ctx.beginPath();
+        ctx.moveTo(Math.cos(ang) * 165, Math.sin(ang) * 165);
+        ctx.lineTo(Math.cos(ang) * 195, Math.sin(ang) * 195);
+        ctx.stroke();
+
+        ctx.fillStyle = '#00f0ff';
+        ctx.beginPath();
+        ctx.arc(Math.cos(ang) * 180, Math.sin(ang) * 180, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // 3. Tactical Corner Framing Brackets [ ]
+      const bDist = 260;
+      const bLen = 22;
+      ctx.strokeStyle = 'rgba(0, 220, 255, 0.35)';
+      ctx.lineWidth = 2;
+      // Top-Left
+      ctx.beginPath();
+      ctx.moveTo(-bDist + bLen, -bDist); ctx.lineTo(-bDist, -bDist); ctx.lineTo(-bDist, -bDist + bLen);
+      // Top-Right
+      ctx.moveTo(bDist - bLen, -bDist); ctx.lineTo(bDist, -bDist); ctx.lineTo(bDist, -bDist + bLen);
+      // Bottom-Left
+      ctx.moveTo(-bDist + bLen, bDist); ctx.lineTo(-bDist, bDist); ctx.lineTo(-bDist, bDist - bLen);
+      // Bottom-Right
+      ctx.moveTo(bDist - bLen, bDist); ctx.lineTo(bDist, bDist); ctx.lineTo(bDist, bDist - bLen);
+      ctx.stroke();
+
+      // 4. Central Reactor Core Emblem
+      ctx.strokeStyle = 'rgba(0, 240, 255, 0.5)';
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.arc(0, 0, 48, 0, Math.PI * 2);
+      ctx.stroke();
+
+      ctx.fillStyle = 'rgba(0, 240, 255, 0.08)';
+      ctx.fill();
+
+      // Subtle rotating core reticle
+      ctx.rotate(this.gridPulse * 0.3);
+      ctx.strokeStyle = 'rgba(0, 240, 255, 0.6)';
+      ctx.lineWidth = 2;
+      for (let i = 0; i < 3; i++) {
+        const ra = (i * Math.PI * 2) / 3;
+        ctx.beginPath();
+        ctx.arc(0, 0, 36, ra, ra + 0.6);
+        ctx.stroke();
       }
     } finally {
       ctx.restore();
@@ -532,18 +720,57 @@ export class Renderer {
         if (form.x < minX || form.x > maxX || form.y < minY || form.y > maxY) continue;
 
         const cColor = form.color;
-        const scale = form.scale;
+        const scale = form.scale || 1.0;
 
-        // Glow behind crystal cluster
-        glowCache.drawGlow(ctx, form.x, form.y, 45 * scale, cColor, 0.6);
+        // Determine shading tones based on base color
+        const isCyan = cColor.includes('00f') || cColor.includes('cyan') || cColor.includes('00ffff');
+        const isGold = cColor.includes('ffe') || cColor.includes('ffb');
+        const shadeColor = isCyan ? '#005b94' : isGold ? '#b37700' : '#60008f';
+        const specColor = isCyan ? '#c2f8ff' : isGold ? '#fff8cc' : '#f5c2ff';
 
-        // Draw cluster of sharp faceted crystal stalagmites
+        // 1. Radiant Ambient Floor Glow (Illuminating the floor grid)
+        glowCache.drawGlow(ctx, form.x, form.y, 65 * scale, cColor, 0.7);
+
+        // Ground drop occlusion shadow under formation
+        ctx.fillStyle = 'rgba(2, 4, 12, 0.75)';
+        ctx.beginPath();
+        ctx.ellipse(form.x, form.y + 12 * scale, 34 * scale, 14 * scale, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 2. Ground Mineral Rubble & Micro-Shards scattered around base
+        const groundPebbles = [
+          { dx: -28, dy: 14, r: 4.5, rot: 0.3 },
+          { dx: 26, dy: 16, r: 5, rot: -0.4 },
+          { dx: -12, dy: 20, r: 3.5, rot: 0.8 },
+          { dx: 14, dy: 22, r: 4, rot: -0.6 },
+        ];
+        for (let p = 0; p < groundPebbles.length; p++) {
+          const pb = groundPebbles[p];
+          const px = form.x + pb.dx * scale;
+          const py = form.y + pb.dy * scale;
+          const pr = pb.r * scale;
+          ctx.save();
+          ctx.translate(px, py);
+          ctx.rotate(pb.rot);
+          ctx.fillStyle = shadeColor;
+          ctx.beginPath();
+          ctx.moveTo(-pr, 0); ctx.lineTo(0, -pr * 1.3); ctx.lineTo(pr, 0); ctx.lineTo(0, pr * 0.8);
+          ctx.closePath();
+          ctx.fill();
+          ctx.strokeStyle = specColor;
+          ctx.lineWidth = 0.8;
+          ctx.stroke();
+          ctx.restore();
+        }
+
+        // 3. Multi-Faceted 3D Crystal Obelisks (Matching Reference Image)
         const shards = [
-          { dx: 0, dy: 0, w: 14, h: 48, tilt: -0.08 },
-          { dx: -14, dy: 10, w: 10, h: 36, tilt: -0.22 },
-          { dx: 13, dy: 8, w: 11, h: 40, tilt: 0.18 },
-          { dx: -24, dy: 22, w: 8, h: 25, tilt: -0.38 },
-          { dx: 22, dy: 20, w: 8, h: 28, tilt: 0.35 },
+          { dx: 0, dy: 0, w: 18, h: 56, tilt: -0.06 },
+          { dx: -18, dy: 12, w: 14, h: 42, tilt: -0.22 },
+          { dx: 16, dy: 10, w: 15, h: 46, tilt: 0.18 },
+          { dx: -32, dy: 24, w: 10, h: 28, tilt: -0.38 },
+          { dx: 28, dy: 22, w: 11, h: 32, tilt: 0.35 },
+          { dx: -6, dy: 18, w: 12, h: 36, tilt: 0.05 },
         ];
 
         for (let s = 0; s < shards.length; s++) {
@@ -557,34 +784,46 @@ export class Renderer {
           ctx.translate(sx, sy);
           ctx.rotate(sh.tilt);
 
-          // Left facet
-          ctx.fillStyle = cColor;
+          // Left facet: Primary saturated bright crystal face with top specular
+          const leftGrad = ctx.createLinearGradient(-sw / 2, 0, 0, -shh);
+          leftGrad.addColorStop(0, cColor);
+          leftGrad.addColorStop(1, specColor);
+          ctx.fillStyle = leftGrad;
+          ctx.globalAlpha = 0.95;
+          ctx.beginPath();
+          ctx.moveTo(0, -shh);
+          ctx.lineTo(-sw / 2, -shh * 0.2);
+          ctx.lineTo(-sw * 0.35, 6);
+          ctx.lineTo(0, 10);
+          ctx.closePath();
+          ctx.fill();
+
+          // Right facet: Deep ambient shaded crystal face
+          ctx.fillStyle = shadeColor;
+          ctx.globalAlpha = 0.92;
+          ctx.beginPath();
+          ctx.moveTo(0, -shh);
+          ctx.lineTo(0, 10);
+          ctx.lineTo(sw * 0.35, 6);
+          ctx.lineTo(sw / 2, -shh * 0.2);
+          ctx.closePath();
+          ctx.fill();
+
+          // Center spine ridge line (Crisp gleaming facet edge)
+          ctx.strokeStyle = specColor;
           ctx.globalAlpha = 0.85;
+          ctx.lineWidth = 1.2;
           ctx.beginPath();
           ctx.moveTo(0, -shh);
-          ctx.lineTo(-sw / 2, 0);
-          ctx.lineTo(0, 8);
-          ctx.closePath();
-          ctx.fill();
-
-          // Right facet (darker shade)
-          ctx.fillStyle = '#ffffff';
-          ctx.globalAlpha = 0.55;
-          ctx.beginPath();
-          ctx.moveTo(0, -shh);
-          ctx.lineTo(sw / 2, 0);
-          ctx.lineTo(0, 8);
-          ctx.closePath();
-          ctx.fill();
-
-          // Crystal facet ridge
-          ctx.strokeStyle = '#ffffff';
-          ctx.globalAlpha = 0.7;
-          ctx.lineWidth = 1;
-          ctx.beginPath();
-          ctx.moveTo(0, -shh);
-          ctx.lineTo(0, 8);
+          ctx.lineTo(0, 10);
           ctx.stroke();
+
+          // Top facet glint gleam
+          ctx.fillStyle = '#ffffff';
+          ctx.globalAlpha = 1.0;
+          ctx.beginPath();
+          ctx.arc(0, -shh, 1.8, 0, Math.PI * 2);
+          ctx.fill();
 
           ctx.restore();
         }
@@ -690,34 +929,154 @@ export class Renderer {
     }
   }
 
-  _drawPerimeterBulkheads(ctx, halfViewW, halfViewH) {
+  _drawBattlegroundArchitecture(ctx, halfViewW, halfViewH) {
     const W = GAME_CONFIG.ARENA_WIDTH;
     const H = GAME_CONFIG.ARENA_HEIGHT;
 
     ctx.save();
     try {
-      // 1. TOP-LEFT CORNER INDUSTRIAL BULKHEAD (Matching Storyboard Reference)
+      // 1. Sector Trench Bastions (Framing Combat Viewport in All Sectors)
+      if (this.sectorBastions) {
+        for (let i = 0; i < this.sectorBastions.length; i++) {
+          const b = this.sectorBastions[i];
+          const pad = b.length;
+          if (b.x < this.camera.x - halfViewW - pad || b.x > this.camera.x + halfViewW + pad ||
+              b.y < this.camera.y - halfViewH - pad || b.y > this.camera.y + halfViewH + pad) continue;
+          this._renderTrenchWallSegment(ctx, b);
+        }
+      }
+
+      // 2. Corner Massive Industrial Bulkheads (Matching Storyboard Corners)
       if (this.camera.x - halfViewW < 520 && this.camera.y - halfViewH < 520) {
         this._renderBulkheadUnit(ctx, 0, 0, 1, 1);
       }
-
-      // 2. BOTTOM-RIGHT CORNER INDUSTRIAL BULKHEAD (Matching Storyboard Reference)
       if (this.camera.x + halfViewW > W - 520 && this.camera.y + halfViewH > H - 520) {
         this._renderBulkheadUnit(ctx, W, H, -1, -1);
       }
-
-      // 3. TOP-RIGHT CORNER BASTION
       if (this.camera.x + halfViewW > W - 520 && this.camera.y - halfViewH < 520) {
         this._renderBulkheadUnit(ctx, W, 0, -1, 1);
       }
-
-      // 4. BOTTOM-LEFT CORNER BASTION
       if (this.camera.x - halfViewW < 520 && this.camera.y + halfViewH > H - 520) {
         this._renderBulkheadUnit(ctx, 0, H, 1, -1);
       }
     } finally {
       ctx.restore();
     }
+  }
+
+  _renderTrenchWallSegment(ctx, b) {
+    ctx.save();
+    ctx.translate(b.x, b.y);
+    ctx.rotate(b.angle);
+
+    const halfL = b.length / 2;
+    const depth = 58;
+    const bevel = 24;
+    const accent = b.color || '#ff00aa';
+
+    // 1. Floor Drop-Shadow
+    ctx.fillStyle = 'rgba(2, 4, 12, 0.65)';
+    ctx.beginPath();
+    ctx.moveTo(-halfL - 12, depth / 2 + 12);
+    ctx.lineTo(halfL + 12, depth / 2 + 12);
+    ctx.lineTo(halfL + 6, depth / 2 - 4);
+    ctx.lineTo(-halfL - 6, depth / 2 - 4);
+    ctx.closePath();
+    ctx.fill();
+
+    // 2. Base Dark Metallic Armor Chassis
+    ctx.fillStyle = '#080d1c';
+    ctx.beginPath();
+    ctx.moveTo(-halfL, -depth / 2);
+    ctx.lineTo(halfL, -depth / 2);
+    ctx.lineTo(halfL + 16, depth / 2);
+    ctx.lineTo(-halfL - 16, depth / 2);
+    ctx.closePath();
+    ctx.fill();
+
+    // 3. Elevated Top Plate with Metallic Chamfer
+    ctx.fillStyle = '#121b36';
+    ctx.beginPath();
+    ctx.moveTo(-halfL, -depth / 2);
+    ctx.lineTo(halfL, -depth / 2);
+    ctx.lineTo(halfL, depth / 2 - bevel);
+    ctx.lineTo(-halfL, depth / 2 - bevel);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.strokeStyle = '#223460';
+    ctx.lineWidth = 1.4;
+    ctx.stroke();
+
+    // 4. Recessed Neon Channel with Slanted Louvers (///)
+    if (b.hasVents) {
+      // Dark inset slot
+      ctx.fillStyle = 'rgba(6, 10, 24, 0.95)';
+      ctx.fillRect(-halfL + 30, -depth / 2 + 8, b.length - 60, 14);
+
+      // Slanted glowing ventilation louvers
+      ctx.strokeStyle = accent;
+      ctx.shadowColor = accent;
+      ctx.shadowBlur = 8;
+      ctx.lineWidth = 2.4;
+      const ventCount = Math.floor((b.length - 70) / 16);
+      for (let v = 0; v < ventCount; v++) {
+        const vx = -halfL + 42 + v * 16;
+        ctx.beginPath();
+        ctx.moveTo(vx - 4, -depth / 2 + 20);
+        ctx.lineTo(vx + 4, -depth / 2 + 10);
+        ctx.stroke();
+      }
+      ctx.shadowBlur = 0;
+    }
+
+    // 5. Diagonal Yellow/Black Hazard Caution Stripes
+    if (b.hasCaution) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(-halfL, depth / 2 - bevel);
+      ctx.lineTo(halfL, depth / 2 - bevel);
+      ctx.lineTo(halfL + 16, depth / 2);
+      ctx.lineTo(-halfL - 16, depth / 2);
+      ctx.closePath();
+      ctx.clip();
+
+      ctx.fillStyle = '#ffaa00';
+      ctx.fillRect(-halfL - 30, depth / 2 - bevel - 4, b.length + 60, bevel + 10);
+
+      ctx.fillStyle = '#080d1a';
+      for (let s = -halfL - 40; s < halfL + 40; s += 22) {
+        ctx.beginPath();
+        ctx.moveTo(s, depth / 2 - bevel - 4);
+        ctx.lineTo(s + 18, depth / 2 + 8);
+        ctx.lineTo(s + 6, depth / 2 + 8);
+        ctx.lineTo(s - 12, depth / 2 - bevel - 4);
+        ctx.closePath();
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    // 6. Glowing Neon Edge Rail along bottom
+    ctx.strokeStyle = accent;
+    ctx.shadowColor = accent;
+    ctx.shadowBlur = 10;
+    ctx.lineWidth = 2.6;
+    ctx.beginPath();
+    ctx.moveTo(-halfL - 16, depth / 2);
+    ctx.lineTo(halfL + 16, depth / 2);
+    ctx.stroke();
+
+    // Structural endcap brackets
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = '#00f0ff';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(-halfL, -depth / 2); ctx.lineTo(-halfL - 16, depth / 2);
+    ctx.moveTo(halfL, -depth / 2); ctx.lineTo(halfL + 16, depth / 2);
+    ctx.stroke();
+
+    ctx.restore();
   }
 
   _renderBulkheadUnit(ctx, originX, originY, dirX, dirY) {

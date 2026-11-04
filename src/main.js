@@ -1489,6 +1489,7 @@ class NeonHavocGame {
     this.particlePool.spawnStarburst(enemy.x, enemy.y, '#ffe600', enemy.radius * 1.6);
     this.particlePool.spawnShockwave(enemy.x, enemy.y, enemy.glow || '#ff00aa', enemy.radius * 2.2);
     this.particlePool.burst(enemy.x, enemy.y, enemy.color || '#ff2255', enemy.isBoss ? 50 : enemy.isElite ? 22 : 10, 240, 2.5);
+    this.renderer.addScorchMark(enemy.x, enemy.y, enemy.radius * (enemy.isBoss ? 2.6 : enemy.isElite ? 1.8 : 1.1), enemy.glow || '#ff00aa');
 
     // Screen Shake Trauma
     if (saveManager.data.settings.screenShake) {
