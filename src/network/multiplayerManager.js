@@ -8,9 +8,11 @@ export class MultiplayerManager {
     this.roomCode = null;
     this.pingMs = 0;
     this.lastPingSent = 0;
+    this.serverLanIps = [];
 
     // Callbacks
     this.onStatusChangeCb = null;
+    this.onServerInfoCb = null;
     this.onRoomCreatedCb = null;
     this.onPlayerJoinedCb = null;
     this.onJoinSuccessCb = null;
@@ -105,7 +107,17 @@ export class MultiplayerManager {
     }));
   }
 
+  leaveRoom() {
+    if (this.isConnected && this.ws && this.ws.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify({ type: 'LEAVE_ROOM' }));
+    }
+    this.role = null;
+    this.roomCode = null;
+    this.isMultiplayerActive = false;
+  }
+
   disconnect() {
+    this.leaveRoom();
     this.isMultiplayerActive = false;
     this.role = null;
     this.roomCode = null;
@@ -118,6 +130,11 @@ export class MultiplayerManager {
 
   _handleMessage(msg) {
     switch (msg.type) {
+      case 'SERVER_INFO':
+        this.serverLanIps = msg.lanIps || [];
+        if (this.onServerInfoCb) this.onServerInfoCb(msg.lanIps);
+        break;
+
       case 'ROOM_CREATED':
         this.roomCode = msg.roomCode;
         if (this.onRoomCreatedCb) this.onRoomCreatedCb(msg.roomCode);

@@ -234,6 +234,10 @@ class NeonHavocGame {
       btnCopyInviteLink: document.getElementById('btnCopyInviteLink'),
       hostRoomStatus: document.getElementById('hostRoomStatus'),
       btnHostStartNow: document.getElementById('btnHostStartNow'),
+      btnCancelHost: document.getElementById('btnCancelHost'),
+      joinSectorCard: document.getElementById('joinSectorCard'),
+      joinLockedBanner: document.getElementById('joinLockedBanner'),
+      lanUrlHint: document.getElementById('lanUrlHint'),
       inputRoomCode: document.getElementById('inputRoomCode'),
       btnJoinRoom: document.getElementById('btnJoinRoom'),
       joinRoomStatus: document.getElementById('joinRoomStatus'),
@@ -388,6 +392,10 @@ class NeonHavocGame {
 
     if (this.dom.btnJoinRoom) {
       this.dom.btnJoinRoom.onclick = () => {
+        if (multiplayerManager.role === 'HOST') {
+          this.showToast('⚠️ You are already hosting Sector [' + (multiplayerManager.roomCode || '') + ']! Player 2 should enter this code on their laptop.', 'warning', 5000);
+          return;
+        }
         const code = (this.dom.inputRoomCode ? this.dom.inputRoomCode.value : '').trim().toUpperCase();
         if (!code || code.length < 4) {
           if (this.dom.joinRoomStatus) {
@@ -422,21 +430,55 @@ class NeonHavocGame {
       };
     }
 
+    if (this.dom.btnCancelHost) {
+      this.dom.btnCancelHost.onclick = () => {
+        multiplayerManager.leaveRoom();
+        this._unlockJoinCard();
+        if (this.dom.hostRoomDisplay) this.dom.hostRoomDisplay.style.display = 'none';
+        if (this.dom.btnCreateRoom) {
+          this.dom.btnCreateRoom.disabled = false;
+          this.dom.btnCreateRoom.textContent = 'CREATE HOST ROOM';
+        }
+        this.showToast('Sector canceled. You can now host again or join as Player 2.', 'info');
+      };
+    }
+
     // Multiplayer Network Callbacks
     multiplayerManager.onStatusChangeCb = (online) => {
       this._updateRelayBadge(online ? 'ONLINE' : 'OFFLINE');
     };
 
+    multiplayerManager.onServerInfoCb = () => {
+      this._updateLanAddressDisplay();
+    };
+
     multiplayerManager.onRoomCreatedCb = (code) => {
       if (this.dom.btnCreateRoom) {
-        this.dom.btnCreateRoom.disabled = false;
-        this.dom.btnCreateRoom.textContent = 'HOST ROOM READY';
+        this.dom.btnCreateRoom.disabled = true;
+        this.dom.btnCreateRoom.textContent = '👑 HOSTING ACTIVE';
       }
       if (this.dom.hostRoomDisplay) this.dom.hostRoomDisplay.style.display = 'block';
       if (this.dom.hostRoomCode) this.dom.hostRoomCode.textContent = code;
       if (this.dom.hostRoomStatus) this.dom.hostRoomStatus.textContent = 'Waiting for Player 2 to connect...';
+
+      // Lock Join Card on Host laptop so user doesn't accidentally fill their own room!
+      if (this.dom.joinLockedBanner) this.dom.joinLockedBanner.style.display = 'block';
+      if (this.dom.inputRoomCode) {
+        this.dom.inputRoomCode.disabled = true;
+        this.dom.inputRoomCode.value = '';
+        this.dom.inputRoomCode.placeholder = code;
+      }
+      if (this.dom.btnJoinRoom) {
+        this.dom.btnJoinRoom.disabled = true;
+        this.dom.btnJoinRoom.textContent = 'WAITING FOR P2 ON LAPTOP 2';
+      }
+      if (this.dom.joinRoomStatus) {
+        this.dom.joinRoomStatus.textContent = 'Enter this code on Laptop 2!';
+        this.dom.joinRoomStatus.style.color = '#00ff88';
+      }
+
       soundEngine.playLevelUp();
-      this.showToast(`✅ Room [${code}] ready! Share code or link with Player 2.`, 'success', 4500);
+      this.showToast(`✅ Room [${code}] ready! On Laptop 2, enter code [${code}] to join.`, 'success', 5000);
     };
 
     multiplayerManager.onPlayerJoinedCb = () => {
@@ -888,31 +930,62 @@ class NeonHavocGame {
     }
   }
 
-  openOnlineModal() {
-    this._showOverlay(this.dom.onlineModal);
-
-    // Update Game Address display
-    if (this.dom.lanUrlDisplay) {
-      try {
-        this.dom.lanUrlDisplay.textContent = window.location.origin + window.location.pathname;
-      } catch (e) {
-        this.dom.lanUrlDisplay.textContent = 'http://localhost:5173/';
-      }
+  _unlockJoinCard() {
+    if (this.dom.joinLockedBanner) this.dom.joinLockedBanner.style.display = 'none';
+    if (this.dom.inputRoomCode) {
+      this.dom.inputRoomCode.disabled = false;
+      this.dom.inputRoomCode.placeholder = 'CODE';
+      this.dom.inputRoomCode.value = '';
     }
-
-    if (this.dom.hostRoomDisplay) this.dom.hostRoomDisplay.style.display = 'none';
+    if (this.dom.btnJoinRoom) {
+      this.dom.btnJoinRoom.disabled = false;
+      this.dom.btnJoinRoom.textContent = 'CONNECT & DEPLOY';
+    }
     if (this.dom.joinRoomStatus) {
       this.dom.joinRoomStatus.textContent = 'Enter 4-letter Code';
       this.dom.joinRoomStatus.style.color = '#ff00aa';
     }
-    if (this.dom.inputRoomCode) this.dom.inputRoomCode.value = '';
+  }
+
+  _updateLanAddressDisplay() {
+    if (!this.dom.lanUrlDisplay) return;
+    try {
+      const port = window.location.port ? `:${window.location.port}` : '';
+      const path = window.location.pathname || '/';
+      let lanIp = null;
+      if (multiplayerManager.serverLanIps && multiplayerManager.serverLanIps.length > 0) {
+        lanIp = multiplayerManager.serverLanIps.find(ip => ip.startsWith('192.168.') || ip.startsWith('10.')) || multiplayerManager.serverLanIps[0];
+      }
+
+      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        if (lanIp) {
+          const lanUrl = `http://${lanIp}${port}${path}`;
+          this.dom.lanUrlDisplay.textContent = lanUrl;
+          if (this.dom.lanUrlHint) {
+            this.dom.lanUrlHint.textContent = `👉 Open ${lanUrl} on Laptop 2 via WiFi, then enter Sector Code!`;
+            this.dom.lanUrlHint.style.color = '#00ff88';
+          }
+          return;
+        }
+      }
+      this.dom.lanUrlDisplay.textContent = window.location.origin + path;
+    } catch (e) {
+      this.dom.lanUrlDisplay.textContent = window.location.origin || 'http://localhost:5173/';
+    }
+  }
+
+  openOnlineModal() {
+    this._showOverlay(this.dom.onlineModal);
+
+    // Update Game Address display using detected LAN IP
+    this._updateLanAddressDisplay();
+
+    if (this.dom.hostRoomDisplay) this.dom.hostRoomDisplay.style.display = 'none';
     if (this.dom.btnCreateRoom) {
       this.dom.btnCreateRoom.disabled = false;
       this.dom.btnCreateRoom.textContent = 'CREATE HOST ROOM';
     }
-    if (this.dom.btnJoinRoom) {
-      this.dom.btnJoinRoom.disabled = false;
-    }
+    this._unlockJoinCard();
 
     this._updateRelayBadge();
 
@@ -922,6 +995,7 @@ class NeonHavocGame {
       multiplayerManager.connect()
         .then(() => {
           this._updateRelayBadge('ONLINE');
+          this._updateLanAddressDisplay();
         })
         .catch(() => {
           this._updateRelayBadge('OFFLINE');

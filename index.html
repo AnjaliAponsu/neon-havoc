@@ -2645,6 +2645,7 @@
           style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; color: rgba(255,255,255,0.85);">
           <span style="color: var(--neon-cyan); font-weight: 700;">📡 GAME ADDRESS:</span> <span id="lanUrlDisplay"
             style="color: #ffe600; font-family: monospace;">http://localhost:5173/</span>
+          <div style="font-size: 11px; color: #00ff88; margin-top: 4px;" id="lanUrlHint">👉 Share this address with Laptop 2 on your WiFi network!</div>
         </div>
         <button class="neon-btn secondary" id="btnCopyLanUrl"
           style="padding: 5px 12px; font-size: 11px; white-space: nowrap;">📋 COPY LINK</button>
@@ -2683,6 +2684,8 @@
             <button class="neon-btn" id="btnHostStartNow"
               style="width: 100%; margin-top: 10px; font-size: 12px; padding: 8px 10px; border-color: #00ff88; color: #00ff88; background: rgba(0, 255, 136, 0.15); box-shadow: 0 0 12px rgba(0,255,136,0.3);">🚀
               DEPLOY NOW (P2 CAN HOT-JOIN)</button>
+            <button class="neon-btn secondary" id="btnCancelHost"
+              style="width: 100%; margin-top: 6px; font-size: 11px; padding: 6px;">❌ CANCEL HOST & JOIN INSTEAD</button>
           </div>
 
           <button class="neon-btn" id="btnCreateRoom" style="width: 100%; font-size: 13px; padding: 11px;">CREATE HOST
@@ -2690,7 +2693,7 @@
         </div>
 
         <!-- JOIN CARD -->
-        <div
+        <div id="joinSectorCard"
           style="background: rgba(255, 0, 170, 0.06); border: 1px solid rgba(255, 0, 170, 0.4); border-radius: 10px; padding: 18px; text-align: center; display: flex; flex-direction: column; justify-content: space-between;">
           <div>
             <div style="font-size: 26px; margin-bottom: 4px;">🚀</div>
@@ -2701,7 +2704,13 @@
             </p>
           </div>
 
-          <div>
+          <div id="joinLockedBanner"
+            style="display: none; background: rgba(0, 255, 136, 0.12); border: 1px solid #00ff88; color: #00ff88; border-radius: 8px; padding: 10px; font-size: 11px; margin-bottom: 8px; font-weight: 700; line-height: 1.4;">
+            👑 YOU ARE HOSTING ON THIS LAPTOP<br>
+            <span style="font-size: 10px; color: rgba(255,255,255,0.85); font-weight: normal;">Give your Sector Code to Player 2 to enter on their laptop!</span>
+          </div>
+
+          <div id="joinInputControls">
             <input type="text" id="inputRoomCode" maxlength="4" placeholder="CODE"
               style="width: 100%; text-transform: uppercase; text-align: center; font-family: var(--font-display); font-size: 22px; letter-spacing: 6px; font-weight: 800; padding: 8px; background: rgba(0,0,0,0.6); border: 2px solid #ff00aa; color: #fff; border-radius: 8px; margin-bottom: 8px; box-shadow: 0 0 15px rgba(255,0,170,0.25);">
             <div id="joinRoomStatus"
