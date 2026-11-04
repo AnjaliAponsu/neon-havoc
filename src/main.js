@@ -2319,7 +2319,7 @@ class NeonHavocGame {
       // 10. Holographic Tactical Radar (rendered on top screen HUD with off-screen teammate radar)
       if (this.state === 'PLAYING' || this.state === 'PAUSED') {
         try {
-          this.renderer.drawRadar(localPlayer, this.enemies, this.powerupManager, this.activeBoss, teammate);
+          this.renderer.drawRadar(localPlayer, this.enemies, this.powerupManager, this.activeBoss, teammate, this.hazardManager);
         } catch (e) { /* radar render guard */ }
       }
     }

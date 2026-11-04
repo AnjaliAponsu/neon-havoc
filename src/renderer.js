@@ -344,8 +344,33 @@ export class Renderer {
   }
 
   setSector(sector) {
-    if (sector && sector.accentColor) {
+    if (!sector) return;
+    this.currentSectorData = sector;
+    if (sector.accentColor) {
       this.sectorAccent = sector.accentColor;
+    }
+    const primary = sector.accentColor || '#00f0ff';
+    const secondary = sector.id === 'sector_2' ? '#ff4400' : (sector.id === 'sector_3' ? '#d000ff' : '#ff00aa');
+
+    // 1. Re-theme cyber conduits per sector
+    if (this.cyberConduits) {
+      this.cyberConduits.forEach((c, idx) => {
+        c.color = idx % 2 === 0 ? primary : secondary;
+      });
+    }
+
+    // 2. Re-theme sector trench bastions
+    if (this.sectorBastions) {
+      this.sectorBastions.forEach((b, idx) => {
+        b.color = idx % 2 === 0 ? primary : secondary;
+      });
+    }
+
+    // 3. Re-theme 3D crystal clusters
+    if (this.crystalFormations) {
+      this.crystalFormations.forEach((cf, idx) => {
+        cf.color = idx % 3 === 0 ? primary : (idx % 3 === 1 ? secondary : '#ffffff');
+      });
     }
   }
 
@@ -1447,7 +1472,7 @@ export class Renderer {
   }
 
   // ---- HOLOGRAPHIC TACTICAL RADAR (MINIMAP) ----
-  drawRadar(player, enemies, powerupPool, activeBoss, teammate = null) {
+  drawRadar(player, enemies, powerupPool, activeBoss, teammate = null, hazardManager = null) {
     if (!player || !isFinite(player.x) || !isFinite(player.y) || this.width <= 0 || this.height <= 0) return;
 
     const ctx = this.ctx;
@@ -1514,6 +1539,60 @@ export class Renderer {
         ctx.beginPath();
         ctx.arc(rx, ry, 3.5, 0, Math.PI * 2);
         ctx.fill();
+      }
+    }
+
+    // 1.5 Draw Tactical Hazards & Environmental Features
+    if (hazardManager) {
+      // Energy Pylons (cyan diamond)
+      for (let i = 0; i < hazardManager.pylons.length; i++) {
+        const py = hazardManager.pylons[i];
+        if (!py.active) continue;
+        const pdx = py.x - player.x;
+        const pdy = py.y - player.y;
+        if (Math.hypot(pdx, pdy) < radarRange) {
+          const rx = cx + (pdx / radarRange) * radius;
+          const ry = cy + (pdy / radarRange) * radius;
+          ctx.fillStyle = '#00f0ff';
+          ctx.beginPath();
+          ctx.moveTo(rx, ry - 3.5); ctx.lineTo(rx + 3.5, ry); ctx.lineTo(rx, ry + 3.5); ctx.lineTo(rx - 3.5, ry);
+          ctx.closePath();
+          ctx.fill();
+        }
+      }
+
+      // Volatile Barrels (small square)
+      for (let i = 0; i < hazardManager.barrels.length; i++) {
+        const br = hazardManager.barrels[i];
+        if (!br.active) continue;
+        const bdx = br.x - player.x;
+        const bdy = br.y - player.y;
+        if (Math.hypot(bdx, bdy) < radarRange) {
+          const rx = cx + (bdx / radarRange) * radius;
+          const ry = cy + (bdy / radarRange) * radius;
+          ctx.fillStyle = br.type === 'cryo' ? '#00f0ff' : '#ff4400';
+          ctx.fillRect(rx - 2, ry - 2, 4, 4);
+        }
+      }
+
+      // Orbital Drop Pods (Pulsing Golden Beacon)
+      for (let i = 0; i < hazardManager.dropPods.length; i++) {
+        const pod = hazardManager.dropPods[i];
+        if (!pod.active) continue;
+        const odx = pod.x - player.x;
+        const ody = pod.y - player.y;
+        const odist = Math.hypot(odx, ody);
+        if (odist < radarRange) {
+          const rx = cx + (odx / radarRange) * radius;
+          const ry = cy + (ody / radarRange) * radius;
+          ctx.fillStyle = '#ffe600';
+          ctx.beginPath();
+          ctx.arc(rx, ry, 5 + Math.sin(this.radarSweep * 3) * 1.5, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 1.2;
+          ctx.stroke();
+        }
       }
     }
 
@@ -1593,6 +1672,35 @@ export class Renderer {
         ctx.closePath();
         ctx.fill();
         ctx.restore();
+      }
+    }
+
+    // 4.5 Off-screen Orbital Supply Pod Indicator Chevron
+    if (hazardManager && hazardManager.dropPods) {
+      for (let i = 0; i < hazardManager.dropPods.length; i++) {
+        const pod = hazardManager.dropPods[i];
+        if (!pod.active) continue;
+        const odx = pod.x - player.x;
+        const ody = pod.y - player.y;
+        const odist = Math.hypot(odx, ody);
+        if (odist > radarRange * 0.75) {
+          const oAngle = Math.atan2(ody, odx);
+          const indX = cx + Math.cos(oAngle) * (radius + 12);
+          const indY = cy + Math.sin(oAngle) * (radius + 12);
+
+          ctx.save();
+          ctx.fillStyle = '#ffe600';
+          ctx.translate(indX, indY);
+          ctx.rotate(oAngle);
+          ctx.beginPath();
+          ctx.moveTo(8, 0);
+          ctx.lineTo(-6, -6);
+          ctx.lineTo(-3, 0);
+          ctx.lineTo(-6, 6);
+          ctx.closePath();
+          ctx.fill();
+          ctx.restore();
+        }
       }
     }
 

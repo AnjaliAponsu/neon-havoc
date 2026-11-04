@@ -1,6 +1,6 @@
 // NEON HAVOC — Bullet & Projectile Physics Engine (30x Speedup with GlowCache)
 
-import { COLORS } from '../constants.js';
+import { COLORS, GAME_CONFIG } from '../constants.js';
 import { glowCache } from '../glowCache.js';
 
 export class Bullet {
@@ -51,6 +51,17 @@ export class Bullet {
     this.distanceTraveled += stepDist;
 
     if (this.distanceTraveled >= this.maxRange) {
+      this.active = false;
+      return;
+    }
+
+    // Arena Bulkhead & Perimeter Ricochet Sparks
+    if (this.x <= 45 || this.x >= (GAME_CONFIG.ARENA_WIDTH || 3200) - 45 ||
+        this.y <= 45 || this.y >= (GAME_CONFIG.ARENA_HEIGHT || 2400) - 45) {
+      if (particlePool) {
+        particlePool.spawnStarburst(this.x, this.y, this.color, 10);
+        particlePool.burst(this.x, this.y, this.color, 5, 140, 1.2);
+      }
       this.active = false;
       return;
     }

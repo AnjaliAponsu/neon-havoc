@@ -566,6 +566,44 @@ export class HazardManager {
         if (dist < p.radius + bullet.radius) {
           bullet.active = false;
           const result = p.takeDamage(bullet.damage);
+
+          // Prismatic Beam Refraction: Amplify & split into 3 piercing hyper-lasers
+          if (!bullet.isRefracted && bulletPool) {
+            const baseAngle = Math.atan2(bullet.vy, bullet.vx);
+            const refAngles = [baseAngle - 0.28, baseAngle, baseAngle + 0.28];
+            for (let a = 0; a < refAngles.length; a++) {
+              const ang = refAngles[a];
+              const speed = 1100;
+              const refBullet = bulletPool.get();
+              if (refBullet) {
+                refBullet.spawn(
+                  p.x + Math.cos(ang) * (p.radius + 8),
+                  p.y + Math.sin(ang) * (p.radius + 8),
+                  Math.cos(ang) * speed,
+                  Math.sin(ang) * speed,
+                  bullet.damage * 1.45,
+                  bullet.pierce + 2,
+                  '#00ffff',
+                  6,
+                  false,
+                  750,
+                  false
+                );
+                refBullet.isRefracted = true;
+              }
+            }
+            if (particlePool) {
+              particlePool.spawnStarburst(p.x, p.y, '#00ffff', 18);
+              particlePool.burst(p.x, p.y, '#00f0ff', 16, 220, 2);
+            }
+            if (soundEngine && soundEngine.playLightning) {
+              soundEngine.playLightning();
+            }
+            if (floatingTexts) {
+              floatingTexts.spawn(p.x, p.y - 24, '⚡ PRISM HYPERCHARGE!', '#00f0ff', '#ffffff', false, 14);
+            }
+          }
+
           if (result === 999) {
             this._detonatePylon(p, enemies, soundEngine, particlePool, floatingTexts);
           }
