@@ -22,6 +22,35 @@ export class WaveManager {
     this.spawnQueue = [];
   }
 
+  spawnOpeningVanguard(player, enemies, particlePool, soundEngine) {
+    const targetPlayer = this._getTargetPlayer(player);
+    const px = targetPlayer ? targetPlayer.x : GAME_CONFIG.ARENA_WIDTH / 2;
+    const py = targetPlayer ? targetPlayer.y : GAME_CONFIG.ARENA_HEIGHT / 2;
+
+    // 5 Opening Vanguard Scouts in visual engagement range (440-520px)
+    const initialTypes = [
+      ENEMY_TYPES.CHASER,
+      ENEMY_TYPES.CHASER,
+      ENEMY_TYPES.CHASER,
+      ENEMY_TYPES.SPEEDER,
+      ENEMY_TYPES.TANK,
+    ];
+
+    for (let i = 0; i < initialTypes.length; i++) {
+      const angle = (i * Math.PI * 2) / initialTypes.length + Math.PI * 0.25;
+      const dist = 460 + (i % 2) * 50;
+      const ex = Math.max(80, Math.min(GAME_CONFIG.ARENA_WIDTH - 80, px + Math.cos(angle) * dist));
+      const ey = Math.max(80, Math.min(GAME_CONFIG.ARENA_HEIGHT - 80, py + Math.sin(angle) * dist));
+
+      enemies.push(new Enemy(initialTypes[i], ex, ey, 1.0));
+
+      if (particlePool) {
+        particlePool.spawn(ex, ey, 0, 0, 36, '#ff00aa', 0.45, 1, 'ring');
+        particlePool.spawn(ex, ey, 0, 0, 20, '#ffffff', 0.25, 1, 'ring');
+      }
+    }
+  }
+
   _getTargetPlayer(player) {
     if (Array.isArray(player)) {
       const alive = player.filter(p => p && !p.isDowned);

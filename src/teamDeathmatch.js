@@ -42,14 +42,20 @@ export class TeamDeathmatchGame {
           ${Object.entries(WEAPONS).map(([id,w],i)=>`<button data-weapon="${id}" class="tdm-loadout ${i===0?'selected':''}">${icon(i===5?'meteor':'cross')}<span>${w}</span></button>`).join('')}
         </div>
         <div id="tdmEntryActions"><div class="tdm-lobby-actions">
-          <button class="tdm-primary" id="tdmQuickMatch">FIND PUBLIC MATCH</button><button class="tdm-secondary" id="tdmCreateRoom">CREATE PRIVATE ROOM</button>
+          <button class="tdm-primary" id="tdmQuickMatch">FIND PUBLIC MATCH</button>
+          <button class="tdm-secondary" id="tdmPracticeBots" style="border-color:rgba(0,255,200,0.5);color:#70ffdd;">🤖 PRACTICE VS BOTS (4v4)</button>
+          <button class="tdm-secondary" id="tdmCreateRoom">CREATE PRIVATE ROOM</button>
         </div><div class="tdm-divider"><span>HAVE AN INVITE?</span></div>
         <div class="tdm-join-row"><input id="tdmRoomCode" class="tdm-input" maxlength="5" placeholder="ROOM CODE"><button class="tdm-secondary" id="tdmJoinRoom">JOIN ROOM</button></div>
         <details class="tdm-server-options"><summary>Server address</summary><label for="tdmServerUrl">Use the same server as your friends. Leave blank for this game's server.</label><input id="tdmServerUrl" class="tdm-input" placeholder="wss://your-server.example/ws"></details></div>
         <div id="tdmWaiting" hidden><div class="tdm-room-share"><span>INVITE CODE <strong id="tdmInviteCode"></strong></span><button class="tdm-secondary" id="tdmCopyInvite">COPY INVITE</button></div>
           <div id="tdmLobbyTeams" class="tdm-lobby-teams"></div>
-          <div class="tdm-lobby-actions"><button class="tdm-secondary" id="tdmSwitchTeam">SWITCH TEAM</button><button class="tdm-primary" id="tdmReady">READY UP</button></div>
-          <p class="tdm-lobby-help">Both teams need a player. Ready up together to start the 10-second countdown. Empty slots stay open for friends.</p>
+          <div class="tdm-lobby-actions">
+            <button class="tdm-secondary" id="tdmFillBots" style="border-color:rgba(0,255,200,0.4);color:#70ffdd;">🤖 FILL AI BOTS</button>
+            <button class="tdm-secondary" id="tdmSwitchTeam">SWITCH TEAM</button>
+            <button class="tdm-primary" id="tdmReady">READY UP</button>
+          </div>
+          <p class="tdm-lobby-help">Both teams need players. Ready up to start the 10-second countdown. Fill empty slots with AI bots or invite friends.</p>
         </div><div id="tdmLobbyStatus" class="tdm-lobby-status" role="status">CREATE AN ARENA OR FIND OTHER PLAYERS</div>
         <p class="tdm-controls-help">WASD move · Mouse aim / fire · Q dash · E aegis · R wave · F ultimate · X reload</p>
       </div></div>
@@ -102,9 +108,11 @@ export class TeamDeathmatchGame {
       this._send({type:'TDM_LOADOUT',weapon:this.selectedWeapon});
     };
     this.dom.QuickMatch.onclick=()=>this._join('TDM_QUICK_MATCH');
+    if(this.dom.PracticeBots) this.dom.PracticeBots.onclick=()=>this._join('TDM_PRACTICE');
     this.dom.CreateRoom.onclick=()=>this._join('TDM_CREATE_ROOM');
     this.dom.JoinRoom.onclick=()=>this._join('TDM_JOIN_ROOM');
     this.dom.LobbyClose.onclick=()=>{if(this.active)this.leave();else this.closeLobby();};
+    if(this.dom.FillBots) this.dom.FillBots.onclick=()=>this._send({type:'TDM_FILL_BOTS'});
     this.dom.Ready.onclick=()=>this._send({type:'TDM_READY',ready:!this._localPlayer()?.ready});
     this.dom.SwitchTeam.onclick=()=>this._send({type:'TDM_TEAM',team:this._localPlayer()?.team==='BLUE'?'RED':'BLUE'});
     this.dom.CopyInvite.onclick=async()=>{
@@ -336,7 +344,7 @@ export class TeamDeathmatchGame {
     for(const [key,el]of[['dash',this.dom.CdDash],['aegis',this.dom.CdAegis],['wave',this.dom.CdWave]]){
       el.textContent=p.cooldowns[key]>0?(p.cooldowns[key]/1000).toFixed(1)+'s':'● ● ●';el.parentElement.classList.toggle('cooling',p.cooldowns[key]>0);
     }
-    const teamHtml=team=>s.players.filter(e=>e.team===team).map(e=>`<div class="${e.id===this.playerId?'me':''}"><i class="tdm-orb-avatar" style="--orb:${fighterColor(e,s.players)}"></i><span>${esc(e.name)}${e.id===s.hostId?' <em>♛</em>':''}</span><b title="${e.ping} ms">${!e.connected?'OFFLINE':s.state==='LOBBY'?(e.ready?'READY':'…'):e.alive?'▂▄▆':'DOWN'}</b></div>`).join('');
+    const teamHtml=team=>s.players.filter(e=>e.team===team).map(e=>`<div class="${e.id===this.playerId?'me':''}"><i class="tdm-orb-avatar" style="--orb:${fighterColor(e,s.players)}"></i><span>${esc(e.name)}${e.isBot?' <small style="opacity:0.75;color:#6bf0ff;font-size:0.75em;">[BOT]</small>':''}${e.id===s.hostId?' <em>♛</em>':''}</span><b title="${e.ping} ms">${!e.connected?'OFFLINE':s.state==='LOBBY'?(e.ready?'READY':'…'):e.alive?'▂▄▆':'DOWN'}</b></div>`).join('');
     this.dom.Roster.innerHTML=['BLUE','RED'].map(team=>`<section style="--team:${COLORS[team]}"><h3>${team} TEAM (${s.players.filter(p=>p.team===team).length})</h3>${teamHtml(team)}</section>`).join('');
     this.dom.LobbyTeams.innerHTML=['BLUE','RED'].map(team=>`<section style="--team:${COLORS[team]}"><h3>${team} TEAM</h3>${teamHtml(team)}${Array.from({length:4-s.players.filter(p=>p.team===team).length},()=>'<div class="tdm-empty-slot">Waiting for player…</div>').join('')}</section>`).join('');
     this.dom.Ready.textContent=p.ready?'READY ✓ / CANCEL':'READY UP';this.dom.SwitchTeam.textContent='JOIN '+(p.team==='BLUE'?'RED':'BLUE');

@@ -125,15 +125,26 @@ class SpringGrid {
     }
     ctx.stroke();
 
-    // High-tech intersection crosshairs
-    ctx.fillStyle = accentColor;
-    ctx.globalAlpha = Math.min(1, pulse * 2.5);
+    // High-tech intersection crosshairs (+) & illuminated nodes (Matching Reference Design)
+    ctx.strokeStyle = accentColor;
+    ctx.fillStyle = '#ffffff';
+    ctx.lineWidth = 1.2;
+    ctx.globalAlpha = Math.min(0.55, pulse * 2.8);
     for (let r = minR; r <= maxR; r += 2) {
       if (!this.nodes[r]) continue;
       for (let c = minC; c <= maxC; c += 2) {
         const node = this.nodes[r][c];
         if (node && isFinite(node.x) && isFinite(node.y)) {
-          ctx.fillRect(node.x - 1.5, node.y - 1.5, 3, 3);
+          // Precise 5px tactical crosshair (+)
+          ctx.beginPath();
+          ctx.moveTo(node.x - 3, node.y);
+          ctx.lineTo(node.x + 3, node.y);
+          ctx.moveTo(node.x, node.y - 3);
+          ctx.lineTo(node.x, node.y + 3);
+          ctx.stroke();
+
+          // Sub-pixel white center gleam
+          ctx.fillRect(node.x - 0.75, node.y - 0.75, 1.5, 1.5);
         }
       }
     }
@@ -178,29 +189,76 @@ export class Renderer {
 
     // Ambient Floating Hexagonal Debris (Matching Reference Image Background)
     this.bgHexagons = [];
-    const hexCount = 28;
+    const hexCount = 36;
     for (let i = 0; i < hexCount; i++) {
       this.bgHexagons.push({
         x: Math.random() * GAME_CONFIG.ARENA_WIDTH,
         y: Math.random() * GAME_CONFIG.ARENA_HEIGHT,
-        size: 26 + Math.random() * 24,
+        size: 24 + Math.random() * 26,
         rotation: (Math.random() - 0.5) * 0.6,
         pulseSpeed: 0.4 + Math.random() * 0.6,
         offset: Math.random() * Math.PI * 2,
       });
     }
 
-    // Ambient Glowing Crystal Formations (Corners & Borders Matching Reference Image)
+    // Atmospheric Floating Cyber Motes (Volumetric 3D Parallax Embers)
+    this.ambientMotes = [];
+    const moteCount = 52;
+    const moteColors = ['#00f0ff', '#ff00aa', '#ffe600', '#70e0ff', '#ffffff', '#b000ff'];
+    for (let i = 0; i < moteCount; i++) {
+      this.ambientMotes.push({
+        x: Math.random() * GAME_CONFIG.ARENA_WIDTH,
+        y: Math.random() * GAME_CONFIG.ARENA_HEIGHT,
+        vx: (Math.random() - 0.5) * 22,
+        vy: -12 - Math.random() * 24,
+        size: 1.4 + Math.random() * 2.6,
+        color: moteColors[i % moteColors.length],
+        baseAlpha: 0.35 + Math.random() * 0.5,
+        pulseSpeed: 1.6 + Math.random() * 2.2,
+        offset: Math.random() * Math.PI * 2,
+      });
+    }
+
+    // Glowing Cyber Power Conduits (Embedded Circuit Bus Floor Tracks)
+    this.conduitPulse = 0;
+    this.cyberConduits = [
+      { from: { x: 1600, y: 1200 }, to: { x: 1600, y: 140 }, color: '#00f0ff', pips: 4 },
+      { from: { x: 1600, y: 1200 }, to: { x: 1600, y: 2260 }, color: '#ff00aa', pips: 4 },
+      { from: { x: 1600, y: 1200 }, to: { x: 140, y: 1200 }, color: '#00f0ff', pips: 4 },
+      { from: { x: 1600, y: 1200 }, to: { x: 3060, y: 1200 }, color: '#00ff88', pips: 4 },
+      { from: { x: 1600, y: 1200 }, to: { x: 420, y: 380 }, color: '#d000ff', pips: 3 },
+      { from: { x: 1600, y: 1200 }, to: { x: 2780, y: 2020 }, color: '#00f0ff', pips: 3 },
+    ];
+
+    // Ambient Glowing Crystal Formations (20 Vibrant Formations Across Battleground)
     this.crystalFormations = [
-      // Bottom-Right Cyan Crystal Cluster (As in reference screenshot)
-      { x: GAME_CONFIG.ARENA_WIDTH - 140, y: GAME_CONFIG.ARENA_HEIGHT - 120, color: '#00f0ff', count: 6, scale: 1.2 },
-      { x: GAME_CONFIG.ARENA_WIDTH - 240, y: GAME_CONFIG.ARENA_HEIGHT - 70, color: '#00f0ff', count: 4, scale: 0.9 },
-      // Bottom-Left Purple/Magenta Crystal Cluster (As in reference screenshot)
-      { x: 120, y: GAME_CONFIG.ARENA_HEIGHT - 130, color: '#d000ff', count: 5, scale: 1.1 },
-      { x: 220, y: GAME_CONFIG.ARENA_HEIGHT - 80, color: '#ff00aa', count: 4, scale: 0.85 },
-      // Top-Left & Top-Right Ambient Crystals
-      { x: 140, y: 130, color: '#9933ff', count: 4, scale: 0.8 },
-      { x: GAME_CONFIG.ARENA_WIDTH - 150, y: 140, color: '#00f0ff', count: 5, scale: 0.9 },
+      // Central Landmark Clusters (Immediately visible near spawn)
+      { x: 1360, y: 1040, color: '#00f0ff', count: 6, scale: 1.15 },
+      { x: 1840, y: 1380, color: '#d000ff', count: 5, scale: 1.1 },
+      { x: 1480, y: 1440, color: '#ffe600', count: 4, scale: 0.95 },
+      { x: 1760, y: 980, color: '#00f0ff', count: 5, scale: 1.05 },
+
+      // Mid-Field Strategic Formations
+      { x: 920, y: 840, color: '#ff00aa', count: 5, scale: 1.1 },
+      { x: 2280, y: 860, color: '#00f0ff', count: 6, scale: 1.2 },
+      { x: 940, y: 1620, color: '#ffe600', count: 5, scale: 1.0 },
+      { x: 2320, y: 1650, color: '#d000ff', count: 6, scale: 1.25 },
+
+      // Northern & Southern Energy Outcroppings
+      { x: 1600, y: 520, color: '#00f0ff', count: 7, scale: 1.3 },
+      { x: 1600, y: 1920, color: '#ff00aa', count: 7, scale: 1.3 },
+      { x: 800, y: 1200, color: '#00ff88', count: 5, scale: 1.1 },
+      { x: 2400, y: 1200, color: '#00f0ff', count: 5, scale: 1.1 },
+
+      // Perimeter & Corner Bastion Clusters (Matching Storyboard Corners)
+      { x: 160, y: 150, color: '#9933ff', count: 7, scale: 1.45 },
+      { x: 290, y: 220, color: '#d000ff', count: 5, scale: 1.0 },
+      { x: GAME_CONFIG.ARENA_WIDTH - 160, y: 150, color: '#00f0ff', count: 7, scale: 1.45 },
+      { x: GAME_CONFIG.ARENA_WIDTH - 290, y: 220, color: '#00ffff', count: 5, scale: 1.0 },
+      { x: 150, y: GAME_CONFIG.ARENA_HEIGHT - 160, color: '#d000ff', count: 7, scale: 1.45 },
+      { x: 280, y: GAME_CONFIG.ARENA_HEIGHT - 240, color: '#ff00aa', count: 5, scale: 1.0 },
+      { x: GAME_CONFIG.ARENA_WIDTH - 160, y: GAME_CONFIG.ARENA_HEIGHT - 150, color: '#00f0ff', count: 8, scale: 1.5 },
+      { x: GAME_CONFIG.ARENA_WIDTH - 290, y: GAME_CONFIG.ARENA_HEIGHT - 230, color: '#00f0ff', count: 5, scale: 1.1 },
     ];
 
     this.resize();
@@ -377,12 +435,13 @@ export class Renderer {
     // 1. Volumetric Deep Indigo Center Illumination (Matching Reference Image)
     try {
       const spaceGrad = ctx.createRadialGradient(
-        GAME_CONFIG.ARENA_WIDTH / 2, GAME_CONFIG.ARENA_HEIGHT / 2, 60,
-        GAME_CONFIG.ARENA_WIDTH / 2, GAME_CONFIG.ARENA_HEIGHT / 2, GAME_CONFIG.ARENA_WIDTH * 0.55
+        GAME_CONFIG.ARENA_WIDTH / 2, GAME_CONFIG.ARENA_HEIGHT / 2, 80,
+        GAME_CONFIG.ARENA_WIDTH / 2, GAME_CONFIG.ARENA_HEIGHT / 2, GAME_CONFIG.ARENA_WIDTH * 0.58
       );
-      spaceGrad.addColorStop(0, 'rgba(18, 30, 85, 0.42)');
-      spaceGrad.addColorStop(0.5, 'rgba(10, 18, 52, 0.25)');
-      spaceGrad.addColorStop(1, 'rgba(4, 8, 20, 0)');
+      spaceGrad.addColorStop(0, 'rgba(20, 36, 96, 0.52)');
+      spaceGrad.addColorStop(0.35, 'rgba(12, 22, 64, 0.35)');
+      spaceGrad.addColorStop(0.7, 'rgba(6, 12, 34, 0.22)');
+      spaceGrad.addColorStop(1, 'rgba(2, 5, 14, 0)');
       ctx.fillStyle = spaceGrad;
       ctx.fillRect(0, 0, GAME_CONFIG.ARENA_WIDTH, GAME_CONFIG.ARENA_HEIGHT);
     } catch (e) { /* gradient guard */ }
@@ -392,17 +451,24 @@ export class Renderer {
       this._drawFloatingHexagons(ctx, halfViewW, halfViewH);
     } catch (e) { /* hex guard */ }
 
-    // 3. Draw elastic grid & glowing arena borders
+    // 3. Draw Elastic Grid & High-Tech Floor Architecture
     try {
-      const pulseAlpha = 0.05 + Math.sin(this.gridPulse) * 0.025;
+      const pulseAlpha = 0.14 + Math.sin(this.gridPulse) * 0.04;
       this.grid.draw(ctx, this.camera.x - halfViewW, this.camera.y - halfViewH, halfViewW * 2, halfViewH * 2, pulseAlpha, this.sectorAccent);
+      this._drawCyberConduits(ctx, halfViewW, halfViewH);
       this._drawBorders(ctx);
+      this._drawPerimeterBulkheads(ctx, halfViewW, halfViewH);
     } catch (e) { /* grid/border guard */ }
 
-    // 4. Ambient Glowing Crystal Clusters (Corners Matching Reference Image)
+    // 4. Ambient Glowing Crystal Clusters (Central & Perimeter Formations)
     try {
       this._drawCrystalClusters(ctx, halfViewW, halfViewH);
     } catch (e) { /* crystal cluster guard */ }
+
+    // 5. Atmospheric Floating Cyber Motes (Volumetric Parallax Embers)
+    try {
+      this._drawAmbientMotes(ctx, halfViewW, halfViewH);
+    } catch (e) { /* motes guard */ }
   }
 
   _drawFloatingHexagons(ctx, halfViewW, halfViewH) {
@@ -569,6 +635,219 @@ export class Renderer {
     ctx.stroke();
 
     ctx.restore();
+  }
+
+  _drawCyberConduits(ctx, halfViewW, halfViewH) {
+    this.conduitPulse = (this.conduitPulse || 0) + 0.016 * 1.5;
+    ctx.save();
+    try {
+      for (let i = 0; i < this.cyberConduits.length; i++) {
+        const c = this.cyberConduits[i];
+        const minX = Math.min(c.from.x, c.to.x) - 40;
+        const maxX = Math.max(c.from.x, c.to.x) + 40;
+        const minY = Math.min(c.from.y, c.to.y) - 40;
+        const maxY = Math.max(c.from.y, c.to.y) + 40;
+
+        if (this.camera.x + halfViewW < minX || this.camera.x - halfViewW > maxX ||
+            this.camera.y + halfViewH < minY || this.camera.y - halfViewH > maxY) continue;
+
+        // Recessed dark floor groove
+        ctx.strokeStyle = 'rgba(6, 14, 32, 0.75)';
+        ctx.lineWidth = 10;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(c.from.x, c.from.y);
+        ctx.lineTo(c.to.x, c.to.y);
+        ctx.stroke();
+
+        // Glowing neon energy core rail
+        ctx.strokeStyle = c.color;
+        ctx.globalAlpha = 0.35;
+        ctx.lineWidth = 2.4;
+        ctx.beginPath();
+        ctx.moveTo(c.from.x, c.from.y);
+        ctx.lineTo(c.to.x, c.to.y);
+        ctx.stroke();
+
+        // Traveling electric energy packets
+        const dx = c.to.x - c.from.x;
+        const dy = c.to.y - c.from.y;
+        const pips = c.pips || 3;
+        ctx.fillStyle = '#ffffff';
+        ctx.globalAlpha = 0.85;
+
+        for (let p = 0; p < pips; p++) {
+          const t = ((this.conduitPulse + p / pips) % 1);
+          const px = c.from.x + dx * t;
+          const py = c.from.y + dy * t;
+          ctx.beginPath();
+          ctx.arc(px, py, 2.5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+    } finally {
+      ctx.restore();
+    }
+  }
+
+  _drawPerimeterBulkheads(ctx, halfViewW, halfViewH) {
+    const W = GAME_CONFIG.ARENA_WIDTH;
+    const H = GAME_CONFIG.ARENA_HEIGHT;
+
+    ctx.save();
+    try {
+      // 1. TOP-LEFT CORNER INDUSTRIAL BULKHEAD (Matching Storyboard Reference)
+      if (this.camera.x - halfViewW < 520 && this.camera.y - halfViewH < 520) {
+        this._renderBulkheadUnit(ctx, 0, 0, 1, 1);
+      }
+
+      // 2. BOTTOM-RIGHT CORNER INDUSTRIAL BULKHEAD (Matching Storyboard Reference)
+      if (this.camera.x + halfViewW > W - 520 && this.camera.y + halfViewH > H - 520) {
+        this._renderBulkheadUnit(ctx, W, H, -1, -1);
+      }
+
+      // 3. TOP-RIGHT CORNER BASTION
+      if (this.camera.x + halfViewW > W - 520 && this.camera.y - halfViewH < 520) {
+        this._renderBulkheadUnit(ctx, W, 0, -1, 1);
+      }
+
+      // 4. BOTTOM-LEFT CORNER BASTION
+      if (this.camera.x - halfViewW < 520 && this.camera.y + halfViewH > H - 520) {
+        this._renderBulkheadUnit(ctx, 0, H, 1, -1);
+      }
+    } finally {
+      ctx.restore();
+    }
+  }
+
+  _renderBulkheadUnit(ctx, originX, originY, dirX, dirY) {
+    ctx.save();
+    ctx.translate(originX, originY);
+    ctx.scale(dirX, dirY);
+
+    // Dark metallic chassis plate
+    ctx.fillStyle = '#0a1024';
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(440, 0);
+    ctx.lineTo(340, 120);
+    ctx.lineTo(200, 220);
+    ctx.lineTo(120, 340);
+    ctx.lineTo(0, 440);
+    ctx.closePath();
+    ctx.fill();
+
+    // Secondary armored rim
+    ctx.fillStyle = '#111a36';
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(380, 0);
+    ctx.lineTo(300, 95);
+    ctx.lineTo(170, 190);
+    ctx.lineTo(95, 300);
+    ctx.lineTo(0, 380);
+    ctx.closePath();
+    ctx.fill();
+
+    // Hazard Caution Striping Segment (Matching Reference Screenshot)
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(340, 120);
+    ctx.lineTo(200, 220);
+    ctx.lineTo(170, 190);
+    ctx.lineTo(300, 95);
+    ctx.closePath();
+    ctx.clip();
+
+    ctx.fillStyle = '#ffaa00';
+    ctx.fillRect(150, 80, 220, 160);
+
+    ctx.fillStyle = '#080d1a';
+    ctx.lineWidth = 12;
+    for (let s = -60; s < 300; s += 24) {
+      ctx.beginPath();
+      ctx.moveTo(s, 0);
+      ctx.lineTo(s + 120, 260);
+      ctx.lineTo(s + 104, 260);
+      ctx.lineTo(s - 16, 0);
+      ctx.closePath();
+      ctx.fill();
+    }
+    ctx.restore();
+
+    // Glowing Neon Edge Rail & Cyber Seams
+    ctx.strokeStyle = '#00f0ff';
+    ctx.shadowColor = '#00f0ff';
+    ctx.shadowBlur = 12;
+    ctx.lineWidth = 2.8;
+    ctx.beginPath();
+    ctx.moveTo(440, 0);
+    ctx.lineTo(340, 120);
+    ctx.lineTo(200, 220);
+    ctx.lineTo(120, 340);
+    ctx.lineTo(0, 440);
+    ctx.stroke();
+
+    // Cyan status ventilation louvers
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = 'rgba(0, 240, 255, 0.65)';
+    ctx.lineWidth = 2.2;
+    for (let v = 0; v < 4; v++) {
+      const vx = 65 + v * 20;
+      const vy = 65 + v * 20;
+      ctx.beginPath();
+      ctx.moveTo(vx - 14, vy + 14);
+      ctx.lineTo(vx + 14, vy - 14);
+      ctx.stroke();
+    }
+
+    ctx.restore();
+  }
+
+  _drawAmbientMotes(ctx, halfViewW, halfViewH) {
+    const W = GAME_CONFIG.ARENA_WIDTH;
+    const H = GAME_CONFIG.ARENA_HEIGHT;
+    const minX = this.camera.x - halfViewW - 60;
+    const maxX = this.camera.x + halfViewW + 60;
+    const minY = this.camera.y - halfViewH - 60;
+    const maxY = this.camera.y + halfViewH + 60;
+
+    ctx.save();
+    try {
+      for (let i = 0; i < this.ambientMotes.length; i++) {
+        const m = this.ambientMotes[i];
+        m.x += m.vx * 0.016;
+        m.y += m.vy * 0.016;
+
+        // Wrap around arena
+        if (m.x < 0) m.x += W;
+        if (m.x > W) m.x -= W;
+        if (m.y < 0) m.y += H;
+        if (m.y > H) m.y -= H;
+
+        if (m.x < minX || m.x > maxX || m.y < minY || m.y > maxY) continue;
+
+        const pulse = 0.5 + Math.sin(this.gridPulse * m.pulseSpeed + m.offset) * 0.5;
+        const alpha = m.baseAlpha * (0.6 + pulse * 0.4);
+
+        ctx.fillStyle = m.color;
+        ctx.globalAlpha = alpha;
+        ctx.beginPath();
+        ctx.arc(m.x, m.y, m.size, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Hot center
+        if (m.size > 2) {
+          ctx.fillStyle = '#ffffff';
+          ctx.globalAlpha = alpha * 0.8;
+          ctx.beginPath();
+          ctx.arc(m.x, m.y, m.size * 0.4, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+    } finally {
+      ctx.restore();
+    }
   }
 
   _drawGlitch(ctx) {

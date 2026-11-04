@@ -15,7 +15,7 @@ const distance = (a,b) => Math.hypot(a.x-b.x,a.y-b.y);
 const cleanName = (s) => typeof s === 'string' ? s.replace(/[^\p{L}\p{N} _-]/gu,'').trim().slice(0,16) || 'Pilot' : 'Pilot';
 const zero = () => ({mx:0,my:0,aim:0,fire:false});
 const playing = (room) => room.state === 'ACTIVE' || room.state === 'OVERTIME';
-const connected = (p) => p.socket?.readyState === WebSocket.OPEN;
+const connected = (p) => p.isBot || p.socket?.readyState === WebSocket.OPEN;
 
 export function createRoom(code, isPublic = false, time = Date.now()) {
   return { code, isPublic, hostId:null, state:'LOBBY', createdAt:time, clock:time, round:1,
@@ -38,12 +38,13 @@ function spawn(room, p) {
 function addPlayer(room, id, socket, data) {
   const blue=[...room.players.values()].filter(p=>p.team==='BLUE').length;
   const red=room.players.size-blue;
-  const team=blue<=red?'BLUE':'RED';
+  const team=data.team&&['BLUE','RED'].includes(data.team)?data.team:(blue<=red?'BLUE':'RED');
   const weapon=weaponValid(data.weapon)?data.weapon:'pulse_pistol_mk1';
+  const isBot=!!data.isBot;
   const p={id,name:cleanName(data.name),team,weapon,socket,token:randomBytes(24).toString('hex'),
-    isBot:false,ready:false,health:115,maxHealth:115,shield:0,alive:true,aim:team==='BLUE'?0:Math.PI,
+    isBot,ready:isBot?true:false,health:115,maxHealth:115,shield:0,alive:true,aim:team==='BLUE'?0:Math.PI,
     kills:0,deaths:0,assists:0,damage:0,score:0,ultimate:0,damageBy:new Map(),input:zero(),pending:[],
-    lastInputAt:room.clock,lastSeq:0,ack:0,lastChatAt:0,disconnectedAt:0,ping:0,
+    lastInputAt:room.clock,lastSeq:0,ack:0,lastChatAt:0,disconnectedAt:0,ping:isBot?8:0,
     lastShotAt:0,dashReadyAt:0,aegisReadyAt:0,waveReadyAt:0,shieldUntil:0};
   room.players.set(id,p); if(!room.hostId) room.hostId=id;
   spawn(room,p); return p;
@@ -145,7 +146,7 @@ function resetRound(room) {
   room.lobbyDeadline=0;room.projectiles=[];
   room.pickups=PICKUPS.map(p=>({...p,active:true,respawnAt:0}));
   for(const p of room.players.values()){
-    Object.assign(p,{ready:false,kills:0,deaths:0,assists:0,damage:0,score:0,ultimate:0,
+    Object.assign(p,{ready:p.isBot?true:false,kills:0,deaths:0,assists:0,damage:0,score:0,ultimate:0,
       dashReadyAt:0,aegisReadyAt:0,waveReadyAt:0,lastShotAt:0});spawn(room,p);
   }
 }
@@ -171,6 +172,53 @@ export function simulate(room,dt,time=Date.now()) {
     if(!p.alive){if(time>=p.respawnAt)spawn(room,p);else continue;}
     if(p.shieldUntil<=time)p.shield=0;
     if(p.reloadUntil&&p.reloadUntil<=time){p.ammo=WEAPONS[p.weapon].magazine;p.reloadUntil=0;}
+    if(p.isBot){
+      p.lastInputAt=time;
+      const enemies=[...room.players.values()].filter(e=>e.team!==p.team&&e.alive);
+      if(enemies.length>0){
+        let bestEnemy=null,bestDist=Infinity;
+        for(const e of enemies){
+          const d=distance(p,e);
+          const clear=lineClear(p,e);
+          const score=d-(clear?250:0);
+          if(score<bestDist){bestDist=score;bestEnemy=e;}
+        }
+        if(bestEnemy){
+          const d=distance(p,bestEnemy);
+          const angle=Math.atan2(bestEnemy.y-p.y,bestEnemy.x-p.x);
+          p.aim=angle;
+          let mx=0,my=0;
+          if(d>320){
+            mx=Math.cos(angle);my=Math.sin(angle);
+          }else if(d<160){
+            const strafe=Math.sin(time*0.003+p.id.length)*0.6;
+            mx=-Math.cos(angle)*0.6-Math.sin(angle)*strafe;
+            my=-Math.sin(angle)*0.6+Math.cos(angle)*strafe;
+          }else{
+            const strafeDir=(p.id.charCodeAt(p.id.length-1)%2===0?1:-1);
+            mx=-Math.sin(angle)*strafeDir*0.85+Math.cos(angle)*0.2;
+            my=Math.cos(angle)*strafeDir*0.85+Math.sin(angle)*0.2;
+          }
+          p.input={mx,my,aim:p.aim,fire:false};
+          const clear=lineClear(p,bestEnemy);
+          if(clear&&d<520){
+            if(p.ammo<=0&&!p.reloadUntil){p.reloadUntil=time+WEAPONS[p.weapon].reload;}
+            else if(p.ammo>0&&!p.reloadUntil){shot(room,p);}
+            if(p.health<60&&p.aegisReadyAt<=time)ability(room,p,'aegis');
+            if(d<150&&p.waveReadyAt<=time)ability(room,p,'wave');
+            if(p.ultimate>=100&&d<400)ability(room,p,'ultimate');
+          }
+        }
+      }else{
+        const angle=Math.atan2(ARENA.height/2-p.y,ARENA.width/2-p.x);
+        p.input={mx:Math.cos(angle)*0.5,my:Math.sin(angle)*0.5,aim:angle,fire:false};
+      }
+      const before={x:p.x,y:p.y};
+      if(p.dashUntil>time)moveBody(p,p.dashX*190/.18*dt,p.dashY*190/.18*dt);
+      else moveInput(p,p.input,dt);
+      p.vx=(p.x-before.x)/dt;p.vy=(p.y-before.y)/dt;
+      continue;
+    }
     const command=p.pending.shift();
     if(command){p.input=command;p.aim=command.aim;p.ack=command.seq;if(command.ability)ability(room,p,command.ability);
       if(command.reload&&p.ammo<WEAPONS[p.weapon].magazine&&!p.reloadUntil)p.reloadUntil=time+WEAPONS[p.weapon].reload;}
@@ -205,7 +253,7 @@ export function snapshot(room) {
   return {type:'TDM_SNAPSHOT',roomCode:room.code,round:room.round,tick:room.tick,state:room.state,hostId:room.hostId,
     winner:room.winner,score:{...room.score},targetScore:40,world:ARENA,
     remainingMs:Math.max(0,(room.state==='COUNTDOWN'?room.countdownEndsAt:room.state==='ACTIVE'?room.endsAt:room.state==='OVERTIME'?room.overtimeEndsAt:room.lobbyDeadline)-t),
-    players:[...room.players.values()].map(p=>({id:p.id,name:p.name,team:p.team,isBot:false,ready:p.ready,connected:connected(p),ping:p.ping,
+    players:[...room.players.values()].map(p=>({id:p.id,name:p.name,team:p.team,isBot:!!p.isBot,ready:p.ready,connected:connected(p),ping:p.ping,
       weapon:p.weapon,x:p.x,y:p.y,vx:p.vx,vy:p.vy,aim:p.aim,ack:p.ack,health:p.health,maxHealth:115,alive:p.alive,
       respawnMs:Math.max(0,p.respawnAt-t),protected:p.protectedUntil>t,shield:p.shield,ultimate:p.ultimate,
       kills:p.kills,deaths:p.deaths,assists:p.assists,damage:Math.round(p.damage),personalScore:p.score,ammo:p.ammo,magazine:WEAPONS[p.weapon].magazine,
@@ -233,7 +281,7 @@ export function setupTeamDeathmatch(wss) {
         if(!p||!p.disconnectedAt||t-p.disconnectedAt>45000)return error(ws,'Your arena reservation expired. Join again.');
         p.socket=ws;p.disconnectedAt=0;p.pending=[];p.input=zero();welcome(ws,room,p);return;
       }
-      if(['TDM_QUICK_MATCH','TDM_CREATE_ROOM','TDM_JOIN_ROOM'].includes(m.type)){
+      if(['TDM_QUICK_MATCH','TDM_CREATE_ROOM','TDM_JOIN_ROOM','TDM_PRACTICE'].includes(m.type)){
         if(sessions.has(ws))return error(ws,'Already in an arena. Leave before joining another.');
         let room;
         if(m.type==='TDM_QUICK_MATCH')room=[...rooms.values()].find(r=>r.isPublic&&r.state!=='ENDED'&&r.players.size<8);
@@ -244,7 +292,18 @@ export function setupTeamDeathmatch(wss) {
         if(!room){room=createRoom(code(),m.type==='TDM_QUICK_MATCH');rooms.set(room.code,room);}
         if(room.players.size>=8)return error(ws,'Arena full: four players per team.');
         if(room.state==='ENDED')return error(ws,'Match ended. Ask the host to start a rematch.');
-        const p=addPlayer(room,`p${++id}`,ws,m);welcome(ws,room,p);event(room,'PLAYER_JOINED',{name:p.name,team:p.team});return;
+        const p=addPlayer(room,`p${++id}`,ws,m);welcome(ws,room,p);event(room,'PLAYER_JOINED',{name:p.name,team:p.team});
+        if(m.type==='TDM_PRACTICE'){
+          const botNames=['Viper AI','Apex AI','Ghost AI','Titan AI','Raptor AI','Phantom AI','Specter AI'];
+          const botWeapons=['pulse_pistol_mk1','arc_smg','prism_rifle','nova_shotgun','rail_lance'];
+          let bIdx=0;
+          while(room.players.size<8){
+            const bot=addPlayer(room,`bot_${++id}`,null,{name:botNames[bIdx%botNames.length],weapon:botWeapons[bIdx%botWeapons.length],isBot:true});
+            bIdx++;
+            event(room,'PLAYER_JOINED',{name:bot.name,team:bot.team});
+          }
+        }
+        return;
       }
       const session=sessions.get(ws);if(!session)return;
       const {room,player:p}=session;room.clock=t;
@@ -256,6 +315,16 @@ export function setupTeamDeathmatch(wss) {
       if(m.type==='TDM_TEAM'&&room.state==='LOBBY'&&['BLUE','RED'].includes(m.team)&&m.team!==p.team){
         if([...room.players.values()].filter(e=>e.team===m.team).length>=4)return error(ws,'That team is full.');
         p.team=m.team;p.ready=false;spawn(room,p);
+      }
+      if(m.type==='TDM_FILL_BOTS'&&room.state==='LOBBY'){
+        const botNames=['Viper AI','Apex AI','Ghost AI','Titan AI','Raptor AI','Phantom AI','Specter AI','Echo AI'];
+        const botWeapons=['pulse_pistol_mk1','arc_smg','prism_rifle','nova_shotgun','rail_lance'];
+        let bIdx=0;
+        while(room.players.size<8){
+          const bot=addPlayer(room,`bot_${++id}`,null,{name:botNames[bIdx%botNames.length],weapon:botWeapons[bIdx%botWeapons.length],isBot:true});
+          bIdx++;
+          event(room,'PLAYER_JOINED',{name:bot.name,team:bot.team});
+        }
       }
       if(m.type==='TDM_LOADOUT'&&room.state==='LOBBY'&&weaponValid(m.weapon)){p.weapon=m.weapon;p.ammo=WEAPONS[m.weapon].magazine;p.ready=false;}
       if(m.type==='TDM_REMATCH'&&room.state==='ENDED'){

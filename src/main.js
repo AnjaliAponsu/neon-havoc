@@ -1,6 +1,6 @@
 // NEON HAVOC — 30X Master Game Loop, Spatial Hash Grid, Fast Glow & UI/UX
 
-import { GAME_CONFIG, SECTORS, META_UPGRADES, ENEMY_TYPES, COLORS, MULTIPLAYER_CONFIG } from './constants.js';
+import { GAME_CONFIG, SECTORS, META_UPGRADES, ENEMY_TYPES, COLORS, MULTIPLAYER_CONFIG, POWERUP_TYPES } from './constants.js';
 import { soundEngine } from './audio.js';
 import { saveManager } from './saveManager.js';
 import { InputManager } from './input.js';
@@ -1261,6 +1261,22 @@ class NeonHavocGame {
 
     this.waveManager = new WaveManager(this.currentSector);
 
+    // Spawn immediate opening Vanguard scouting wave (Instant Action)
+    this.waveManager.spawnOpeningVanguard(this.players, this.enemies, this.particlePool, soundEngine);
+
+    // Pre-populate tactical supply drops nearby as in reference storyboard
+    const px = camInitPlayer.x;
+    const py = camInitPlayer.y;
+    this.powerupManager.spawn(px - 320, py - 180, POWERUP_TYPES.HEALTH);
+    this.powerupManager.spawn(px + 340, py + 210, POWERUP_TYPES.OVERDRIVE);
+
+    // Scatter 12 gleaming XP diamond crystals around the opening arena
+    for (let i = 0; i < 12; i++) {
+      const ca = (i * Math.PI * 2) / 12 + Math.random() * 0.4;
+      const cd = 160 + Math.random() * 260;
+      this.crystalPool.spawn(px + Math.cos(ca) * cd, py + Math.sin(ca) * cd, 10);
+    }
+
     // Audio & State
     soundEngine.startMusic();
     soundEngine.setIntensity(1);
@@ -1468,6 +1484,11 @@ class NeonHavocGame {
     const force = enemy.isBoss ? 85 : enemy.isElite ? 55 : enemy.type === 'tank' ? 45 : 25;
     const rad = enemy.isBoss ? 350 : enemy.isElite ? 240 : enemy.type === 'tank' ? 200 : 130;
     this.renderer.grid.applyExplosion(enemy.x, enemy.y, force, rad);
+
+    // Fiery Starburst Kill Explosion & Radiant Shock Ring (Matching Reference Storyboard)
+    this.particlePool.spawnStarburst(enemy.x, enemy.y, '#ffe600', enemy.radius * 1.6);
+    this.particlePool.spawnShockwave(enemy.x, enemy.y, enemy.glow || '#ff00aa', enemy.radius * 2.2);
+    this.particlePool.burst(enemy.x, enemy.y, enemy.color || '#ff2255', enemy.isBoss ? 50 : enemy.isElite ? 22 : 10, 240, 2.5);
 
     // Screen Shake Trauma
     if (saveManager.data.settings.screenShake) {
@@ -2149,7 +2170,7 @@ class NeonHavocGame {
     this.dom.cdShield.style.height = `${shieldCdPct}%`;
     this.dom.slotShield.classList.toggle('ready', p.shieldCdTimer <= 0);
     if (this.dom.lblShield) {
-      this.dom.lblShield.textContent = p.shieldCdTimer > 0 ? `[E] ${p.shieldCdTimer.toFixed(1)}s` : '[E] REGIS';
+      this.dom.lblShield.textContent = p.shieldCdTimer > 0 ? `[E] ${p.shieldCdTimer.toFixed(1)}s` : '[E] AEGIS';
     }
 
     const waveCdPct = p.shockwaveCdTimer > 0 ? (p.shockwaveCdTimer / p.shockwaveCooldown) * 100 : 0;
