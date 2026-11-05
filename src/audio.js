@@ -544,6 +544,128 @@ class SoundEngine {
     osc.stop(t + 0.08);
   }
 
+  playHitmarker(isFatal = false) {
+    if (!this.ctx || this.isMuted) return;
+    this.resume();
+    const t = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+
+    osc.type = isFatal ? 'triangle' : 'sine';
+    osc.frequency.setValueAtTime(isFatal ? 1600 : 1200, t);
+    osc.frequency.exponentialRampToValueAtTime(isFatal ? 600 : 800, t + 0.05);
+
+    gain.gain.setValueAtTime(isFatal ? 0.35 : 0.18, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
+
+    osc.connect(gain);
+    gain.connect(this.sfxGain);
+    osc.start(t);
+    osc.stop(t + 0.05);
+  }
+
+  playShieldCrack() {
+    if (!this.ctx || this.isMuted) return;
+    this.resume();
+    const t = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(2400, t);
+    osc.frequency.exponentialRampToValueAtTime(320, t + 0.18);
+
+    gain.gain.setValueAtTime(0.28, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+
+    osc.connect(gain);
+    gain.connect(this.sfxGain);
+    osc.start(t);
+    osc.stop(t + 0.18);
+    this._playNoise(0.14, 0.18, 2200);
+  }
+
+  playKillstreak(level = 1) {
+    if (!this.ctx || this.isMuted) return;
+    this.resume();
+    const t = this.ctx.currentTime;
+    const notes = level >= 4 ? [440, 554, 659, 880] : level >= 2 ? [330, 440, 554] : [261, 330, 392];
+    notes.forEach((freq, idx) => {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      const noteTime = t + idx * 0.07;
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(freq, noteTime);
+      gain.gain.setValueAtTime(0.18, noteTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, noteTime + 0.22);
+      osc.connect(gain);
+      gain.connect(this.sfxGain);
+      osc.start(noteTime);
+      osc.stop(noteTime + 0.22);
+    });
+  }
+
+  playTacticalPing() {
+    if (!this.ctx || this.isMuted) return;
+    this.resume();
+    const t = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(1400, t);
+    osc.frequency.exponentialRampToValueAtTime(880, t + 0.12);
+
+    gain.gain.setValueAtTime(0.25, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+
+    osc.connect(gain);
+    gain.connect(this.sfxGain);
+    osc.start(t);
+    osc.stop(t + 0.12);
+  }
+
+  playNexusCapture() {
+    if (!this.ctx || this.isMuted) return;
+    this.resume();
+    const t = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(180, t);
+    osc.frequency.exponentialRampToValueAtTime(880, t + 0.35);
+
+    gain.gain.setValueAtTime(0.38, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.42);
+
+    osc.connect(gain);
+    gain.connect(this.sfxGain);
+    osc.start(t);
+    osc.stop(t + 0.42);
+    this.playShockwave();
+  }
+
+  playLowAmmo() {
+    if (!this.ctx || this.isMuted) return;
+    this.resume();
+    const t = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(600, t);
+    osc.frequency.exponentialRampToValueAtTime(300, t + 0.04);
+
+    gain.gain.setValueAtTime(0.12, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
+
+    osc.connect(gain);
+    gain.connect(this.sfxGain);
+    osc.start(t);
+    osc.stop(t + 0.04);
+  }
+
   _playNoise(duration, volume, filterFreq = 1000) {
     if (!this.ctx) return;
     const t = this.ctx.currentTime;

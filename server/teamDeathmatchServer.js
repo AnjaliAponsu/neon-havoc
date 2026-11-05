@@ -9,6 +9,8 @@ export const WEAPONS = {
   nova_shotgun: { name:'Nova Shotgun', damage:8, rate:1.35, speed:800, range:460, radius:5, magazine:8, reload:1800, pellets:6, spread:.28 },
   rail_lance: { name:'Rail Lance', damage:38, rate:.85, speed:1600, range:1600, radius:5, magazine:6, reload:1800, pierce:2 },
   plasma_cannon: { name:'Plasma Cannon', damage:28, rate:1.05, speed:560, range:1000, radius:11, magazine:8, reload:1800, splash:100 },
+  tesla_carbine: { name:'Tesla Carbine', damage:10, rate:6.5, speed:980, range:850, radius:5, magazine:28, reload:1400, chain:130 },
+  vortex_launcher: { name:'Vortex Launcher', damage:32, rate:0.9, speed:620, range:950, radius:12, magazine:5, reload:1900, vortex:140, splash:110 },
 };
 const weaponValid = (id) => Object.hasOwn(WEAPONS, id);
 const distance = (a,b) => Math.hypot(a.x-b.x,a.y-b.y);
@@ -21,7 +23,12 @@ export function createRoom(code, isPublic = false, time = Date.now()) {
   return { code, isPublic, hostId:null, state:'LOBBY', createdAt:time, clock:time, round:1,
     players:new Map(), projectiles:[], events:[], nextId:1, tick:0, score:{BLUE:0,RED:0},
     winner:null, endedAt:0, countdownEndsAt:0, lobbyDeadline:0, endsAt:0, overtimeEndsAt:0,
-    pickups:PICKUPS.map(p=>({...p,active:true,respawnAt:0})) };
+    pickups:PICKUPS.map(p=>({...p,active:true,respawnAt:0})),
+    nexus:{
+      x:1280, y:605, radius:155, control:0, state:'NEUTRAL',
+      overchargeTeam:null, overchargeUntil:0, cooldownUntil:0
+    }
+  };
 }
 function spawn(room, p) {
   const enemies = [...room.players.values()].filter(e=>e.team!==p.team&&e.alive);
@@ -32,7 +39,8 @@ function spawn(room, p) {
     return score(b)-score(a);
   });
   Object.assign(p,points[0],{health:115,shield:0,alive:true,respawnAt:0,protectedUntil:room.clock+2000,
-    ammo:WEAPONS[p.weapon].magazine,reloadUntil:0,dashUntil:0,vx:0,vy:0,input:zero(),pending:[]});
+    ammo:WEAPONS[p.weapon].magazine,reloadUntil:0,dashUntil:0,vx:0,vy:0,input:zero(),pending:[],
+    streak:0,multiKills:0,overchargedUntil:0});
   p.damageBy.clear();
 }
 function addPlayer(room, id, socket, data) {
@@ -45,7 +53,8 @@ function addPlayer(room, id, socket, data) {
     isBot,ready:isBot?true:false,health:115,maxHealth:115,shield:0,alive:true,aim:team==='BLUE'?0:Math.PI,
     kills:0,deaths:0,assists:0,damage:0,score:0,ultimate:0,damageBy:new Map(),input:zero(),pending:[],
     lastInputAt:room.clock,lastSeq:0,ack:0,lastChatAt:0,disconnectedAt:0,ping:isBot?8:0,
-    lastShotAt:0,dashReadyAt:0,aegisReadyAt:0,waveReadyAt:0,shieldUntil:0};
+    lastShotAt:0,dashReadyAt:0,aegisReadyAt:0,waveReadyAt:0,shieldUntil:0,
+    streak:0,multiKills:0,lastKillAt:0,overchargedUntil:0};
   room.players.set(id,p); if(!room.hostId) room.hostId=id;
   spawn(room,p); return p;
 }
@@ -64,16 +73,54 @@ export function damage(room,target,attacker,amount,weapon=attacker.weapon) {
   const dealt=Math.min(target.health,amount-absorbed);target.health-=dealt;
   attacker.damage+=dealt;attacker.ultimate=clamp(attacker.ultimate+dealt*.12,0,100);
   if(dealt+absorbed>0) target.damageBy.set(attacker.id,room.clock);
-  event(room,'HIT',{targetId:target.id,attackerId:attacker.id,x:target.x,y:target.y,amount:Math.round(dealt+absorbed),shield:absorbed>0});
+  event(room,'HIT',{targetId:target.id,attackerId:attacker.id,x:target.x,y:target.y,amount:Math.round(dealt+absorbed),shield:absorbed>0,fatal:target.health<=0});
   if(target.health>0) return;
   target.alive=false;target.deaths++;target.respawnAt=room.clock+4000;target.pending=[];target.input=zero();
+
+  const prevStreak = target.streak || 0;
+  target.streak = 0;
+
   attacker.kills++;attacker.score+=100;room.score[attacker.team]++;
+  attacker.streak = (attacker.streak || 0) + 1;
+
+  if (!attacker.lastKillAt || room.clock - attacker.lastKillAt > 4500) {
+    attacker.multiKills = 1;
+  } else {
+    attacker.multiKills = (attacker.multiKills || 1) + 1;
+  }
+  attacker.lastKillAt = room.clock;
+
+  let streakTitle = null;
+  if (attacker.streak === 3) streakTitle = 'KILLING SPREE';
+  else if (attacker.streak === 5) streakTitle = 'RAMPAGE';
+  else if (attacker.streak === 7) streakTitle = 'DOMINATING';
+  else if (attacker.streak === 10) streakTitle = 'UNSTOPPABLE';
+  else if (attacker.streak >= 15 && attacker.streak % 5 === 0) streakTitle = 'GODLIKE';
+
+  let multiKillTitle = null;
+  if (attacker.multiKills === 2) { multiKillTitle = 'DOUBLE KILL'; attacker.score += 50; }
+  else if (attacker.multiKills === 3) { multiKillTitle = 'TRIPLE KILL'; attacker.score += 100; }
+  else if (attacker.multiKills === 4) { multiKillTitle = 'QUADRA KILL'; attacker.score += 150; }
+  else if (attacker.multiKills >= 5) { multiKillTitle = 'ACE'; attacker.score += 250; }
+
+  if (streakTitle) {
+    event(room, 'STREAK', { playerId: attacker.id, playerName: attacker.name, team: attacker.team, streak: attacker.streak, title: streakTitle });
+  }
+  if (multiKillTitle) {
+    event(room, 'MULTIKILL', { playerId: attacker.id, playerName: attacker.name, team: attacker.team, multiKills: attacker.multiKills, title: multiKillTitle });
+  }
+  if (prevStreak >= 3) {
+    const bounty = prevStreak * 50;
+    attacker.score += bounty;
+    event(room, 'SHUTDOWN', { killerId: attacker.id, killerName: attacker.name, victimId: target.id, victimName: target.name, bounty, team: attacker.team });
+  }
+
   for(const [id,at] of target.damageBy) {
     const p=room.players.get(id);
     if(p&&p!==attacker&&p.team===attacker.team&&room.clock-at<=8000){p.assists++;p.score+=40;}
   }
   event(room,'ELIMINATION',{killer:attacker.name,victim:target.name,killerId:attacker.id,victimId:target.id,
-    x:target.x,y:target.y,weapon:WEAPONS[weapon]?.name||'Meteor',team:attacker.team});
+    x:target.x,y:target.y,weapon:WEAPONS[weapon]?.name||'Meteor',team:attacker.team,streak:attacker.streak});
   if(room.score[attacker.team]>=40||room.state==='OVERTIME') end(room,attacker.team);
 }
 function shot(room,p,meteor=false) {
@@ -86,10 +133,11 @@ function shot(room,p,meteor=false) {
     const angle=p.aim+(w.pellets?(n/(w.pellets-1)-.5)*2*(w.spread||0):(Math.random()-.5)*(w.spread||0));
     room.projectiles.push({id:room.nextId++,ownerId:p.id,team:p.team,x:p.x,y:p.y,
       vx:Math.cos(angle)*w.speed,vy:Math.sin(angle)*w.speed,radius:w.radius,remaining:w.range,
-      damage:w.damage,pierce:w.pierce||1,splash:w.splash||0,hit:new Set(),meteor,
-      weapon:meteor?'meteor':p.weapon,color:meteor?'#ffc247':p.team==='BLUE'?'#ffbc45':'#ff40dd'});
+      damage:w.damage,pierce:w.pierce||1,splash:w.splash||0,chain:w.chain||0,vortex:w.vortex||0,
+      hit:new Set(),meteor,weapon:meteor?'meteor':p.weapon,
+      color:meteor?'#ffc247':p.weapon==='tesla_carbine'?'#00e5ff':p.weapon==='vortex_launcher'?'#b14dff':p.team==='BLUE'?'#ffbc45':'#ff40dd'});
   }
-  event(room,'SHOT',{playerId:p.id,x:p.x,y:p.y,aim:p.aim,team:p.team,meteor});
+  event(room,'SHOT',{playerId:p.id,x:p.x,y:p.y,aim:p.aim,team:p.team,meteor,weapon:meteor?'meteor':p.weapon});
 }
 function ability(room,p,type) {
   if(!playing(room)||!p.alive)return;
@@ -127,6 +175,14 @@ function bullets(room,dt) {
       const x=b.x+b.vx*dt/steps,y=b.y+b.vy*dt/steps;b.remaining-=length/steps;
       if(blocked(x,y,b.radius)||b.remaining<=0){
         if(b.splash)splash(room,b,owner);
+        if(b.vortex){
+          for(const target of room.players.values()){
+            if(target.alive&&target.team!==b.team&&distance(b,target)<b.vortex){
+              const a=Math.atan2(b.y-target.y,b.x-target.x);
+              moveBody(target,Math.cos(a)*55,Math.sin(a)*55);
+            }
+          }
+        }
         event(room,'IMPACT',{x:b.x,y:b.y,team:b.team});removed=true;break;
       }
       b.x=x;b.y=y;
@@ -134,6 +190,23 @@ function bullets(room,dt) {
         if(!target.alive||target.team===b.team||b.hit.has(target.id)||distance(target,b)>ARENA.radius+b.radius)continue;
         b.hit.add(target.id);
         if(b.splash)splash(room,b,owner);else damage(room,target,owner,b.damage,b.weapon);
+        if(b.chain){
+          for(const other of room.players.values()){
+            if(other.alive&&other.team!==owner.team&&other.id!==target.id&&distance(target,other)<=b.chain&&lineClear(target,other)){
+              damage(room,other,owner,Math.round(b.damage*0.65),b.weapon);
+              event(room,'CHAIN_LIGHTNING',{fromX:target.x,fromY:target.y,toX:other.x,toY:other.y,team:owner.team});
+              break;
+            }
+          }
+        }
+        if(b.vortex){
+          for(const other of room.players.values()){
+            if(other.alive&&other.team!==b.team&&distance(b,other)<b.vortex){
+              const a=Math.atan2(b.y-other.y,b.x-other.x);
+              moveBody(other,Math.cos(a)*55,Math.sin(a)*55);
+            }
+          }
+        }
         if(--b.pierce<=0){removed=true;break;}
       }
     }
@@ -145,9 +218,13 @@ function resetRound(room) {
   room.round++;room.score={BLUE:0,RED:0};room.winner=null;room.endedAt=0;room.state='LOBBY';
   room.lobbyDeadline=0;room.projectiles=[];
   room.pickups=PICKUPS.map(p=>({...p,active:true,respawnAt:0}));
+  if (room.nexus) {
+    room.nexus.control = 0; room.nexus.state = 'NEUTRAL';
+    room.nexus.overchargeTeam = null; room.nexus.overchargeUntil = 0; room.nexus.cooldownUntil = 0;
+  }
   for(const p of room.players.values()){
     Object.assign(p,{ready:p.isBot?true:false,kills:0,deaths:0,assists:0,damage:0,score:0,ultimate:0,
-      dashReadyAt:0,aegisReadyAt:0,waveReadyAt:0,lastShotAt:0});spawn(room,p);
+      dashReadyAt:0,aegisReadyAt:0,waveReadyAt:0,lastShotAt:0,streak:0,multiKills:0,overchargedUntil:0});spawn(room,p);
   }
 }
 export function simulate(room,dt,time=Date.now()) {
@@ -167,14 +244,81 @@ export function simulate(room,dt,time=Date.now()) {
     room.state='ACTIVE';room.startedAt=time;room.endsAt=time+360000;event(room,'MATCH_STARTED');
   }
   if(!playing(room))return;
+
+  // Central Nexus Tactical Objective Simulation
+  if(room.nexus){
+    const nx=room.nexus;
+    if(nx.overchargeUntil&&time>=nx.overchargeUntil){
+      nx.overchargeTeam=null;nx.state='NEUTRAL';
+    }
+    const insideBlue=[...room.players.values()].filter(p=>p.alive&&p.team==='BLUE'&&distance(p,nx)<nx.radius).length;
+    const insideRed=[...room.players.values()].filter(p=>p.alive&&p.team==='RED'&&distance(p,nx)<nx.radius).length;
+
+    if(insideBlue>0&&insideRed>0){
+      nx.state='CONTESTED';
+    }else if(insideBlue>0&&time>=nx.cooldownUntil){
+      nx.state='CAPTURING';
+      nx.control=Math.min(100,nx.control+dt*28);
+      if(nx.control>=100&&nx.overchargeTeam!=='BLUE'){
+        nx.control=100;nx.overchargeTeam='BLUE';nx.overchargeUntil=time+14000;nx.cooldownUntil=time+36000;
+        room.score.BLUE+=2;
+        for(const p of room.players.values()){
+          if(p.team==='BLUE'&&p.alive){
+            p.shield=Math.min(65,(p.shield||0)+35);
+            p.overchargedUntil=time+14000;
+          }
+        }
+        event(room,'NEXUS_OVERCHARGED',{team:'BLUE',score:{...room.score}});
+      }
+    }else if(insideRed>0&&time>=nx.cooldownUntil){
+      nx.state='CAPTURING';
+      nx.control=Math.max(-100,nx.control-dt*28);
+      if(nx.control<=-100&&nx.overchargeTeam!=='RED'){
+        nx.control=-100;nx.overchargeTeam='RED';nx.overchargeUntil=time+14000;nx.cooldownUntil=time+36000;
+        room.score.RED+=2;
+        for(const p of room.players.values()){
+          if(p.team==='RED'&&p.alive){
+            p.shield=Math.min(65,(p.shield||0)+35);
+            p.overchargedUntil=time+14000;
+          }
+        }
+        event(room,'NEXUS_OVERCHARGED',{team:'RED',score:{...room.score}});
+      }
+    }else if(time>=nx.cooldownUntil){
+      if(nx.control>0)nx.control=Math.max(0,nx.control-dt*10);
+      else if(nx.control<0)nx.control=Math.min(0,nx.control+dt*10);
+      nx.state=nx.control===0?'NEUTRAL':'CAPTURING';
+    }
+  }
+
   for(const p of room.players.values()){
     if(!connected(p))continue;
     if(!p.alive){if(time>=p.respawnAt)spawn(room,p);else continue;}
-    if(p.shieldUntil<=time)p.shield=0;
+    if(p.shieldUntil<=time&&(!p.overchargedUntil||time>=p.overchargedUntil))p.shield=0;
     if(p.reloadUntil&&p.reloadUntil<=time){p.ammo=WEAPONS[p.weapon].magazine;p.reloadUntil=0;}
+    const speedMult=p.overchargedUntil>time?1.20:1.0;
+
     if(p.isBot){
       p.lastInputAt=time;
       const enemies=[...room.players.values()].filter(e=>e.team!==p.team&&e.alive);
+      const lowHealth=p.health<65;
+
+      // Smart Heal Pickup Seeking
+      let targetGoal=null;
+      if(lowHealth){
+        const heals=room.pickups.filter(pk=>pk.active&&pk.type==='HEAL');
+        if(heals.length>0)targetGoal=heals.sort((a,b)=>distance(p,a)-distance(p,b))[0];
+      }
+
+      // Reflexive projectile / meteor dodge dash
+      const threat=room.projectiles.find(b=>b.team!==p.team&&distance(p,b)<130);
+      if(threat&&p.dashReadyAt<=time){
+        const awayAngle=Math.atan2(p.y-threat.y,p.x-threat.x);
+        p.dashX=Math.cos(awayAngle);p.dashY=Math.sin(awayAngle);
+        p.dashUntil=time+180;p.dashReadyAt=time+5000;
+        event(room,'ABILITY',{playerId:p.id,ability:'dash',x:p.x,y:p.y,team:p.team});
+      }
+
       if(enemies.length>0){
         let bestEnemy=null,bestDist=Infinity;
         for(const e of enemies){
@@ -185,28 +329,39 @@ export function simulate(room,dt,time=Date.now()) {
         }
         if(bestEnemy){
           const d=distance(p,bestEnemy);
-          const angle=Math.atan2(bestEnemy.y-p.y,bestEnemy.x-p.x);
+          const w=WEAPONS[p.weapon]||WEAPONS.pulse_pistol_mk1;
+          const leadTime=d/(w.speed||900);
+          const leadX=bestEnemy.x+(bestEnemy.vx||0)*leadTime*0.7;
+          const leadY=bestEnemy.y+(bestEnemy.vy||0)*leadTime*0.7;
+          const angle=Math.atan2(leadY-p.y,leadX-p.x);
           p.aim=angle;
+
           let mx=0,my=0;
-          if(d>320){
-            mx=Math.cos(angle);my=Math.sin(angle);
-          }else if(d<160){
-            const strafe=Math.sin(time*0.003+p.id.length)*0.6;
-            mx=-Math.cos(angle)*0.6-Math.sin(angle)*strafe;
-            my=-Math.sin(angle)*0.6+Math.cos(angle)*strafe;
+          if(targetGoal){
+            const toGoal=Math.atan2(targetGoal.y-p.y,targetGoal.x-p.x);
+            mx=Math.cos(toGoal);my=Math.sin(toGoal);
           }else{
-            const strafeDir=(p.id.charCodeAt(p.id.length-1)%2===0?1:-1);
-            mx=-Math.sin(angle)*strafeDir*0.85+Math.cos(angle)*0.2;
-            my=Math.cos(angle)*strafeDir*0.85+Math.sin(angle)*0.2;
+            const preferredRange=p.weapon==='rail_lance'?520:p.weapon==='nova_shotgun'?140:280;
+            if(d>preferredRange+80){
+              mx=Math.cos(angle);my=Math.sin(angle);
+            }else if(d<preferredRange-60){
+              const strafe=Math.sin(time*0.003+p.id.length)*0.7;
+              mx=-Math.cos(angle)*0.7-Math.sin(angle)*strafe;
+              my=-Math.sin(angle)*0.7+Math.cos(angle)*strafe;
+            }else{
+              const strafeDir=(p.id.charCodeAt(p.id.length-1)%2===0?1:-1);
+              mx=-Math.sin(angle)*strafeDir*0.85+Math.cos(angle)*0.15;
+              my=Math.cos(angle)*strafeDir*0.85+Math.sin(angle)*0.15;
+            }
           }
           p.input={mx,my,aim:p.aim,fire:false};
           const clear=lineClear(p,bestEnemy);
-          if(clear&&d<520){
-            if(p.ammo<=0&&!p.reloadUntil){p.reloadUntil=time+WEAPONS[p.weapon].reload;}
+          if(clear&&d<550){
+            if(p.ammo<=0&&!p.reloadUntil){p.reloadUntil=time+w.reload;}
             else if(p.ammo>0&&!p.reloadUntil){shot(room,p);}
             if(p.health<60&&p.aegisReadyAt<=time)ability(room,p,'aegis');
-            if(d<150&&p.waveReadyAt<=time)ability(room,p,'wave');
-            if(p.ultimate>=100&&d<400)ability(room,p,'ultimate');
+            if(d<160&&p.waveReadyAt<=time)ability(room,p,'wave');
+            if(p.ultimate>=100&&d<420)ability(room,p,'ultimate');
           }
         }
       }else{
@@ -215,7 +370,10 @@ export function simulate(room,dt,time=Date.now()) {
       }
       const before={x:p.x,y:p.y};
       if(p.dashUntil>time)moveBody(p,p.dashX*190/.18*dt,p.dashY*190/.18*dt);
-      else moveInput(p,p.input,dt);
+      else {
+        const length=Math.max(1,Math.hypot(p.input.mx,p.input.my));
+        moveBody(p,p.input.mx/length*ARENA.speed*dt*speedMult,p.input.my/length*ARENA.speed*dt*speedMult);
+      }
       p.vx=(p.x-before.x)/dt;p.vy=(p.y-before.y)/dt;
       continue;
     }
@@ -226,7 +384,10 @@ export function simulate(room,dt,time=Date.now()) {
     if(time-p.lastInputAt>250)p.input=zero();
     const before={x:p.x,y:p.y};
     if(p.dashUntil>time)moveBody(p,p.dashX*190/.18*dt,p.dashY*190/.18*dt);
-    else moveInput(p,p.input,dt);
+    else {
+      const length=Math.max(1,Math.hypot(p.input.mx,p.input.my));
+      moveBody(p,p.input.mx/length*ARENA.speed*dt*speedMult,p.input.my/length*ARENA.speed*dt*speedMult);
+    }
     p.vx=(p.x-before.x)/dt;p.vy=(p.y-before.y)/dt;
     if(p.input.fire)shot(room,p);
   }
@@ -252,14 +413,16 @@ export function snapshot(room) {
   const t=room.clock;
   return {type:'TDM_SNAPSHOT',roomCode:room.code,round:room.round,tick:room.tick,state:room.state,hostId:room.hostId,
     winner:room.winner,score:{...room.score},targetScore:40,world:ARENA,
+    nexus:room.nexus?{control:Math.round(room.nexus.control),state:room.nexus.state,overchargeTeam:room.nexus.overchargeTeam,
+      overchargeMs:Math.max(0,room.nexus.overchargeUntil-t),cooldownMs:Math.max(0,room.nexus.cooldownUntil-t)}:null,
     remainingMs:Math.max(0,(room.state==='COUNTDOWN'?room.countdownEndsAt:room.state==='ACTIVE'?room.endsAt:room.state==='OVERTIME'?room.overtimeEndsAt:room.lobbyDeadline)-t),
     players:[...room.players.values()].map(p=>({id:p.id,name:p.name,team:p.team,isBot:!!p.isBot,ready:p.ready,connected:connected(p),ping:p.ping,
       weapon:p.weapon,x:p.x,y:p.y,vx:p.vx,vy:p.vy,aim:p.aim,ack:p.ack,health:p.health,maxHealth:115,alive:p.alive,
       respawnMs:Math.max(0,p.respawnAt-t),protected:p.protectedUntil>t,shield:p.shield,ultimate:p.ultimate,
       kills:p.kills,deaths:p.deaths,assists:p.assists,damage:Math.round(p.damage),personalScore:p.score,ammo:p.ammo,magazine:WEAPONS[p.weapon].magazine,
-      reloadMs:Math.max(0,p.reloadUntil-t),dashing:p.dashUntil>t,
+      reloadMs:Math.max(0,p.reloadUntil-t),dashing:p.dashUntil>t,streak:p.streak||0,overcharged:p.overchargedUntil>t,
       cooldowns:{dash:Math.max(0,p.dashReadyAt-t),aegis:Math.max(0,p.aegisReadyAt-t),wave:Math.max(0,p.waveReadyAt-t)}})),
-    projectiles:room.projectiles.map(b=>({id:b.id,ownerId:b.ownerId,x:b.x,y:b.y,vx:b.vx,vy:b.vy,radius:b.radius,color:b.color,team:b.team,meteor:b.meteor})),
+    projectiles:room.projectiles.map(b=>({id:b.id,ownerId:b.ownerId,x:b.x,y:b.y,vx:b.vx,vy:b.vy,radius:b.radius,color:b.color,team:b.team,meteor:b.meteor,chain:!!b.chain,vortex:!!b.vortex})),
     pickups:room.pickups.map(p=>({...p,respawnMs:Math.max(0,p.respawnAt-t)}))};
 }
 export function setupTeamDeathmatch(wss) {
@@ -340,6 +503,15 @@ export function setupTeamDeathmatch(wss) {
       }
       if(m.type==='TDM_PING')send(ws,{type:'TDM_PONG',time:m.time});
       if(m.type==='TDM_LATENCY'&&Number.isFinite(m.ping))p.ping=clamp(Math.round(m.ping),0,5000);
+      if(m.type==='TDM_PING_BEACON'&&playing(room)){
+        if(t - (p.lastPingBeaconAt||0) >= 1200){
+          p.lastPingBeaconAt = t;
+          for(const target of room.players.values()){
+            if(target.team === p.team)
+              send(target.socket, { type:'TDM_EVENT', event:{ type:'TACTICAL_PING', data:{ x:m.x, y:m.y, playerId:p.id, playerName:p.name, team:p.team, pingType:m.pingType||'alert' }}});
+          }
+        }
+      }
       if(m.type==='TDM_CHAT'&&t-p.lastChatAt>=700){
         if(typeof m.message!=='string')return;const message=m.message.replace(/[\x00-\x1f]/g,'').trim().slice(0,120);if(!message)return;
         p.lastChatAt=t;const channel=m.channel==='TEAM'?'TEAM':'ALL';

@@ -2,7 +2,7 @@ import { ARENA, WALLS, COLORS, moveInput, clamp } from './battleground/arena.js'
 import { BattlegroundArt, fighterColor } from './battleground/art.js';
 import { soundEngine } from './audio.js';
 
-const WEAPONS={pulse_pistol_mk1:'Pulse Pistol',arc_smg:'Arc SMG',prism_rifle:'Prism Rifle',nova_shotgun:'Nova Shotgun',rail_lance:'Rail Lance',plasma_cannon:'Plasma Cannon'};
+const WEAPONS={pulse_pistol_mk1:'Pulse Pistol',arc_smg:'Arc SMG',prism_rifle:'Prism Rifle',nova_shotgun:'Nova Shotgun',rail_lance:'Rail Lance',plasma_cannon:'Plasma Cannon',tesla_carbine:'Tesla Carbine',vortex_launcher:'Vortex Launcher'};
 const esc=s=>String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
 const paths={
   dash:'M4 8l13 16L4 40l20-16z M23 8l13 16-13 16 20-16z',
@@ -16,7 +16,11 @@ const paths={
   exit:'M20 6H6v36h14M25 13l13 11-13 11M15 24h23',
   wifi:'M4 17c12-12 28-12 40 0M11 25c8-8 18-8 26 0M18 32c4-4 8-4 12 0M24 40v1',
   skull:'M10 30V16c0-17 28-17 28 0v14l-8 3v9H18v-9zM16 21h3m10 0h3M24 30v4',
+  zap:'M26 3L12 25h12L20 45l18-24H24l4-18z',
+  vortex:'M24 4a20 20 0 1 0 20 20A20 20 0 0 0 24 4zm0 6a14 14 0 1 1-14 14 14 14 0 0 1 14-14zm0 6a8 8 0 1 0 8 8 8 8 0 0 0-8-8z',
+  ping:'M24 4a12 12 0 0 0-12 12c0 9 12 28 12 28s12-19 12-28a12 12 0 0 0-12-12zm0 16a4 4 0 1 1 4-4 4 4 0 0 1-4 4z'
 };
+const WEAPON_ICONS={pulse_pistol_mk1:'cross',arc_smg:'wave',prism_rifle:'cross',nova_shotgun:'dash',rail_lance:'fullscreen',plasma_cannon:'meteor',tesla_carbine:'zap',vortex_launcher:'vortex'};
 const icon=(name)=>`<svg viewBox="0 0 48 48" aria-hidden="true"><path d="${paths[name]||paths.cross}" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 const playing=s=>s==='ACTIVE'||s==='OVERTIME';
 export class TeamDeathmatchGame {
@@ -24,7 +28,8 @@ export class TeamDeathmatchGame {
     Object.assign(this,{canvas,ctx:canvas.getContext('2d'),onEnter,onExit,onFullscreen,ws:null,snapshot:null,playerId:null,team:'BLUE',
       active:false,roomCode:'',token:null,selectedWeapon:'pulse_pistol_mk1',ping:0,fps:60,seq:0,pending:[],inputTimer:0,
       snapshotAt:0,visualPlayers:new Map(),effects:[],feed:[],keys:new Set(),mouse:{x:innerWidth/2,y:innerHeight/2,down:false},
-      touchMove:{x:0,y:0},touchAim:null,chatChannel:'ALL',lastPingAt:0,frames:0,frameTime:0,menuOpen:false,reconnecting:false});
+      touchMove:{x:0,y:0},touchAim:null,chatChannel:'ALL',lastPingAt:0,lastPingBeaconAt:0,spectateIndex:0,trauma:0,lastLowAmmoWarn:null,
+      frames:0,frameTime:0,menuOpen:false,reconnecting:false});
     this.art=new BattlegroundArt();this._injectUI();this._bindUI();
   }
   _injectUI() {
@@ -39,7 +44,7 @@ export class TeamDeathmatchGame {
           <input id="tdmPilotName" class="tdm-input" maxlength="16" placeholder="Enter your name" value="Pilot" autocomplete="off">
         </div>
         <div class="tdm-field-label">YOUR LOADOUT</div><div class="tdm-loadouts" id="tdmLoadouts">
-          ${Object.entries(WEAPONS).map(([id,w],i)=>`<button data-weapon="${id}" class="tdm-loadout ${i===0?'selected':''}">${icon(i===5?'meteor':'cross')}<span>${w}</span></button>`).join('')}
+          ${Object.entries(WEAPONS).map(([id,w],i)=>`<button data-weapon="${id}" class="tdm-loadout ${i===0?'selected':''}">${icon(WEAPON_ICONS[id]||'cross')}<span>${w}</span></button>`).join('')}
         </div>
         <div id="tdmEntryActions"><div class="tdm-lobby-actions">
           <button class="tdm-primary" id="tdmQuickMatch">FIND PUBLIC MATCH</button>
@@ -57,7 +62,7 @@ export class TeamDeathmatchGame {
           </div>
           <p class="tdm-lobby-help">Both teams need players. Ready up to start the 10-second countdown. Fill empty slots with AI bots or invite friends.</p>
         </div><div id="tdmLobbyStatus" class="tdm-lobby-status" role="status">CREATE AN ARENA OR FIND OTHER PLAYERS</div>
-        <p class="tdm-controls-help">WASD move · Mouse aim / fire · Q dash · E aegis · R wave · F ultimate · X reload</p>
+        <p class="tdm-controls-help">WASD move · Mouse aim / fire · Q dash · E aegis · R wave · F ultimate · X reload · Z / MMB tactical ping · Space spectate</p>
       </div></div>
       <div id="tdmHud" class="tdm-hud" aria-hidden="true">
         <svg class="tdm-frame" viewBox="0 0 1672 941" preserveAspectRatio="none" aria-hidden="true">
@@ -68,7 +73,9 @@ export class TeamDeathmatchGame {
         </svg>
         <div class="tdm-brand"><strong>NEON <span>HAVOC</span><i>ϟ</i></strong><small>MULTIPLAYER BATTLEGROUND</small></div>
         <div class="tdm-top-score"><div class="tdm-team-score blue"><strong id="tdmBlueScore">0</strong>${icon('skull')}</div>
-        <div class="tdm-match-center"><b>TEAM DEATHMATCH</b><strong id="tdmTimer">06:00</strong><small id="tdmMatchState">FIRST TO 40</small></div>
+        <div class="tdm-match-center"><b>TEAM DEATHMATCH</b><strong id="tdmTimer">06:00</strong><small id="tdmMatchState">FIRST TO 40</small>
+          <div class="tdm-nexus-meter" id="tdmNexusMeter" title="Central Nexus Objective"><div class="tdm-nexus-fill" id="tdmNexusFill"></div><span class="tdm-nexus-label" id="tdmNexusLabel">NEXUS: NEUTRAL</span></div>
+        </div>
         <div class="tdm-team-score red">${icon('skull')}<strong id="tdmRedScore">0</strong></div></div>
         <div class="tdm-diagnostics"><span class="tdm-ping">${icon('wifi')}<span id="tdmPing">— ms</span></span><span id="tdmFps">FPS —</span>
           <button id="tdmShowScore" title="Scoreboard (Tab)" aria-label="Scoreboard">${icon('people')}</button><button id="tdmSettings" title="Match menu" aria-label="Settings">${icon('settings')}</button>
@@ -142,10 +149,23 @@ export class TeamDeathmatchGame {
     window.addEventListener('keydown',e=>{
       if(!this.active)return;
       e.stopImmediatePropagation();
-      if(e.target.matches('input,textarea,select'))return;
+      if(e.target?.matches?.('input,textarea,select'))return;
       if(['Space','Tab','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();
       this.keys.add(e.code);
       if(e.repeat)return;
+      if(e.code==='Space'){
+        const local=this._localPlayer();
+        if(local&&!local.alive){
+          e.preventDefault();
+          this.spectateIndex=(this.spectateIndex||0)+1;
+          return;
+        }
+      }
+      if(e.code==='KeyZ'){
+        e.preventDefault();
+        this._sendPing('alert');
+        return;
+      }
       const ability={KeyQ:'dash',ShiftLeft:'dash',KeyE:'aegis',KeyR:'wave',KeyF:'ultimate',Space:'ultimate'}[e.code];
       if(ability)this.abilityQueue=ability;
       if(e.code==='KeyX')this.reload=true;
@@ -160,7 +180,10 @@ export class TeamDeathmatchGame {
     },true);
     window.addEventListener('mousemove',e=>{this.mouse.x=e.clientX;this.mouse.y=e.clientY;});
     this.canvas.addEventListener('pointerdown',e=>{
-      if(!this.active||e.button!==0||this.menuOpen)return;this.mouse.down=true;this.canvas.setPointerCapture(e.pointerId);soundEngine.init();
+      if(!this.active||this.menuOpen)return;
+      if(e.button===1){e.preventDefault();this._sendPing('alert');return;}
+      if(e.button!==0)return;
+      this.mouse.down=true;this.canvas.setPointerCapture(e.pointerId);soundEngine.init();
     });
     window.addEventListener('pointerup',()=>{this.mouse.down=false;});
     window.addEventListener('blur',()=>this._clearInput());
@@ -263,10 +286,54 @@ export class TeamDeathmatchGame {
     if(e.type==='SHOT'){
       if(d.playerId===this.playerId)soundEngine.playPistol();effect('spark',.12);
     }else if(e.type==='HIT'){
-      effect('spark',.25);if(d.attackerId===this.playerId){effect('text',.7,{text:String(d.amount),color:d.shield?'#55dfff':'#ffc247'});soundEngine.playEnemyPop(.3);}
+      effect('spark',.25);
+      if(d.attackerId===this.playerId){
+        this.art.addHitmarker(d.fatal,d.shield);
+        this.art.addCombatNumber(d.x,d.y,d.amount,d.shield?'#55dfff':'#ffc247',d.fatal);
+        soundEngine.playHitmarker(d.fatal);
+      }
+      if(d.victimId===this.playerId){
+        this.trauma=Math.min(1.0,this.trauma+(d.fatal?.75:.35));
+        const atk=this.snapshot?.players.find(p=>p.id===d.attackerId);
+        if(atk){
+          const angle=Math.atan2(atk.y-d.y,atk.x-d.x);
+          this.art.addDamageArc(angle);
+        }
+        if(d.shield)soundEngine.playShieldCrack();
+      }
+    }else if(e.type==='CHAIN_LIGHTNING'){
+      this.effects.push({type:'chain_lightning',life:.28,duration:.28,x:d.fromX,y:d.fromY,toX:d.toX,toY:d.toY,color:COLORS[d.team]||'#00e5ff'});
+      this.art.addFloorRipple(d.toX,d.toY,COLORS[d.team]||'#00e5ff');
+      if(d.victimId===this.playerId){
+        this.trauma=Math.min(1.0,this.trauma+.3);
+        soundEngine.playShieldCrack();
+      }
     }else if(e.type==='ELIMINATION'){
       effect('explosion',.65);soundEngine.playEnemyPop(1);
       this.feed.unshift({at:performance.now(),html:`<span style="color:${color}">${esc(d.killer)}</span> ✦ ${esc(d.victim)}<small>${esc(d.weapon)}</small>`});
+    }else if(e.type==='STREAK'){
+      this.art.addStreakBanner(d.playerName,d.title,d.team);
+      soundEngine.playKillstreak(d.streak>=10?3:d.streak>=5?2:1);
+      this._announce(`${d.playerName.toUpperCase()} — ${d.title}!`,COLORS[d.team]||'#ffc247',2500);
+    }else if(e.type==='MULTIKILL'){
+      this.art.addStreakBanner(d.playerName,d.title,d.team);
+      soundEngine.playKillstreak(d.count>=4?3:2);
+      this._announce(`${d.playerName.toUpperCase()} — ${d.title}!`,COLORS[d.team]||'#ffc247',2500);
+    }else if(e.type==='SHUTDOWN'){
+      this.art.addStreakBanner(d.killer,`SHUTDOWN (+${d.bounty} PTS)`,d.team);
+      soundEngine.playKillstreak(2);
+      this._announce(`SHUTDOWN! ${d.killer.toUpperCase()} ENDED ${d.victim.toUpperCase()}'S STREAK (+${d.bounty} PTS)`,COLORS[d.team]||'#ffc247',2800);
+    }else if(e.type==='NEXUS_OVERCHARGED'){
+      soundEngine.playNexusCapture();
+      const teamCol=COLORS[d.team]||'#00e5ff';
+      this._announce(`⚡ ${d.team} OVERCHARGED THE NEXUS! (+2 SCORE, +35 SHIELD, SPEED BOOST)`,teamCol,3500);
+      this.effects.push({type:'wave',life:.8,duration:.8,x:1280,y:605,color:teamCol});
+    }else if(e.type==='TACTICAL_PING'){
+      if(d.team===this.team){
+        this.art.addPing(d.x,d.y,d.pingType,d.playerName,d.team);
+        soundEngine.playTacticalPing();
+        this.feed.unshift({at:performance.now(),html:`<span style="color:${COLORS[d.team]}">${esc(d.playerName)}</span> 📍 Sector Ping`});
+      }
     }else if(e.type==='ABILITY'){
       if(d.ability==='wave')effect('wave',.45);
       if(d.playerId===this.playerId){if(d.ability==='dash')soundEngine.playDash();if(d.ability==='aegis')soundEngine.playShield();if(d.ability==='wave')soundEngine.playShockwave();}
@@ -282,7 +349,35 @@ export class TeamDeathmatchGame {
     if(this.effects.length>140)this.effects.splice(0,this.effects.length-140);
   }
   _localPlayer(){return this.snapshot?.players.find(p=>p.id===this.playerId)||null;}
-  _camera(){return {x:1200,y:675,zoom:Math.min(this.canvas.width/2400,this.canvas.height/1350)};}
+  _spectatedPlayer(){
+    const s=this.snapshot,local=this._localPlayer();
+    if(!s||!local)return null;
+    if(local.alive)return local;
+    const teammates=s.players.filter(p=>p.team===local.team&&p.alive);
+    if(teammates.length)return teammates[Math.abs(this.spectateIndex)%teammates.length];
+    const anyLiving=s.players.filter(p=>p.alive);
+    return anyLiving.length?anyLiving[Math.abs(this.spectateIndex)%anyLiving.length]:local;
+  }
+  _camera(){
+    let shakeX=0,shakeY=0;
+    if(this.trauma>0){
+      const shake=this.trauma*this.trauma*18;
+      shakeX=(Math.random()*2-1)*shake;
+      shakeY=(Math.random()*2-1)*shake;
+    }
+    const baseZoom=Math.min(this.canvas.width/2400,this.canvas.height/1350);
+    return {x:1200+shakeX,y:675+shakeY,zoom:baseZoom};
+  }
+  _sendPing(pingType='alert'){
+    if(!this.active||!playing(this.snapshot?.state))return;
+    const now=performance.now();
+    if(now-this.lastPingBeaconAt<1200)return;
+    this.lastPingBeaconAt=now;
+    const cam=this._camera();
+    const worldX=(this.mouse.x-this.canvas.width/2)/cam.zoom+cam.x;
+    const worldY=(this.mouse.y-this.canvas.height/2)/cam.zoom+cam.y;
+    this._send({type:'TDM_PING_BEACON',x:clamp(Math.round(worldX),60,2340),y:clamp(Math.round(worldY),60,1290),pingType});
+  }
   _readInput(){
     const disabled=this.menuOpen||!playing(this.snapshot?.state)||document.activeElement===this.dom.ChatInput||document.hidden;
     if(disabled)return {mx:0,my:0,aim:this._localPlayer()?.aim||0,fire:false};
@@ -305,6 +400,7 @@ export class TeamDeathmatchGame {
   frame(dt){
     if(!this.active)return;dt=Math.min(dt,.05);this.frames++;this.frameTime+=dt;
     if(this.frameTime>=.5){this.fps=Math.round(this.frames/this.frameTime);this.frames=0;this.frameTime=0;}
+    if(this.trauma>0)this.trauma=Math.max(0,this.trauma-dt*2.5);
     this.inputTimer+=dt;if(this.inputTimer>=1/30){this.inputTimer%=1/30;this._sendInput();}
     if(performance.now()-this.lastPingAt>1500){this.lastPingAt=performance.now();this._send({type:'TDM_PING',time:this.lastPingAt});}
     if(this.predicted&&this._localPlayer()?.alive&&playing(this.snapshot?.state)&&this.ws?.readyState===WebSocket.OPEN)moveInput(this.predicted,this._readInput(),dt);
@@ -327,8 +423,30 @@ export class TeamDeathmatchGame {
     c.clearRect(0,0,w,h);c.fillStyle='#030919';c.fillRect(0,0,w,h);c.save();c.scale(w/2400,h/1350);
     c.strokeStyle='#00cfff';c.lineWidth=12;c.strokeRect(65,65,2270,1220);
     c.fillStyle='#182746';for(const wall of WALLS){c.beginPath();wall.points.forEach(([x,y],i)=>i?c.lineTo(x,y):c.moveTo(x,y));c.closePath();c.fill();}
-    c.fillStyle='#dc32ff';c.beginPath();c.moveTo(1280,495);c.lineTo(1350,605);c.lineTo(1280,710);c.lineTo(1210,605);c.closePath();c.fill();
-    for(const p of this.snapshot?.players||[]){if(!p.alive)continue;c.fillStyle=p.id===this.playerId?'#fff':COLORS[p.team];c.shadowColor=c.fillStyle;c.shadowBlur=10;c.beginPath();c.arc(p.x,p.y,p.id===this.playerId?30:21,0,Math.PI*2);c.fill();}
+
+    // Central Nexus zone on minimap
+    const nx=this.snapshot?.nexus;
+    c.fillStyle=nx?.cooldownMs>0?(nx.overchargedBy==='RED'?'rgba(255,49,91,0.6)':'rgba(0,229,255,0.6)'):nx?.capturingTeam==='CONTESTED'?'rgba(255,194,71,0.5)':nx?.control>0?'rgba(0,229,255,0.4)':nx?.control<0?'rgba(255,49,91,0.4)':'rgba(177,77,255,0.2)';
+    c.beginPath();c.arc(1280,605,155,0,Math.PI*2);c.fill();
+    c.strokeStyle=nx?.capturingTeam==='CONTESTED'?'#ffc247':'#00cfff';c.lineWidth=4;c.stroke();
+
+    // Central diamond icon
+    c.fillStyle='#dc32ff';c.beginPath();c.moveTo(1280,565);c.lineTo(1310,605);c.lineTo(1280,645);c.lineTo(1250,605);c.closePath();c.fill();
+
+    // Tactical pings on minimap
+    for(const p of this.art.pings||[]){
+      c.save();c.fillStyle=p.team==='RED'?'#ff174f':'#00e5ff';c.shadowColor=c.fillStyle;c.shadowBlur=16;
+      c.beginPath();c.arc(p.x,p.y,38,0,Math.PI*2);c.fill();
+      c.restore();
+    }
+
+    // Players on minimap
+    for(const p of this.snapshot?.players||[]){
+      if(!p.alive)continue;
+      c.fillStyle=p.id===this.playerId?'#fff':COLORS[p.team];
+      c.shadowColor=c.fillStyle;c.shadowBlur=10;
+      c.beginPath();c.arc(p.x,p.y,p.id===this.playerId?30:21,0,Math.PI*2);c.fill();
+    }
     c.restore();
   }
   _updateHud(){
@@ -338,8 +456,38 @@ export class TeamDeathmatchGame {
     this.dom.Timer.textContent=s.state==='LOBBY'?'06:00':`${String(Math.floor(seconds/60)).padStart(2,'0')}:${String(seconds%60).padStart(2,'0')}`;
     this.dom.MatchState.textContent=s.state==='COUNTDOWN'?'DEPLOYING':s.state==='OVERTIME'?'SUDDEN DEATH':'FIRST TO 40';
     this.dom.Ping.textContent=this.reconnecting?'OFFLINE':`${this.ping} ms`;this.dom.Fps.textContent=`FPS ${this.fps}`;
-    this.dom.HpLabel.textContent=`${Math.ceil(p.health)} / 115 HP`;this.dom.HpFill.style.width=`${p.health/115*100}%`;
+    this.dom.HpLabel.textContent=`${Math.ceil(p.health)} / 115 HP${p.shield>0?` (+${Math.ceil(p.shield)} 🛡)`:''}`;
+    this.dom.HpFill.style.width=`${Math.min(100,(p.health+p.shield)/115*100)}%`;
+    this.dom.HpFill.style.background=p.shield>0?'linear-gradient(90deg,#00cfff,#b14dff)':'linear-gradient(90deg,#6546ff,#c21aff)';
     this.dom.WeaponLabel.textContent=WEAPONS[p.weapon];this.dom.Ammo.textContent=p.reloadMs>0?'RELOADING':`${p.ammo} / ${p.magazine}`;
+
+    // Low ammo warning
+    if(p.ammo<=3&&p.ammo>0&&!p.reloadMs&&this.active&&playing(s.state)){
+      if(this.lastLowAmmoWarn!==p.ammo){this.lastLowAmmoWarn=p.ammo;soundEngine.playLowAmmo();}
+    }else if(p.ammo>3){this.lastLowAmmoWarn=null;}
+
+    // Central Nexus HUD meter
+    if(this.dom.NexusFill&&this.dom.NexusLabel&&s.nexus){
+      const nx=s.nexus;
+      const pct=Math.abs(nx.control);
+      this.dom.NexusFill.style.width=`${pct}%`;
+      this.dom.NexusFill.classList.toggle('red',nx.control<0);
+      this.dom.NexusFill.classList.toggle('contested',nx.capturingTeam==='CONTESTED');
+      if(nx.cooldownMs>0){
+        this.dom.NexusLabel.textContent=`OVERCHARGED (${(nx.cooldownMs/1000).toFixed(0)}s)`;
+        this.dom.NexusFill.style.width='100%';
+        this.dom.NexusFill.style.background=nx.overchargedBy==='RED'?'#ff0055':'#00e5ff';
+      }else if(nx.capturingTeam==='CONTESTED'){
+        this.dom.NexusLabel.textContent=`NEXUS: CONTESTED (${pct}%)`;
+      }else if(nx.control>0){
+        this.dom.NexusLabel.textContent=`NEXUS: BLUE ${pct}%`;
+      }else if(nx.control<0){
+        this.dom.NexusLabel.textContent=`NEXUS: RED ${pct}%`;
+      }else{
+        this.dom.NexusLabel.textContent='NEXUS: NEUTRAL';
+      }
+    }
+
     this.dom.Ultimate.textContent=`${Math.round(p.ultimate)}%`;this.dom.Ultimate.parentElement.classList.toggle('charged',p.ultimate>=100);
     for(const [key,el]of[['dash',this.dom.CdDash],['aegis',this.dom.CdAegis],['wave',this.dom.CdWave]]){
       el.textContent=p.cooldowns[key]>0?(p.cooldowns[key]/1000).toFixed(1)+'s':'● ● ●';el.parentElement.classList.toggle('cooling',p.cooldowns[key]>0);
