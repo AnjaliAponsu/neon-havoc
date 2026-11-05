@@ -64,17 +64,27 @@ Open your browser to:
 4. Friends open the same game address and join by code or invite link. The lobby shows actual players and empty slots. There are no automatically inserted bots.
 5. Select teams and **Ready Up**. With at least one connected player on each team, all-ready starts a ten-second countdown. A lobby with opponents also starts after its sixty-second waiting period. Rooms hold up to four people per team, and late joins fill available slots.
 
+**Testing alone:** click **TEST MATCH** in the battleground lobby. Choose Casual, Standard, or Veteran bots. You join three bot teammates against four bot opponents, and the match starts in three seconds without needing Ready Up. Bots navigate around cover, seek health, reload, strafe, and use abilities. Test arenas stay separate from public matchmaking, and every bot is labeled. A running match server is still required; `npm.cmd run dev` includes it.
+
+**Testing with friends:** create a private room, have friends join first, then the host can select **Fill with Bots** and Ready Up. Public matches require just two humans, one on each team; eight players are optional. Bots cannot take ownership of a room, and bot-only rooms are removed when their last human leaves.
+
+Loadout cards show damage, fire rate, magazine size, and reload time from the same weapon definitions used by the server. During the four-second respawn window, change your next weapon in **Respawn Loadout**. Reload progress appears on your orb and ammo display. Confirmed hits, eliminations, incoming damage direction, streaks, and team pings have distinct feedback. Use Z or middle click to ping a position for teammates. The match menu includes a screen shake toggle and respects reduced-motion preferences for camera shake.
+
+The central Nexus grants its capturing team a temporary shield and 20% movement boost; it does not award elimination points. Its HUD distinguishes capture, contested, active boost, and recharge states. First to 40 eliminations still wins.
+
 The match server runs at 30 Hz and owns movement, projectiles, damage, abilities, pickups, eliminations, respawns, team scores, and overtime. Hold `Tab` for the scoreboard and press `Enter` for chat.
 
-Deathmatch controls: WASD/arrows to move; mouse to aim; hold left click to fire; Q/Shift to dash; E for Aegis; R for Wave; F/Space for Meteor; X to reload. Escape opens the match menu while the online game continues. Touch players drag the right control to aim and fire. Team chat reaches only teammates.
+**Battlefield & Camera:** The arena is expanded to **3840 x 2160** (2.56X larger surface area in 16:9 standard ratio) featuring a 3-lane tactical layout: North Sniper Highroad, South Industrial Trenches, Blue Bastion (West), Red Bastion (East), and the Grand Central Nexus. A **Dynamic Follow Camera** tracks player movement with aim peeking, soft boundary clamping, and combat trauma shake. Press `C`, use the mouse wheel, or click the camera button on the HUD to toggle between close-up **Follow** mode and full arena **Overview** mode. Off-screen fighter chevrons on the screen edge and an interactive minimap with a frustum viewport rectangle maintain total spatial awareness.
+
+Deathmatch controls: WASD/arrows to move; mouse to aim; hold left click to fire; Q/Shift to dash; E for Aegis; R for Wave; F/Space for Meteor; X to reload; C or mouse wheel to toggle camera; Z or middle click to ping. Escape opens the match menu while the online game continues. Touch players drag the right control to aim and fire. Team chat reaches only teammates.
 
 For friends on the same Wi-Fi, share this computer's LAN address (for example, `http://192.168.1.20:5173`), not `localhost`. All clients must reach the same running server.
 
 For a production server, run `npm.cmd run build` followed by `npm.cmd run server`. Port 3001 serves both the built game and the WebSocket endpoint at `/ws`; `PORT` can override it. Internet play requires this server to be publicly reachable behind HTTPS with WebSocket upgrades forwarded to `/ws`. GitHub Pages alone hosts static files and cannot run the match server. For separate hosting, use the lobby's **Server address** setting or build with `VITE_MULTIPLAYER_URL=wss://your-server.example/ws`.
 
-Connections have a 45-second reservation and retry automatically after disruption. Rematch returns the same players to their room's ready lobby. Host controls are reassigned when the host disconnects.
+Connections have a 45-second reservation and retry automatically after disruption. Rematch returns the same players to their room's ready lobby; solo test rematches restart after three seconds. Host controls are reassigned to connected human players when the host disconnects.
 
-Validation: `node --test server/teamDeathmatchServer.test.js` covers eight separate WebSocket clients, shared public matchmaking, capacity, ready/countdown, server-owned combat, team chat, reconnect, respawn, friendly fire, spawn protection, shield absorption, overtime and swept movement through cover.
+Validation: `node --test server/teamDeathmatchServer.test.js` covers eight separate WebSocket clients, shared public matchmaking, capacity, ready/countdown, server-owned combat, team chat, reconnect, respawn, friendly fire, spawn protection, shield absorption, overtime, navigation around cover, solo bot combat, practice isolation, rematches, respawn loadouts, private-host controls, and room cleanup.
 
 ---
 

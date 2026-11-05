@@ -4,6 +4,7 @@ import http from 'node:http';
 import { WebSocketServer, WebSocket } from 'ws';
 import { setupTeamDeathmatch, createRoom, simulate, damage } from './teamDeathmatchServer.js';
 import { blocked, moveBody, WALLS } from '../src/battleground/arena.js';
+import { findRoute, walkable } from './tdmNavigation.js';
 
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 async function until(fn,timeout=5000){const start=Date.now();while(Date.now()-start<timeout){const result=fn();if(result)return result;await wait(20);}throw Error('Condition timed out');}
@@ -68,7 +69,7 @@ test('eight independent humans share one public room; ready, combat, capacity, c
 });
 function player(id,team,x=800,y=750){
   return {id,name:id,team,x,y,health:115,alive:true,protectedUntil:0,shield:0,damage:0,ultimate:0,weapon:'pulse_pistol_mk1',
-    kills:0,deaths:0,assists:0,score:0,damageBy:new Map(),pending:[],socket:null};
+    kills:0,deaths:0,assists:0,score:0,damageBy:new Map(),pending:[],socket:null,input:{mx:0,my:0,aim:0,fire:false},lastInputAt:0};
 }
 test('friendly fire, shield, spawn protection, one elimination and overtime',()=>{
   const r=createRoom('TEST');r.state='ACTIVE';r.clock=1000;r.endsAt=1000;
@@ -85,9 +86,9 @@ test('shared swept movement cannot cross thin cover, including dash-sized steps'
   const wall=WALLS[0];assert.ok(wall.points.length>4);
   const body={x:400,y:500};moveBody(body,0,260);assert.ok(body.y<570);assert.equal(blocked(body.x,body.y),false);
 });
-test('50X features: killstreaks, multi-kills, shutdown bounty, and central nexus overcharge',()=>{
+test('killstreaks, multi-kills, shutdown bounty, and Nexus support buffs preserve elimination scoring',()=>{
   const r=createRoom('NX50');r.state='ACTIVE';r.clock=1000;r.endsAt=100000;
-  const p1=player('p1','BLUE',1280,605),p2=player('p2','RED',1280,605),p3=player('p3','RED',1280,605);
+  const p1=player('p1','BLUE',1920,1080),p2=player('p2','RED',1920,1080),p3=player('p3','RED',1920,1080);
   r.players=new Map([[p1.id,p1],[p2.id,p2],[p3.id,p3]]);
   damage(r,p2,p1,999);
   assert.equal(p1.kills,1);
@@ -104,10 +105,67 @@ test('50X features: killstreaks, multi-kills, shutdown bounty, and central nexus
   assert.equal(p1.streak,0);
   assert.ok(r.events.some(e=>e.type==='SHUTDOWN'&&e.data.bounty===200));
   assert.ok(r.nexus);
-  p1.alive=true;p1.health=115;p1.team='BLUE';p1.x=1280;p1.y=605;
+  p1.alive=true;p1.health=115;p1.team='BLUE';p1.x=1920;p1.y=1080;
+  p1.socket={readyState:WebSocket.OPEN};p1.shieldUntil=0;
   p2.alive=false;p3.alive=false;
+  const score={...r.score};
   for(let i=0;i<120;i++) simulate(r,1/30,3000+i*33);
   assert.equal(r.nexus.overchargeTeam,'BLUE');
   assert.ok(p1.shield>=30);
   assert.ok(p1.overchargedUntil>3000);
+  assert.deepEqual(r.score,score,'Nexus buffs do not grant elimination points');
+});
+
+test('navigation routes full-size fighters around cover without cutting corners',()=>{
+  const start={x:400,y:500},goal={x:430,y:800};
+  assert.equal(walkable(start,goal),false);
+  const route=findRoute(start,goal);assert.ok(route.length>1);
+  let previous=start;
+  for(const waypoint of route){assert.ok(walkable(previous,waypoint));previous=waypoint;}
+  assert.deepEqual(route.at(-1),goal);
+});
+
+test('solo test starts immediately with seven labeled bots, real combat, isolated matchmaking and cleanup',{timeout:30000},async()=>{
+  const server=http.createServer(),wss=new WebSocketServer({server}),service=setupTeamDeathmatch(wss),clients=[];
+  await new Promise(r=>server.listen(0,'127.0.0.1',r));const url=`ws://127.0.0.1:${server.address().port}`;
+  try{
+    const a=await client(url);clients.push(a);a.send({type:'TDM_PRACTICE',name:'Tester',difficulty:'veteran'});
+    const joined=await until(()=>a.latest('TDM_JOINED')),room=service.rooms.get(joined.roomCode);
+    const first=a.latest('TDM_SNAPSHOT');assert.equal(first.state,'COUNTDOWN');assert.equal(first.isPractice,true);
+    assert.equal(first.players.length,8);assert.equal(first.players.filter(p=>p.isBot).length,7);
+    assert.equal(first.players.filter(p=>p.team==='BLUE').length,4);assert.ok(first.remainingMs<=3100);
+    const b=await client(url);clients.push(b);b.send({type:'TDM_QUICK_MATCH',name:'Human',isBot:true,team:'RED'});
+    const publicJoin=await until(()=>b.latest('TDM_JOINED'));assert.notEqual(publicJoin.roomCode,joined.roomCode);
+    const publicRoom=service.rooms.get(publicJoin.roomCode);assert.equal(publicRoom.players.size,1);
+    assert.equal(publicRoom.players.get(publicJoin.playerId).isBot,false,'clients cannot impersonate server bots');
+    b.send({type:'TDM_FILL_BOTS'});await until(()=>b.latest('TDM_ERROR'));assert.equal(publicRoom.players.size,1);
+    await until(()=>a.latest('TDM_SNAPSHOT').state==='ACTIVE',5000);
+    const initial=new Map([...room.players].map(([id,p])=>[id,{x:p.x,y:p.y}]));
+    await until(()=>room.score.BLUE+room.score.RED>0,20000);
+    assert.ok([...room.players.values()].filter(p=>p.isBot&&Math.hypot(p.x-initial.get(p.id).x,p.y-initial.get(p.id).y)>80).length>=4);
+    assert.ok([...room.players.values()].some(p=>p.isBot&&p.damage>0));
+    assert.ok([...room.players.values()].every(p=>!blocked(p.x,p.y)));
+    assert.equal(room.hostId,joined.playerId);
+    const human=room.players.get(joined.playerId);human.alive=false;human.respawnAt=Date.now()+4000;
+    a.send({type:'TDM_LOADOUT',weapon:'tesla_carbine'});await until(()=>human.weapon==='tesla_carbine');
+    room.state='ENDED';a.send({type:'TDM_REMATCH'});await until(()=>room.round===2);
+    assert.equal(room.state,'COUNTDOWN');assert.equal(room.players.size,8);assert.deepEqual(room.score,{BLUE:0,RED:0});
+    a.send({type:'TDM_LEAVE'});await until(()=>!service.rooms.has(room.code));
+  }finally{for(const c of clients)c.ws.terminate();service.close();await new Promise(r=>wss.close(r));await new Promise(r=>server.close(r));}
+});
+
+test('private room bot filling is restricted to its human host',{timeout:5000},async()=>{
+  const server=http.createServer(),wss=new WebSocketServer({server}),service=setupTeamDeathmatch(wss),clients=[];
+  await new Promise(r=>server.listen(0,'127.0.0.1',r));const url=`ws://127.0.0.1:${server.address().port}`;
+  try{
+    const host=await client(url);clients.push(host);host.send({type:'TDM_CREATE_ROOM'});
+    const joined=await until(()=>host.latest('TDM_JOINED'));
+    const guest=await client(url);clients.push(guest);guest.send({type:'TDM_JOIN_ROOM',roomCode:joined.roomCode});await until(()=>guest.latest('TDM_JOINED'));
+    guest.send({type:'TDM_FILL_BOTS'});await until(()=>guest.latest('TDM_ERROR'));
+    const room=service.rooms.get(joined.roomCode);assert.equal(room.players.size,2);
+    host.send({type:'TDM_FILL_BOTS'});await until(()=>room.players.size===8);
+    assert.equal([...room.players.values()].filter(p=>p.isBot).length,6);
+    host.send({type:'TDM_LEAVE'});await until(()=>room.hostId===guest.latest('TDM_JOINED').playerId);
+    guest.send({type:'TDM_LEAVE'});await until(()=>!service.rooms.has(room.code));
+  }finally{for(const c of clients)c.ws.terminate();service.close();await new Promise(r=>wss.close(r));await new Promise(r=>server.close(r));}
 });
